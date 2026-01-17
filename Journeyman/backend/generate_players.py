@@ -22,7 +22,7 @@ def getPlayerTeams(playerID):
         if team_id != 0 and team_id in team_dict:
             team_name = team_dict[team_id]
             if team_name not in player_teams_list:
-                player_teams_list.append(team_name)
+                player_teams_list.append(team_name.lower())
 
     time.sleep(1)
     return player_teams_list
