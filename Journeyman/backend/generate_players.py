@@ -29,8 +29,8 @@ def getPlayerTeams(playerID):
 
 def randomPlayer():
     while True:
-        playerID, playerName = generatePlayer()
-        teams_list = getPlayerTeams(playerID)
+        player_ID, player_name = generatePlayer()
+        teams_list = getPlayerTeams(player_ID)
         if len(teams_list) > 1:
             break
-    return playerName, teams_list
+    return player_name, teams_list

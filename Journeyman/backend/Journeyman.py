@@ -1,13 +1,12 @@
 from generate_players import randomPlayer
-
+from game_logic import guess_check
 def main():
-    print("Testing randomPlayer() function...\n")
+    print("Welcome to JOURNEYMAN")
+    print("Guess the teams that this player has played for!")
 
-    # Pick 5 random journeyman players
-    for i in range(5):
-        player_name, teams = randomPlayer()
-        print(f"{i+1}. {player_name}")
-        print(f"   Teams: {teams}\n")
+    player_name, correct_teams_list = randomPlayer()
+
+    print (f"Player: {player_name} has played for {len(correct_teams_list)} teams")
 
 if __name__ == "__main__":
     main()
