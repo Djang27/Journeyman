@@ -18,11 +18,17 @@ def getPlayerTeams(playerID):
     team_dict = {team['id']: team['full_name'] for team in nba_teams_data}
 
     player_teams_list = []
+    previous_team = None
+
     for team_id in playerStats["TEAM_ID"]:
-        if team_id != 0 and team_id in team_dict:
-            team_name = team_dict[team_id]
-            if team_name not in player_teams_list:
-                player_teams_list.append(team_name.lower())
+        if team_id == 0 or team_id not in team_dict:
+            continue
+        
+        current_team = team_dict[team_id].lower()
+        
+        if current_team != previous_team:
+                player_teams_list.append(current_team)
+                previous_team = current_team
 
     time.sleep(1)
     return player_teams_list
