@@ -13,6 +13,7 @@ def new_game():
     player_name, teams = randomPlayer()
     return jsonify ({
         "Player" : player_name,
+        "Teams" : teams,
         "Number of Teams": len(teams)
     })
 
