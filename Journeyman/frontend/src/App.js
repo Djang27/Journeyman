@@ -5,6 +5,7 @@ function App() {
     const [player, set_player] = useState("");
     const [teams, set_teams] = useState([]);
     const[game_start, set_game_status] = useState(false);
+    const[guesses, set_guesses] = useState(Array(teams.length).fill(""))
 
     const start_game = () => {
     fetch("/new-game")
