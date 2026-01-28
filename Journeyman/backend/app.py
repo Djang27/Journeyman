@@ -28,7 +28,7 @@ def check_guess():
 
     return jsonify ({
         "result": result
-    })
+    }) 
 
 
 if __name__ == "__main__":

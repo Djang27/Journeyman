@@ -1,5 +1,6 @@
-import React, {useState, useEffect} from 'react'
-
+import React, {useState} from 'react'
+import StartScreen from "./components/start"
+import GameScreen from "./components/game"
 function App() {
     const [player, set_player] = useState("");
     const [teams, set_teams] = useState([]);
@@ -16,17 +17,12 @@ function App() {
   };
     return(
       <div>
-        <h1>Welcome to Journeyman</h1>
-
-        {!game_start && (
-             <button onClick = {start_game}>
-                Start Game
-            </button>
-        )}
-
-        {game_start && (
-            <h2>Player: {player} Teams: {teams} </h2>
-        )}
+          {!game_start && (
+            <StartScreen onStart = {start_game} />
+          )}
+          {game_start && (
+            <GameScreen player = {player} teams = {teams} />
+          )}
           
       </div>
    )
