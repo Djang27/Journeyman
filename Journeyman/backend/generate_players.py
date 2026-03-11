@@ -1,7 +1,7 @@
 import random
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playercareerstats
-from nba_api.stats.static import teams  # module
+from nba_api.stats.static import teams  
 import time
 from unidecode import unidecode
 

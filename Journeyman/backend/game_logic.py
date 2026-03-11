@@ -16,4 +16,4 @@ def guess_check(guess, correct_teams, position):
             return "yellow"
     
     return "gray"
-     
+      
