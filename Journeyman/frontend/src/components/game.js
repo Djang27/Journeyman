@@ -9,7 +9,7 @@ function GameScreen({player, teams, guesses, results, on_guess_change, on_submit
             guesses = {guesses}
             results = {results}
             on_guess_change = {on_guess_change}
-            on_submit = {onsubmit} />
+            on_submit = {on_submit} />
         </div>
     )
 }
