@@ -47,6 +47,16 @@ function App() {
       return updated;
     });
   };
+  
+  const reset_game = () => {
+    set_player("");
+    set_teams([]);
+    set_guesses([]);
+    set_results([]);
+    set_game_status(false);
+  };
+
+  const has_won = results.length > 0 && results.every(r => r === "green");
 
     return(
       <div>
@@ -61,6 +71,8 @@ function App() {
             results = {results}
             on_guess_change = {update_guess}
             on_submit = {check_guess}
+            has_won = {has_won}
+            on_play_again = {reset_game}
              />
           )}
           
