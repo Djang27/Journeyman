@@ -19,13 +19,49 @@ function App() {
         set_game_status(true);
       });
   };
+
+  const check_guess = (position) => {
+    fetch("/check-guess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        guess: guesses[position].toLowerCase().trim(),
+        teams: teams,
+        position: position,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        set_results(prev => {
+          const updated = [...prev];
+          updated[position] = data.result;
+          return updated;
+        });
+      });
+  };
+
+  const update_guess = (position, value) => {
+    set_guesses(prev => {
+      const updated = [...prev];
+      updated[position] = value;
+      return updated;
+    });
+  };
+
     return(
       <div>
           {!game_start && (
             <StartScreen onStart = {start_game} />
           )}
           {game_start && (
-            <GameScreen player = {player} teams = {teams} />
+            <GameScreen 
+            player = {player} 
+            teams = {teams}
+            guesses = {guesses}
+            results = {results}
+            on_guess_change = {update_guess}
+            on_submit = {check_guess}
+             />
           )}
           
       </div>
