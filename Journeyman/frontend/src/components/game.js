@@ -1,14 +1,15 @@
 import TeamList from "./team_list"
-import React, {useState} from 'react'
 
-function GameScreen({player, teams}) {
-    const[guesses, set_guesses] = useState(Array(teams.length).fill(""))
+function GameScreen({player, teams, guesses, results, on_guess_change, on_submit}) {
     return (
         <div>
             <h2>Player: {player}</h2>
-            <TeamList teams = {teams} />
-
-            <button>Submit Guess</button>
+            <TeamList 
+            teams = {teams}
+            guesses = {guesses}
+            results = {results}
+            on_guess_change = {on_guess_change}
+            on_submit = {onsubmit} />
         </div>
     )
 }
