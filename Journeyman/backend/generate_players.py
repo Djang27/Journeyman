@@ -5,19 +5,6 @@ from nba_api.stats.static import teams
 import time
 from unidecode import unidecode
 
-Headers = {
-    "Host": "stats.nba.com",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0",
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br",
-    "x-nba-stats-origin": "stats",
-    "x-nba-stats-token": "true",
-    "Connection": "keep-alive",
-    "Referer": "https://www.nba.com/",
-    "Pragma": "no-cache",
-    "Cache-Control": "no-cache",
-}
 def generatePlayer():
     playerList = players.get_active_players()
     gamePlayer = random.choice(playerList)
