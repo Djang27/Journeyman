@@ -1,48 +1,64 @@
-const RESULT_COLORS = {
-    green: "#538d4e",
-    yellow: "#b59f3b",
-    gray: "#3a3a3c"
-};
+const NBA_TEAMS = [
+    "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets",
+    "chicago bulls", "cleveland cavaliers", "dallas mavericks", "denver nuggets",
+    "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
+    "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat",
+    "milwaukee bucks", "minnesota timberwolves", "new orleans pelicans", "new york knicks",
+    "oklahoma city thunder", "orlando magic", "philadelphia 76ers", "phoenix suns",
+    "portland trail blazers", "sacramento kings", "san antonio spurs", "toronto raptors",
+    "utah jazz", "washington wizards"
+].sort()
 
-function TeamList( {teams, guesses, results, on_guess_change, on_submit} ) {
+const RESULT_COLORS = {
+    green: "correct",
+    yellow: "close",
+    gray: "wrong",
+}
+
+function TeamList({ teams, guesses, results, on_guess_change, on_submit }) {
     return (
-        <ul style = {{listStyle: "none", padding: 0}}>
+        <div className="roadmap">
+            <div className="road-spine"></div>
+            <div className="road-dashes"></div>
+
             {teams.map((team, index) => {
-                const result = results[index];
-                const bgColor = result ? RESULT_COLORS[result] : "transparent";
-                const isLocked = result === "green";
+                const result = results[index]
+                const cardClass = result ? RESULT_COLORS[result] : ""
+                const isLocked = result === "green"
 
                 return (
-                    <li key = {index} style = {{marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px"}}>
-                        <span>Team {index + 1}:</span>
-                        <input
-                            type = "text"
-                            value = {guesses[index] ?? ""}
-                            onChange = {(e) => on_guess_change(index, e.target.value)}
-                            disabled = {isLocked}
-                            style = {{
-                                backgroundColor: bgColor,
-                                color: result ? "white" : "inherit",
-                                border: "1px solid #ccc",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
-                            }}
-                        />
-                        <button
-                            onClick = {() => on_submit(index)}
-                            disabled = {isLocked || !(guesses[index] ?? "").trim()}
-                        >
-                            Guess
-                        </button>
-                        {result && (
-                            <span style = {{ color: bgColor, fontWeight: "bold", textTransform: "capitalize"}}>
-                                {result}
-                            </span>
-                        )}
-                    </li>
+                    <div className="road-stop" key={index}>
+                        <div className={`stop-marker ${cardClass}`}>
+                            {index + 1}
+                        </div>
+
+                        <div className={`stop-card ${cardClass}`}>
+                            <span className="stop-number">Stop {index + 1}</span>
+
+                            <select
+                                className="team-select"
+                                value={guesses[index] ?? ""}
+                                onChange={(e) => on_guess_change(index, e.target.value)}
+                                disabled={isLocked}
+                            >
+                                <option value="">— select a team —</option>
+                                {NBA_TEAMS.map(t => (
+                                    <option key={t} value={t}>{t.replace(/\b\w/g, c => c.toUpperCase())}</option>
+                                ))}
+                            </select>
+
+                            <button
+                                className="guess-btn"
+                                onClick={() => on_submit(index)}
+                                disabled={isLocked || !(guesses[index] ?? "").trim()}
+                            >
+                                Guess
+                            </button>
+                        </div>
+                    </div>
                 )
             })}
-        </ul>
+        </div>
     )
 }
 
