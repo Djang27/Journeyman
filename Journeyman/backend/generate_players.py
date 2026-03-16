@@ -29,7 +29,6 @@ def randomPlayer():
         ]
     )
     raw = message.content[0].text
-    print("Claude response:", raw)  # add this line
     clean = raw.replace("```json", "").replace("```", "").strip()
     data = json.loads(clean)
     return data["name"], data["teams"]
