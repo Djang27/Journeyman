@@ -2,6 +2,7 @@ import anthropic
 import json
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -28,7 +29,9 @@ def randomPlayer():
             }
         ]
     )
+
     raw = message.content[0].text
-    clean = raw.replace("```json", "").replace("```", "").strip()
+    matches = re.findall(r'\{[^{}]*\}', raw, re.DOTALL)
+    clean = matches[-1]
     data = json.loads(clean)
     return data["name"], data["teams"]
