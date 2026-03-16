@@ -1,38 +1,343 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  --court-dark: #1a1a2e;
+  --court-mid: #16213e;
+  --court-accent: #0f3460;
+  --road-gray: #2d2d2d;
+  --road-line: #f5c518;
+  --green-correct: #538d4e;
+  --yellow-close: #b59f3b;
+  --gray-wrong: #3a3a3c;
+  --text-primary: #f0f0f0;
+  --text-muted: #9a9a9a;
+  --nba-red: #c8102e;
+  --nba-blue: #1d428a;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+body {
+  background: var(--court-dark);
+  color: var(--text-primary);
+  font-family: 'Barlow', sans-serif;
   min-height: 100vh;
+}
+
+.app-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* START SCREEN */
+.start-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  min-height: 100vh;
+  text-align: center;
+  gap: 2rem;
+}
+
+.logo-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--road-line);
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(245, 197, 24, 0.3);
+}
+
+.logo-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.road-preview {
+  width: 80px;
+  height: 4px;
+  background: var(--road-line);
+  border-radius: 2px;
+  position: relative;
+}
+
+.start-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: var(--road-line);
+  color: var(--court-dark);
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 197, 24, 0.4);
+}
+
+/* GAME SCREEN */
+.game-screen {
+  padding: 2rem 0;
+}
+
+.player-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.player-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.player-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+}
+
+/* ROADMAP */
+.roadmap {
+  position: relative;
+  padding: 1rem 0;
+}
+
+.road-spine {
+  position: absolute;
+  left: 32px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--road-gray);
+  border-radius: 2px;
+}
+
+.road-dashes {
+  position: absolute;
+  left: 33.5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--road-line) 0px,
+    var(--road-line) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+}
+
+.road-stop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-left: 80px;
+}
+
+.stop-marker {
+  position: absolute;
+  left: 20px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--court-dark);
+  border: 3px solid var(--road-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.3s;
+  z-index: 1;
+}
+
+.stop-marker.correct {
+  border-color: var(--green-correct);
+  background: var(--green-correct);
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.stop-marker.close {
+  border-color: var(--yellow-close);
+  background: var(--yellow-close);
+  color: white;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.stop-marker.wrong {
+  border-color: var(--gray-wrong);
+  background: var(--gray-wrong);
+  color: white;
+}
+
+.stop-card {
+  flex: 1;
+  background: var(--court-mid);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.3s;
+}
+
+.stop-card.correct {
+  border-color: var(--green-correct);
+  background: rgba(83, 141, 78, 0.15);
+}
+
+.stop-card.close {
+  border-color: var(--yellow-close);
+  background: rgba(181, 159, 59, 0.15);
+}
+
+.stop-card.wrong {
+  border-color: var(--gray-wrong);
+}
+
+.stop-number {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.team-select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.team-select option {
+  background: var(--court-mid);
+  color: var(--text-primary);
+}
+
+.team-select:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.guess-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--road-line);
+  border: 1px solid var(--road-line);
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.guess-btn:hover:not(:disabled) {
+  background: var(--road-line);
+  color: var(--court-dark);
+}
+
+.guess-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* WIN SCREEN */
+.win-banner {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 2rem;
+  background: var(--court-mid);
+  border: 1px solid var(--green-correct);
+  border-radius: 12px;
+}
+
+.win-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--green-correct);
+  margin-bottom: 1rem;
+}
+
+.play-again-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: var(--green-correct);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.play-again-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(83, 141, 78, 0.4);
+}
+
+/* LOADING */
+.loading {
+  text-align: center;
+  padding: 4rem;
+}
+
+.loading-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
