@@ -1,5 +1,7 @@
 import json
+import os
 import random
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -8,7 +10,8 @@ from urllib.request import Request, urlopen
 
 
 NBA_STATS_BASE_URL = "https://stats.nba.com/stats"
-CACHE_PATH = Path(__file__).with_name("nba_player_cache.json")
+CACHE_DIRECTORY = Path(tempfile.gettempdir()) if os.getenv("VERCEL") else Path(__file__).parent
+CACHE_PATH = CACHE_DIRECTORY / "nba_player_cache.json"
 CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
 MIN_CACHED_PLAYERS = 40
 TARGET_CACHE_SIZE = 120

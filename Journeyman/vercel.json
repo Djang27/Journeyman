@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "rewrites": [
+    {
+      "source": "/new-game",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/check-guess",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
