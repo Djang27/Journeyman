@@ -3,10 +3,12 @@ const NBA_TEAMS = [
     "chicago bulls", "cleveland cavaliers", "dallas mavericks", "denver nuggets",
     "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
     "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat",
-    "milwaukee bucks", "minnesota timberwolves", "new orleans pelicans", "new york knicks",
+    "milwaukee bucks", "minnesota timberwolves", "new jersey nets", "new orleans hornets",
+    "new orleans pelicans", "new orleans/oklahoma city hornets", "new york knicks",
     "oklahoma city thunder", "orlando magic", "philadelphia 76ers", "phoenix suns",
-    "portland trail blazers", "sacramento kings", "san antonio spurs", "toronto raptors",
-    "utah jazz", "washington wizards"
+    "portland trail blazers", "sacramento kings", "san antonio spurs", "seattle supersonics",
+    "toronto raptors", "utah jazz", "vancouver grizzlies", "washington bullets",
+    "washington wizards"
 ].sort()
 
 const RESULT_COLORS = {
