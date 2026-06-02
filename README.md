@@ -38,6 +38,21 @@ npm start
 
 The frontend proxies API requests to the Flask backend during local development.
 
+## Player Data
+
+The app reads NBA career paths from a committed static database:
+
+```text
+Journeyman/backend/nba_players.json
+```
+
+To refresh that database from NBA Stats, run:
+
+```bash
+cd Journeyman/backend
+python refresh_nba_players.py
+```
+
 ## Deployment
 
 This project is configured for Vercel. Use `Journeyman` as the Vercel root directory.

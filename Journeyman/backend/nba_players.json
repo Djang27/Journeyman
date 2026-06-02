@@ -1,0 +1,856 @@
+{
+  "created_at": 1780363813.473547,
+  "players": [
+    {
+      "id": 201579,
+      "name": "Roy Hibbert",
+      "teams": [
+        "indiana pacers",
+        "los angeles lakers",
+        "charlotte hornets",
+        "denver nuggets"
+      ]
+    },
+    {
+      "id": 201591,
+      "name": "DJ White",
+      "teams": [
+        "oklahoma city thunder",
+        "charlotte hornets",
+        "boston celtics",
+        "charlotte hornets"
+      ]
+    },
+    {
+      "id": 969,
+      "name": "Travis Knight",
+      "teams": [
+        "los angeles lakers",
+        "boston celtics",
+        "los angeles lakers",
+        "new york knicks"
+      ]
+    },
+    {
+      "id": 1666,
+      "name": "Gerald Madkins",
+      "teams": [
+        "cleveland cavaliers",
+        "golden state warriors"
+      ]
+    },
+    {
+      "id": 2732,
+      "name": "Ben Gordon",
+      "teams": [
+        "chicago bulls",
+        "detroit pistons",
+        "charlotte hornets",
+        "orlando magic"
+      ]
+    },
+    {
+      "id": 1627735,
+      "name": "Wade Baldwin IV",
+      "teams": [
+        "memphis grizzlies",
+        "portland trail blazers"
+      ]
+    },
+    {
+      "id": 987,
+      "name": "Jason Sasser",
+      "teams": [
+        "san antonio spurs",
+        "dallas mavericks",
+        "vancouver grizzlies"
+      ]
+    },
+    {
+      "id": 951,
+      "name": "Ray Allen",
+      "teams": [
+        "milwaukee bucks",
+        "seattle supersonics",
+        "boston celtics",
+        "miami heat"
+      ]
+    },
+    {
+      "id": 202696,
+      "name": "Nikola Vu\u010devi\u0107",
+      "teams": [
+        "philadelphia 76ers",
+        "orlando magic",
+        "chicago bulls",
+        "boston celtics"
+      ]
+    },
+    {
+      "id": 1630610,
+      "name": "DeJon Jarreau",
+      "teams": [
+        "indiana pacers",
+        "memphis grizzlies"
+      ]
+    },
+    {
+      "id": 2853,
+      "name": "Earl Barron",
+      "teams": [
+        "miami heat",
+        "new york knicks",
+        "phoenix suns",
+        "milwaukee bucks",
+        "portland trail blazers",
+        "golden state warriors",
+        "washington wizards",
+        "new york knicks",
+        "phoenix suns"
+      ]
+    },
+    {
+      "id": 511,
+      "name": "Melvin Booker",
+      "teams": [
+        "houston rockets",
+        "denver nuggets",
+        "golden state warriors"
+      ]
+    },
+    {
+      "id": 1628418,
+      "name": "Thomas Bryant",
+      "teams": [
+        "los angeles lakers",
+        "washington wizards",
+        "los angeles lakers",
+        "denver nuggets",
+        "miami heat",
+        "indiana pacers",
+        "cleveland cavaliers"
+      ]
+    },
+    {
+      "id": 2321,
+      "name": "Paul Shirley",
+      "teams": [
+        "atlanta hawks",
+        "chicago bulls",
+        "phoenix suns"
+      ]
+    },
+    {
+      "id": 1137,
+      "name": "Chris Jent",
+      "teams": [
+        "houston rockets",
+        "new york knicks"
+      ]
+    },
+    {
+      "id": 1631199,
+      "name": "Ron Harper Jr.",
+      "teams": [
+        "toronto raptors",
+        "detroit pistons",
+        "boston celtics"
+      ]
+    },
+    {
+      "id": 226,
+      "name": "Antonio Lang",
+      "teams": [
+        "phoenix suns",
+        "cleveland cavaliers",
+        "miami heat",
+        "cleveland cavaliers",
+        "toronto raptors",
+        "philadelphia 76ers"
+      ]
+    },
+    {
+      "id": 954,
+      "name": "Kerry Kittles",
+      "teams": [
+        "new jersey nets",
+        "los angeles clippers"
+      ]
+    },
+    {
+      "id": 1631466,
+      "name": "Nate Williams",
+      "teams": [
+        "portland trail blazers",
+        "houston rockets",
+        "golden state warriors"
+      ]
+    },
+    {
+      "id": 1626158,
+      "name": "Richaun Holmes",
+      "teams": [
+        "philadelphia 76ers",
+        "phoenix suns",
+        "sacramento kings",
+        "dallas mavericks",
+        "washington wizards"
+      ]
+    },
+    {
+      "id": 200761,
+      "name": "Shawne Williams",
+      "teams": [
+        "indiana pacers",
+        "dallas mavericks",
+        "new york knicks",
+        "new jersey nets",
+        "los angeles lakers",
+        "miami heat",
+        "detroit pistons"
+      ]
+    },
+    {
+      "id": 78294,
+      "name": "Earl Tatum",
+      "teams": [
+        "los angeles lakers",
+        "indiana pacers",
+        "boston celtics",
+        "detroit pistons",
+        "cleveland cavaliers"
+      ]
+    },
+    {
+      "id": 2243,
+      "name": "Brian Scalabrine",
+      "teams": [
+        "new jersey nets",
+        "boston celtics",
+        "chicago bulls"
+      ]
+    },
+    {
+      "id": 1630554,
+      "name": "Jason Preston",
+      "teams": [
+        "los angeles clippers",
+        "utah jazz"
+      ]
+    },
+    {
+      "id": 77260,
+      "name": "Bo Kimble",
+      "teams": [
+        "los angeles clippers",
+        "new york knicks"
+      ]
+    },
+    {
+      "id": 2406,
+      "name": "Caron Butler",
+      "teams": [
+        "miami heat",
+        "los angeles lakers",
+        "washington wizards",
+        "dallas mavericks",
+        "los angeles clippers",
+        "milwaukee bucks",
+        "oklahoma city thunder",
+        "detroit pistons",
+        "sacramento kings"
+      ]
+    },
+    {
+      "id": 1630171,
+      "name": "Isaac Okoro",
+      "teams": [
+        "cleveland cavaliers",
+        "chicago bulls"
+      ]
+    },
+    {
+      "id": 77852,
+      "name": "Mike Phelps",
+      "teams": [
+        "seattle supersonics",
+        "los angeles clippers"
+      ]
+    },
+    {
+      "id": 202331,
+      "name": "Paul George",
+      "teams": [
+        "indiana pacers",
+        "oklahoma city thunder",
+        "los angeles clippers",
+        "philadelphia 76ers"
+      ]
+    },
+    {
+      "id": 1627755,
+      "name": "Tyler Ulis",
+      "teams": [
+        "phoenix suns",
+        "chicago bulls"
+      ]
+    },
+    {
+      "id": 2200,
+      "name": "Pau Gasol",
+      "teams": [
+        "memphis grizzlies",
+        "los angeles lakers",
+        "chicago bulls",
+        "san antonio spurs",
+        "milwaukee bucks"
+      ]
+    },
+    {
+      "id": 203894,
+      "name": "Shabazz Napier",
+      "teams": [
+        "miami heat",
+        "orlando magic",
+        "portland trail blazers",
+        "brooklyn nets",
+        "minnesota timberwolves",
+        "washington wizards"
+      ]
+    },
+    {
+      "id": 1628413,
+      "name": "Jonah Bolden",
+      "teams": [
+        "philadelphia 76ers",
+        "phoenix suns"
+      ]
+    },
+    {
+      "id": 980,
+      "name": "Zydrunas Ilgauskas",
+      "teams": [
+        "cleveland cavaliers",
+        "miami heat"
+      ]
+    },
+    {
+      "id": 203159,
+      "name": "Scott Machado",
+      "teams": [
+        "houston rockets",
+        "los angeles lakers"
+      ]
+    },
+    {
+      "id": 202083,
+      "name": "Wesley Matthews",
+      "teams": [
+        "utah jazz",
+        "portland trail blazers",
+        "dallas mavericks",
+        "new york knicks",
+        "indiana pacers",
+        "milwaukee bucks",
+        "los angeles lakers",
+        "milwaukee bucks",
+        "atlanta hawks"
+      ]
+    },
+    {
+      "id": 200771,
+      "name": "Sergio Rodriguez",
+      "teams": [
+        "portland trail blazers",
+        "sacramento kings",
+        "new york knicks",
+        "philadelphia 76ers"
+      ]
+    },
+    {
+      "id": 1737,
+      "name": "Nazr Mohammed",
+      "teams": [
+        "philadelphia 76ers",
+        "atlanta hawks",
+        "new york knicks",
+        "san antonio spurs",
+        "detroit pistons",
+        "charlotte hornets",
+        "oklahoma city thunder",
+        "chicago bulls",
+        "oklahoma city thunder"
+      ]
+    },
+    {
+      "id": 78048,
+      "name": "Walker Russell",
+      "teams": [
+        "detroit pistons",
+        "atlanta hawks",
+        "detroit pistons",
+        "indiana pacers",
+        "detroit pistons"
+      ]
+    },
+    {
+      "id": 201157,
+      "name": "Sean Williams",
+      "teams": [
+        "new jersey nets",
+        "dallas mavericks",
+        "boston celtics"
+      ]
+    },
+    {
+      "id": 201936,
+      "name": "Tyreke Evans",
+      "teams": [
+        "sacramento kings",
+        "new orleans pelicans",
+        "sacramento kings",
+        "memphis grizzlies",
+        "indiana pacers"
+      ]
+    },
+    {
+      "id": 78378,
+      "name": "Elston Turner",
+      "teams": [
+        "dallas mavericks",
+        "denver nuggets",
+        "chicago bulls",
+        "denver nuggets"
+      ]
+    },
+    {
+      "id": 2034,
+      "name": "Mike Miller",
+      "teams": [
+        "orlando magic",
+        "memphis grizzlies",
+        "minnesota timberwolves",
+        "washington wizards",
+        "miami heat",
+        "memphis grizzlies",
+        "cleveland cavaliers",
+        "denver nuggets"
+      ]
+    },
+    {
+      "id": 2109,
+      "name": "Eddie Gill",
+      "teams": [
+        "new jersey nets",
+        "memphis grizzlies",
+        "portland trail blazers",
+        "indiana pacers",
+        "new jersey nets",
+        "seattle supersonics",
+        "milwaukee bucks"
+      ]
+    },
+    {
+      "id": 78352,
+      "name": "Sedric Toney",
+      "teams": [
+        "atlanta hawks",
+        "phoenix suns",
+        "new york knicks",
+        "indiana pacers",
+        "atlanta hawks",
+        "sacramento kings",
+        "cleveland cavaliers"
+      ]
+    },
+    {
+      "id": 202397,
+      "name": "Ish Smith",
+      "teams": [
+        "houston rockets",
+        "memphis grizzlies",
+        "golden state warriors",
+        "orlando magic",
+        "milwaukee bucks",
+        "phoenix suns",
+        "oklahoma city thunder",
+        "philadelphia 76ers",
+        "new orleans pelicans",
+        "philadelphia 76ers",
+        "detroit pistons",
+        "washington wizards",
+        "charlotte hornets",
+        "washington wizards",
+        "denver nuggets",
+        "charlotte hornets"
+      ]
+    },
+    {
+      "id": 262,
+      "name": "Michael Cage",
+      "teams": [
+        "los angeles clippers",
+        "seattle supersonics",
+        "cleveland cavaliers",
+        "philadelphia 76ers",
+        "new jersey nets"
+      ]
+    },
+    {
+      "id": 201207,
+      "name": "Coby Karl",
+      "teams": [
+        "los angeles lakers",
+        "cleveland cavaliers",
+        "golden state warriors"
+      ]
+    },
+    {
+      "id": 200821,
+      "name": "Yakhouba Diawara",
+      "teams": [
+        "denver nuggets",
+        "miami heat"
+      ]
+    },
+    {
+      "id": 1630214,
+      "name": "Xavier Tillman",
+      "teams": [
+        "memphis grizzlies",
+        "boston celtics",
+        "charlotte hornets"
+      ]
+    },
+    {
+      "id": 271,
+      "name": "Johnny Newman",
+      "teams": [
+        "cleveland cavaliers",
+        "new york knicks",
+        "charlotte hornets",
+        "new jersey nets",
+        "milwaukee bucks",
+        "denver nuggets",
+        "cleveland cavaliers",
+        "new jersey nets",
+        "dallas mavericks"
+      ]
+    },
+    {
+      "id": 770,
+      "name": "Mark West",
+      "teams": [
+        "dallas mavericks",
+        "milwaukee bucks",
+        "cleveland cavaliers",
+        "phoenix suns",
+        "detroit pistons",
+        "cleveland cavaliers",
+        "indiana pacers",
+        "atlanta hawks",
+        "phoenix suns"
+      ]
+    },
+    {
+      "id": 1630579,
+      "name": "Jericho Sims",
+      "teams": [
+        "new york knicks",
+        "milwaukee bucks"
+      ]
+    },
+    {
+      "id": 203967,
+      "name": "Dario Saric",
+      "teams": [
+        "philadelphia 76ers",
+        "minnesota timberwolves",
+        "phoenix suns",
+        "oklahoma city thunder",
+        "golden state warriors",
+        "denver nuggets",
+        "sacramento kings"
+      ]
+    },
+    {
+      "id": 204060,
+      "name": "Joe Ingles",
+      "teams": [
+        "utah jazz",
+        "milwaukee bucks",
+        "orlando magic",
+        "minnesota timberwolves"
+      ]
+    },
+    {
+      "id": 988,
+      "name": "Randy Livingston",
+      "teams": [
+        "houston rockets",
+        "atlanta hawks",
+        "phoenix suns",
+        "golden state warriors",
+        "seattle supersonics",
+        "new orleans hornets",
+        "los angeles clippers",
+        "utah jazz",
+        "chicago bulls",
+        "seattle supersonics"
+      ]
+    },
+    {
+      "id": 76707,
+      "name": "Eric Fernsten",
+      "teams": [
+        "cleveland cavaliers",
+        "chicago bulls",
+        "boston celtics",
+        "new york knicks"
+      ]
+    },
+    {
+      "id": 2499,
+      "name": "Richie Frahm",
+      "teams": [
+        "seattle supersonics",
+        "portland trail blazers",
+        "minnesota timberwolves",
+        "houston rockets",
+        "los angeles clippers"
+      ]
+    },
+    {
+      "id": 2563,
+      "name": "Dahntay Jones",
+      "teams": [
+        "memphis grizzlies",
+        "sacramento kings",
+        "denver nuggets",
+        "indiana pacers",
+        "dallas mavericks",
+        "atlanta hawks",
+        "los angeles clippers",
+        "cleveland cavaliers"
+      ]
+    },
+    {
+      "id": 2041,
+      "name": "Etan Thomas",
+      "teams": [
+        "washington wizards",
+        "oklahoma city thunder",
+        "atlanta hawks"
+      ]
+    },
+    {
+      "id": 1626179,
+      "name": "Terry Rozier",
+      "teams": [
+        "boston celtics",
+        "charlotte hornets",
+        "miami heat"
+      ]
+    },
+    {
+      "id": 77670,
+      "name": "Jay Murphy",
+      "teams": [
+        "los angeles clippers",
+        "washington wizards"
+      ]
+    },
+    {
+      "id": 200797,
+      "name": "Ryan Hollins",
+      "teams": [
+        "charlotte hornets",
+        "dallas mavericks",
+        "minnesota timberwolves",
+        "cleveland cavaliers",
+        "boston celtics",
+        "los angeles clippers",
+        "sacramento kings",
+        "washington wizards",
+        "memphis grizzlies"
+      ]
+    },
+    {
+      "id": 203995,
+      "name": "Vasilije Micic",
+      "teams": [
+        "oklahoma city thunder",
+        "charlotte hornets",
+        "phoenix suns"
+      ]
+    },
+    {
+      "id": 229,
+      "name": "James Edwards",
+      "teams": [
+        "los angeles lakers",
+        "indiana pacers",
+        "cleveland cavaliers",
+        "phoenix suns",
+        "detroit pistons",
+        "los angeles clippers",
+        "los angeles lakers",
+        "portland trail blazers",
+        "chicago bulls"
+      ]
+    },
+    {
+      "id": 1630527,
+      "name": "Brandon Boston",
+      "teams": [
+        "los angeles clippers",
+        "new orleans pelicans"
+      ]
+    },
+    {
+      "id": 77314,
+      "name": "Tom Kropp",
+      "teams": [
+        "washington wizards",
+        "chicago bulls"
+      ]
+    },
+    {
+      "id": 442,
+      "name": "Pervis Ellison",
+      "teams": [
+        "sacramento kings",
+        "washington wizards",
+        "boston celtics",
+        "seattle supersonics"
+      ]
+    },
+    {
+      "id": 201571,
+      "name": "D.J. Augustin",
+      "teams": [
+        "charlotte hornets",
+        "indiana pacers",
+        "toronto raptors",
+        "chicago bulls",
+        "detroit pistons",
+        "oklahoma city thunder",
+        "denver nuggets",
+        "orlando magic",
+        "milwaukee bucks",
+        "houston rockets",
+        "los angeles lakers"
+      ]
+    },
+    {
+      "id": 1628984,
+      "name": "Devonte' Graham",
+      "teams": [
+        "charlotte hornets",
+        "new orleans pelicans",
+        "san antonio spurs"
+      ]
+    },
+    {
+      "id": 203382,
+      "name": "Aron Baynes",
+      "teams": [
+        "san antonio spurs",
+        "detroit pistons",
+        "boston celtics",
+        "phoenix suns",
+        "toronto raptors"
+      ]
+    },
+    {
+      "id": 77483,
+      "name": "Eddie Mast",
+      "teams": [
+        "new york knicks",
+        "atlanta hawks"
+      ]
+    },
+    {
+      "id": 728,
+      "name": "Jimmy King",
+      "teams": [
+        "toronto raptors",
+        "denver nuggets"
+      ]
+    },
+    {
+      "id": 112,
+      "name": "Dontonio Wingfield",
+      "teams": [
+        "seattle supersonics",
+        "portland trail blazers"
+      ]
+    },
+    {
+      "id": 78138,
+      "name": "Gene Short",
+      "teams": [
+        "seattle supersonics",
+        "new york knicks"
+      ]
+    },
+    {
+      "id": 2074,
+      "name": "Jabari Smith",
+      "teams": [
+        "sacramento kings",
+        "philadelphia 76ers",
+        "sacramento kings",
+        "new jersey nets"
+      ]
+    },
+    {
+      "id": 1733,
+      "name": "Al Harrington",
+      "teams": [
+        "indiana pacers",
+        "atlanta hawks",
+        "indiana pacers",
+        "golden state warriors",
+        "new york knicks",
+        "denver nuggets",
+        "orlando magic",
+        "washington wizards"
+      ]
+    },
+    {
+      "id": 417,
+      "name": "Sam Mitchell",
+      "teams": [
+        "minnesota timberwolves",
+        "indiana pacers",
+        "minnesota timberwolves"
+      ]
+    },
+    {
+      "id": 1626204,
+      "name": "Larry Nance Jr.",
+      "teams": [
+        "los angeles lakers",
+        "cleveland cavaliers",
+        "portland trail blazers",
+        "new orleans pelicans",
+        "atlanta hawks",
+        "cleveland cavaliers"
+      ]
+    },
+    {
+      "id": 324,
+      "name": "Anthony Peeler",
+      "teams": [
+        "los angeles lakers",
+        "vancouver grizzlies",
+        "minnesota timberwolves",
+        "sacramento kings",
+        "washington wizards"
+      ]
+    }
+  ],
+  "season": "2025-26",
+  "source": "stats.nba.com"
+}
