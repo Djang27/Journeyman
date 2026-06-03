@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
+import { supabase } from './lib/supabase'
 import './App.css'
 
 const PLAYED_KEY = "journeyman_played"
@@ -22,15 +23,37 @@ function record_played_id(id) {
 }
 
 function App() {
-    const [player, set_player] = useState("")
-    const [teams, set_teams] = useState([])
-    const [game_start, set_game_status] = useState(false)
-    const [guesses, set_guesses] = useState([])
-    const [results, set_results] = useState([])
+    const [player, set_player]           = useState("")
+    const [teams, set_teams]             = useState([])
+    const [game_start, set_game_status]  = useState(false)
+    const [guesses, set_guesses]         = useState([])
+    const [results, set_results]         = useState([])
     const [wrong_guesses, set_wrong_guesses] = useState(0)
-    const [loading, set_loading] = useState(false)
+    const [loading, set_loading]         = useState(false)
     const [show_sidebar, set_show_sidebar] = useState(false)
+    const [user, set_user]               = useState(null)
+    const [recovery_mode, set_recovery_mode] = useState(false)
     const MAX_WRONG_GUESSES = 3
+
+    // Auth state listener — single source of truth for the current user
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            set_user(session?.user ?? null)
+        })
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            set_user(session?.user ?? null)
+
+            if (event === 'PASSWORD_RECOVERY') {
+                set_recovery_mode(true)
+                set_show_sidebar(true)
+            } else {
+                set_recovery_mode(false)
+            }
+        })
+
+        return () => subscription.unsubscribe()
+    }, [])
 
     const start_game = () => {
         set_loading(true)
@@ -90,7 +113,7 @@ function App() {
         set_game_status(false)
     }
 
-    const has_won = results.length > 0 && results.every(r => r === "green")
+    const has_won  = results.length > 0 && results.every(r => r === "green")
     const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
 
     if (loading) {
@@ -122,7 +145,12 @@ function App() {
                     on_play_again={reset_game}
                 />
             )}
-            <Sidebar open={show_sidebar} onClose={() => set_show_sidebar(false)} />
+            <Sidebar
+                open={show_sidebar}
+                onClose={() => set_show_sidebar(false)}
+                user={user}
+                recoveryMode={recovery_mode}
+            />
         </div>
     )
 }

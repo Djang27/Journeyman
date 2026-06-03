@@ -726,6 +726,111 @@ body {
   border-top: 1px solid rgba(255,255,255,0.07);
 }
 
+.auth-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  font-size: 0.82rem;
+  color: var(--gray-wrong);
+  background: rgba(200, 16, 46, 0.1);
+  border: 1px solid rgba(200, 16, 46, 0.25);
+  border-radius: 4px;
+  padding: 0.4rem 0.7rem;
+  margin: 0;
+}
+
+.auth-success {
+  font-size: 0.82rem;
+  color: var(--green-correct);
+  background: rgba(83, 141, 78, 0.1);
+  border: 1px solid rgba(83, 141, 78, 0.25);
+  border-radius: 4px;
+  padding: 0.4rem 0.7rem;
+  margin-bottom: 0.75rem;
+}
+
+.auth-intro {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.auth-link-btn {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  text-align: center;
+  width: 100%;
+  transition: color 0.2s;
+}
+
+.auth-link-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Signed-in profile view */
+.auth-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.auth-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--court-accent);
+  border: 2px solid var(--road-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--road-line);
+  margin-bottom: 0.25rem;
+}
+
+.auth-profile-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.auth-profile-email {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* Check email view */
+.auth-check-email {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.auth-email-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
 /* HISTORY / COMING SOON TAB */
 .coming-soon-box {
   display: flex;
