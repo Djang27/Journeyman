@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { calculate_streaks } from '../lib/scoring'
 
 const TABS = [
     { id: 'howto',   label: 'How to Play' },
@@ -392,12 +393,13 @@ function HistoryTab({ user }) {
                 .order('created_at', { ascending: false })
 
             if (data) {
-                const wins      = data.filter(r => r.result === 'win').length
-                const losses    = data.filter(r => r.result === 'loss').length
-                const scores    = data.map(r => r.score || 0).filter(s => s > 0)
-                const bestScore = scores.length ? Math.max(...scores) : null
+                const wins       = data.filter(r => r.result === 'win').length
+                const losses     = data.filter(r => r.result === 'loss').length
+                const scores     = data.map(r => r.score || 0).filter(s => s > 0)
+                const bestScore  = scores.length ? Math.max(...scores) : null
                 const totalScore = scores.reduce((a, b) => a + b, 0)
-                setStats({ played: data.length, wins, losses, bestScore, totalScore })
+                const { current: currentStreak, best: bestStreak } = calculate_streaks(data)
+                setStats({ played: data.length, wins, losses, bestScore, totalScore, currentStreak, bestStreak })
                 setRecent(data.slice(0, 6))
             }
         }
@@ -456,6 +458,21 @@ function HistoryTab({ user }) {
                             Total: <strong>{stats.totalScore.toLocaleString()} pts</strong>
                         </p>
                     )}
+                    <div className="streak-row">
+                        <div className="streak-item">
+                            <span className="streak-val">
+                                {stats.currentStreak > 0 ? '🔥' : '—'} {stats.currentStreak > 0 ? stats.currentStreak : ''}
+                            </span>
+                            <span className="streak-label">Current Streak</span>
+                        </div>
+                        <div className="streak-divider" />
+                        <div className="streak-item">
+                            <span className="streak-val">
+                                {stats.bestStreak > 0 ? '🏆' : '—'} {stats.bestStreak > 0 ? stats.bestStreak : ''}
+                            </span>
+                            <span className="streak-label">Best Streak</span>
+                        </div>
+                    </div>
                 </div>
             )}
 

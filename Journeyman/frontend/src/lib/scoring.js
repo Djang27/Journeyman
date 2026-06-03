@@ -1,3 +1,26 @@
+// games must be ordered newest-first (as returned by Supabase)
+export function calculate_streaks(games) {
+    let current = 0
+    let best    = 0
+    let run     = 0
+
+    for (const g of games) {
+        if (g.result === 'win') current++
+        else break
+    }
+
+    for (let i = games.length - 1; i >= 0; i--) {
+        if (games[i].result === 'win') {
+            run++
+            if (run > best) best = run
+        } else {
+            run = 0
+        }
+    }
+
+    return { current, best }
+}
+
 export const BASE        = 1000
 export const TIME_GRACE  = 30   // free seconds before penalty starts
 export const TIME_RATE   = 1    // points lost per second after grace
