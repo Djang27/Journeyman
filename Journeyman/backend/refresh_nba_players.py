@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 
 NBA_STATS_BASE_URL = "https://stats.nba.com/stats"
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
-TARGET_PLAYER_COUNT = 120
+TARGET_PLAYER_COUNT = 200
 MIN_PLAYER_COUNT = 40
 REQUEST_DELAY_SECONDS = 0.6
 MIN_CAREER_PPG = 5.0

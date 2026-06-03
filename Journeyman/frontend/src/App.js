@@ -3,6 +3,23 @@ import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import './App.css'
 
+const PLAYED_KEY = "journeyman_played"
+
+function get_played_ids() {
+    try {
+        return JSON.parse(localStorage.getItem(PLAYED_KEY) || "[]")
+    } catch {
+        return []
+    }
+}
+
+function record_played_id(id) {
+    const played = get_played_ids()
+    if (!played.includes(id)) {
+        localStorage.setItem(PLAYED_KEY, JSON.stringify([...played, id]))
+    }
+}
+
 function App() {
     const [player, set_player] = useState("")
     const [teams, set_teams] = useState([])
@@ -15,7 +32,9 @@ function App() {
 
     const start_game = () => {
         set_loading(true)
-        fetch("/new-game")
+        const played_ids = get_played_ids()
+        const exclude_param = played_ids.length ? `?exclude=${played_ids.join(",")}` : ""
+        fetch(`/new-game${exclude_param}`)
             .then(res => res.json())
             .then(data => {
                 set_player(data.Player)
@@ -25,6 +44,7 @@ function App() {
                 set_wrong_guesses(0)
                 set_game_status(true)
                 set_loading(false)
+                record_played_id(data.PlayerID)
             })
     }
 

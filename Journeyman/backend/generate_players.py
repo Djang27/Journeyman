@@ -18,6 +18,13 @@ def _load_players():
     return players
 
 
-def randomPlayer():
-    player = random.choice(_load_players())
-    return player["name"], player["teams"]
+def randomPlayer(exclude_ids=None):
+    players = _load_players()
+
+    available = players
+    if exclude_ids:
+        filtered = [p for p in players if p["id"] not in exclude_ids]
+        available = filtered if filtered else players  # reset when all have been seen
+
+    player = random.choice(available)
+    return player["name"], player["teams"], player["id"]

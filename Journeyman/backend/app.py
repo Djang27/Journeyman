@@ -10,14 +10,23 @@ def home():
 
 @app.route("/new-game")
 def new_game():
-    player_name, teams = randomPlayer()
-    return jsonify ({
-        "Player" : player_name,
-        "Teams" : teams,
-        "Number of Teams": len(teams)
+    exclude_param = request.args.get("exclude", "")
+    exclude_ids = set()
+    if exclude_param:
+        try:
+            exclude_ids = {int(x) for x in exclude_param.split(",") if x.strip()}
+        except ValueError:
+            pass
+
+    player_name, teams, player_id = randomPlayer(exclude_ids=exclude_ids)
+    return jsonify({
+        "Player": player_name,
+        "PlayerID": player_id,
+        "Teams": teams,
+        "Number of Teams": len(teams),
     })
 
-@app.route("/check-guess", methods = ["POST"])
+@app.route("/check-guess", methods=["POST"])
 def check_guess():
     player_data = request.json
     guess = player_data.get("guess")
@@ -26,11 +35,10 @@ def check_guess():
 
     result = guess_check(guess, correct_teams, position)
 
-    return jsonify ({
+    return jsonify({
         "result": result
-    }) 
+    })
 
 
 if __name__ == "__main__":
-    app.run(debug = True)
-
+    app.run(debug=True)
