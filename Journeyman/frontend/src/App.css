@@ -317,12 +317,83 @@ body {
   cursor: not-allowed;
 }
 
+/* GAME STATUS ROW (lives + hint button) */
+.game-status-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.game-status-row .lives-indicator {
+  margin-bottom: 0;
+}
+
+/* HINT BUTTON */
+.hint-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--road-line);
+  border: 1px dashed var(--road-line);
+  padding: 0.35rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+
+.hint-btn:hover {
+  background: rgba(245, 197, 24, 0.12);
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+.hint-active-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* CONFERENCE BADGE */
+.conf-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.conf-badge.east {
+  background: rgba(29, 66, 138, 0.3);
+  color: #6fa3ef;
+  border: 1px solid rgba(29, 66, 138, 0.5);
+}
+
+.conf-badge.west {
+  background: rgba(200, 16, 46, 0.2);
+  color: #f07070;
+  border: 1px solid rgba(200, 16, 46, 0.4);
+}
+
 /* LIVES INDICATOR */
 .lives-indicator {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 2rem;
   padding: 0.6rem 1rem;
   background: var(--court-mid);
   border: 1px solid rgba(255,255,255,0.08);

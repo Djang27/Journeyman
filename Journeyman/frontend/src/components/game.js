@@ -2,8 +2,9 @@ import TeamList from "./team_list"
 import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, on_play_again }) {
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, on_play_again }) {
     const game_over = has_won || has_lost
+    const hint_available = wrong_guesses >= 2 && !hint_active && !game_over
 
     return (
         <div className="game-screen">
@@ -15,13 +16,25 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 <div className="player-name">{player}</div>
             </div>
 
-            <div className="lives-indicator">
-                <span className="lives-label">Wrong Guesses</span>
-                <div className="lives-dots">
-                    {[...Array(max_guesses)].map((_, i) => (
-                        <span key={i} className={`life-dot ${i < wrong_guesses ? 'used' : 'remaining'}`} />
-                    ))}
+            <div className="game-status-row">
+                <div className="lives-indicator">
+                    <span className="lives-label">Wrong Guesses</span>
+                    <div className="lives-dots">
+                        {[...Array(max_guesses)].map((_, i) => (
+                            <span key={i} className={`life-dot ${i < wrong_guesses ? 'used' : 'remaining'}`} />
+                        ))}
+                    </div>
                 </div>
+
+                {hint_available && (
+                    <button className="hint-btn" onClick={on_hint} title="Reveal which conference each team belongs to">
+                        💡 Hint
+                    </button>
+                )}
+
+                {hint_active && !game_over && (
+                    <span className="hint-active-label">Conference hints on</span>
+                )}
             </div>
 
             <TeamList
@@ -31,6 +44,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 on_guess_change={on_guess_change}
                 on_submit={on_submit}
                 game_over={game_over}
+                hint_active={hint_active}
             />
 
             {has_won && (

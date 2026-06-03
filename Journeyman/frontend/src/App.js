@@ -30,6 +30,7 @@ function App() {
     const [guesses, set_guesses]         = useState([])
     const [results, set_results]         = useState([])
     const [wrong_guesses, set_wrong_guesses] = useState(0)
+    const [hint_active, set_hint_active] = useState(false)
     const [loading, set_loading]         = useState(false)
     const [show_sidebar, set_show_sidebar] = useState(false)
     const [sidebar_tab, set_sidebar_tab]   = useState('howto')
@@ -113,6 +114,7 @@ function App() {
         set_guesses([])
         set_results([])
         set_wrong_guesses(0)
+        set_hint_active(false)
         set_game_status(false)
         result_saved.current = false
     }
@@ -176,6 +178,8 @@ function App() {
                     has_lost={has_lost}
                     wrong_guesses={wrong_guesses}
                     max_guesses={MAX_WRONG_GUESSES}
+                    hint_active={hint_active}
+                    on_hint={() => set_hint_active(true)}
                     on_play_again={reset_game}
                 />
             )}

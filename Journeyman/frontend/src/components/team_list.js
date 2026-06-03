@@ -13,6 +13,45 @@ const NBA_TEAMS = [
     "washington wizards"
 ].sort()
 
+const CONFERENCE = {
+    "atlanta hawks":                    "East",
+    "boston celtics":                   "East",
+    "brooklyn nets":                    "East",
+    "charlotte hornets":                "East",
+    "chicago bulls":                    "East",
+    "cleveland cavaliers":              "East",
+    "dallas mavericks":                 "West",
+    "denver nuggets":                   "West",
+    "detroit pistons":                  "East",
+    "golden state warriors":            "West",
+    "houston rockets":                  "West",
+    "indiana pacers":                   "East",
+    "los angeles clippers":             "West",
+    "los angeles lakers":               "West",
+    "memphis grizzlies":                "West",
+    "miami heat":                       "East",
+    "milwaukee bucks":                  "East",
+    "minnesota timberwolves":           "West",
+    "new jersey nets":                  "East",
+    "new orleans hornets":              "West",
+    "new orleans pelicans":             "West",
+    "new orleans/oklahoma city hornets":"West",
+    "new york knicks":                  "East",
+    "oklahoma city thunder":            "West",
+    "orlando magic":                    "East",
+    "philadelphia 76ers":               "East",
+    "phoenix suns":                     "West",
+    "portland trail blazers":           "West",
+    "sacramento kings":                 "West",
+    "san antonio spurs":                "West",
+    "seattle supersonics":              "West",
+    "toronto raptors":                  "East",
+    "utah jazz":                        "West",
+    "vancouver grizzlies":              "West",
+    "washington bullets":               "East",
+    "washington wizards":               "East",
+}
+
 const RESULT_COLORS = {
     green: "correct",
     yellow: "close",
@@ -115,16 +154,18 @@ function TeamSearch({ value, onChange, disabled }) {
     )
 }
 
-function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_over }) {
+function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_over, hint_active }) {
     return (
         <div className="roadmap">
             <div className="road-spine"></div>
             <div className="road-dashes"></div>
 
             {teams.map((team, index) => {
-                const result = results[index]
+                const result    = results[index]
                 const cardClass = result ? RESULT_COLORS[result] : ""
-                const isLocked = result === "green"
+                const isLocked  = result === "green"
+                const showHint  = hint_active && !isLocked
+                const conf      = showHint ? CONFERENCE[team] : null
 
                 return (
                     <div className="road-stop" key={index}>
@@ -140,6 +181,12 @@ function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_ov
                                 onChange={(val) => on_guess_change(index, val)}
                                 disabled={isLocked || game_over}
                             />
+
+                            {conf && (
+                                <span className={`conf-badge ${conf === "East" ? "east" : "west"}`}>
+                                    {conf}
+                                </span>
+                            )}
 
                             <button
                                 className="guess-btn"
