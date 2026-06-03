@@ -12,6 +12,7 @@ PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 TARGET_PLAYER_COUNT = 120
 MIN_PLAYER_COUNT = 40
 REQUEST_DELAY_SECONDS = 0.6
+MIN_CAREER_PPG = 5.0
 
 NBA_HEADERS = {
     "Accept": "application/json",
@@ -100,7 +101,8 @@ def all_nba_players():
     return result_set(data, "CommonAllPlayers")
 
 
-def career_teams_for_player(player_id):
+def career_stats_for_player(player_id):
+    """Returns (teams, career_ppg). teams is empty list if player is invalid."""
     data = nba_get(
         "playercareerstats",
         {
@@ -121,12 +123,20 @@ def career_teams_for_player(player_id):
         team_name = TEAM_NAMES_BY_ABBR.get(abbr)
 
         if not team_name:
-            return []
+            return [], 0.0
 
         if not teams or teams[-1] != team_name:
             teams.append(team_name)
 
-    return teams
+    career_rows = result_set(data, "CareerTotalsRegularSeason")
+    if career_rows:
+        total_pts = career_rows[0].get("PTS", 0) or 0
+        total_gp = career_rows[0].get("GP", 0) or 0
+        career_ppg = round(total_pts / total_gp, 1) if total_gp > 0 else 0.0
+    else:
+        career_ppg = 0.0
+
+    return teams, career_ppg
 
 
 def build_player_database():
@@ -143,13 +153,14 @@ def build_player_database():
         if len(players) >= TARGET_PLAYER_COUNT:
             break
 
-        teams = career_teams_for_player(candidate["PERSON_ID"])
+        teams, ppg = career_stats_for_player(candidate["PERSON_ID"])
 
-        if len(teams) >= 2 and len(set(teams)) >= 2:
+        if len(teams) >= 2 and len(set(teams)) >= 2 and ppg >= MIN_CAREER_PPG:
             players.append(
                 {
                     "id": candidate["PERSON_ID"],
                     "name": candidate["DISPLAY_FIRST_LAST"],
+                    "ppg": ppg,
                     "teams": teams,
                 }
             )
@@ -168,10 +179,40 @@ def build_player_database():
     }
 
 
+def filter_existing_database():
+    """Re-check career PPG for every player in the current database and drop those below MIN_CAREER_PPG."""
+    with PLAYER_DATABASE_PATH.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    existing = data.get("players", [])
+    print(f"Checking {len(existing)} existing players (min PPG: {MIN_CAREER_PPG})...")
+
+    kept = []
+    for player in existing:
+        _, ppg = career_stats_for_player(player["id"])
+        status = "KEEP" if ppg >= MIN_CAREER_PPG else "DROP"
+        safe_name = player['name'].encode('ascii', errors='replace').decode()
+        print(f"  [{status}] {safe_name}: {ppg} PPG")
+        if ppg >= MIN_CAREER_PPG:
+            player["ppg"] = ppg
+            kept.append(player)
+        time.sleep(REQUEST_DELAY_SECONDS)
+
+    data["players"] = kept
+    data["filtered_at"] = datetime.now().isoformat(timespec="seconds")
+
+    with PLAYER_DATABASE_PATH.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+
+    print(f"\nKept {len(kept)}/{len(existing)} players with >= {MIN_CAREER_PPG} PPG")
+
+
 if __name__ == "__main__":
-    database = build_player_database()
-
-    with PLAYER_DATABASE_PATH.open("w", encoding="utf-8") as player_file:
-        json.dump(database, player_file, indent=2, sort_keys=True)
-
-    print(f"\nWrote {len(database['players'])} players to {PLAYER_DATABASE_PATH}")
+    import sys
+    if "--filter" in sys.argv:
+        filter_existing_database()
+    else:
+        database = build_player_database()
+        with PLAYER_DATABASE_PATH.open("w", encoding="utf-8") as player_file:
+            json.dump(database, player_file, indent=2, sort_keys=True)
+        print(f"\nWrote {len(database['players'])} players to {PLAYER_DATABASE_PATH}")
