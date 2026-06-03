@@ -352,6 +352,13 @@ function AccountTab({ user, recoveryMode }) {
 }
 
 /* ── HISTORY ─────────────────────────────────────────── */
+function fmtTime(s) {
+    if (!s && s !== 0) return null
+    const m   = Math.floor(s / 60)
+    const sec = s % 60
+    return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 function timeAgo(dateString) {
     const diff = Date.now() - new Date(dateString).getTime()
     const mins  = Math.floor(diff / 60000)
@@ -472,7 +479,12 @@ function HistoryTab({ user }) {
                                     {game.result === 'win' ? '✓' : '✗'}
                                 </span>
                                 <span className="hist-player">{game.player_name}</span>
-                                <span className="hist-time">{timeAgo(game.created_at)}</span>
+                                <span className="hist-meta">
+                                    {fmtTime(game.time_seconds) && (
+                                        <span className="hist-game-time">{fmtTime(game.time_seconds)}</span>
+                                    )}
+                                    <span className="hist-time">{timeAgo(game.created_at)}</span>
+                                </span>
                             </div>
                         ))}
                     </div>

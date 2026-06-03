@@ -2,8 +2,14 @@ import TeamList from "./team_list"
 import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, on_play_again }) {
-    const game_over = has_won || has_lost
+function fmt_time(s) {
+    const m   = Math.floor(s / 60)
+    const sec = s % 60
+    return `${m}:${String(sec).padStart(2, '0')}`
+}
+
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, elapsed, final_time, on_play_again }) {
+    const game_over      = has_won || has_lost
     const hint_available = wrong_guesses >= 2 && !hint_active && !game_over
 
     return (
@@ -26,12 +32,15 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                     </div>
                 </div>
 
+                <div className={`game-timer ${game_over ? 'done' : ''}`}>
+                    {fmt_time(game_over && final_time !== null ? final_time : elapsed)}
+                </div>
+
                 {hint_available && (
                     <button className="hint-btn" onClick={on_hint} title="Reveal which conference each team belongs to">
                         💡 Hint
                     </button>
                 )}
-
                 {hint_active && !game_over && (
                     <span className="hint-active-label">Conference hints on</span>
                 )}
@@ -50,10 +59,15 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
             {has_won && (
                 <div className="win-banner">
                     <div className="win-title">Journey Complete</div>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                         You traced {player}'s full career path.
                     </p>
-                    <button className="play-again-btn" onClick={on_play_again}>
+                    {final_time !== null && (
+                        <p className="result-time win">
+                            Completed in {fmt_time(final_time)}
+                        </p>
+                    )}
+                    <button className="play-again-btn" style={{ marginTop: '1.25rem' }} onClick={on_play_again}>
                         New Journey
                     </button>
                 </div>
@@ -62,7 +76,12 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
             {has_lost && (
                 <div className="game-over-banner">
                     <div className="game-over-title">Journey Ended</div>
-                    <p className="game-over-subtitle">{player}'s career path was:</p>
+                    {final_time !== null && (
+                        <p className="result-time loss">Time: {fmt_time(final_time)}</p>
+                    )}
+                    <p className="game-over-subtitle" style={{ marginTop: '0.75rem' }}>
+                        {player}'s career path was:
+                    </p>
                     <ol className="correct-teams-list">
                         {teams.map((team, i) => (
                             <li key={i}>{team.replace(/\b\w/g, c => c.toUpperCase())}</li>

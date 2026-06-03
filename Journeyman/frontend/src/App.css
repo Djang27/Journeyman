@@ -330,6 +330,33 @@ body {
   margin-bottom: 0;
 }
 
+/* LIVE GAME TIMER */
+.game-timer {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  min-width: 48px;
+  text-align: center;
+  transition: color 0.3s;
+}
+
+.game-timer.done {
+  color: var(--road-line);
+}
+
+/* TIME IN WIN / LOSE BANNERS */
+.result-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.result-time.win  { color: var(--green-correct); }
+.result-time.loss { color: var(--text-muted); }
+
 /* HINT BUTTON */
 .hint-btn {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1181,6 +1208,21 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.hist-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.hist-game-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--road-line);
+  letter-spacing: 1px;
 }
 
 .hist-time {

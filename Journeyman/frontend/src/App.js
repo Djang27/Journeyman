@@ -36,10 +36,17 @@ function App() {
     const [sidebar_tab, set_sidebar_tab]   = useState('howto')
     const [user, set_user]               = useState(null)
     const [recovery_mode, set_recovery_mode] = useState(false)
-    const result_saved = useRef(false)
+
+    // Timer
+    const [elapsed, set_elapsed]         = useState(0)
+    const [final_time, set_final_time]   = useState(null)
+    const start_time_ref  = useRef(null)
+    const timer_ref       = useRef(null)
+    const result_saved    = useRef(false)
+
     const MAX_WRONG_GUESSES = 3
 
-    // Auth state listener — single source of truth for the current user
+    // Auth state listener
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             set_user(session?.user ?? null)
@@ -47,7 +54,6 @@ function App() {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             set_user(session?.user ?? null)
-
             if (event === 'PASSWORD_RECOVERY') {
                 set_recovery_mode(true)
                 set_show_sidebar(true)
@@ -58,6 +64,47 @@ function App() {
 
         return () => subscription.unsubscribe()
     }, [])
+
+    // Timer interval — runs while game is active, stops on win/loss
+    useEffect(() => {
+        if (!game_start || !start_time_ref.current) return
+
+        const tick = () => {
+            const secs = Math.floor((Date.now() - start_time_ref.current) / 1000)
+            set_elapsed(secs)
+        }
+
+        timer_ref.current = setInterval(tick, 500)
+        return () => clearInterval(timer_ref.current)
+    }, [game_start])
+
+    const has_won  = results.length > 0 && results.every(r => r === "green")
+    const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
+
+    // Freeze timer and save result when game ends
+    /* eslint-disable react-hooks/exhaustive-deps */
+    useEffect(() => {
+        if (!game_start) return
+        if (!has_won && !has_lost) return
+
+        clearInterval(timer_ref.current)
+        const game_time = Math.floor((Date.now() - start_time_ref.current) / 1000)
+        set_final_time(game_time)
+
+        if (!user || result_saved.current) return
+        result_saved.current = true
+        supabase.from('game_results').insert({
+            user_id: user.id,
+            player_name: player,
+            result: has_won ? 'win' : 'loss',
+            wrong_guesses,
+            num_teams: teams.length,
+            time_seconds: game_time,
+        }).then(({ error }) => {
+            if (error) console.error('Failed to save result:', error.message)
+        })
+    }, [has_won, has_lost])
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const start_game = () => {
         set_loading(true)
@@ -71,6 +118,11 @@ function App() {
                 set_guesses(Array(data.Teams.length).fill(""))
                 set_results(Array(data.Teams.length).fill(null))
                 set_wrong_guesses(0)
+                set_hint_active(false)
+                set_elapsed(0)
+                set_final_time(null)
+                start_time_ref.current = Date.now()
+                result_saved.current = false
                 set_game_status(true)
                 set_loading(false)
                 record_played_id(data.PlayerID)
@@ -109,41 +161,24 @@ function App() {
     }
 
     const reset_game = () => {
+        clearInterval(timer_ref.current)
         set_player("")
         set_teams([])
         set_guesses([])
         set_results([])
         set_wrong_guesses(0)
         set_hint_active(false)
-        set_game_status(false)
+        set_elapsed(0)
+        set_final_time(null)
+        start_time_ref.current = null
         result_saved.current = false
+        set_game_status(false)
     }
 
     function open_sidebar(tab = 'howto') {
         set_sidebar_tab(tab)
         set_show_sidebar(true)
     }
-
-    const has_won  = results.length > 0 && results.every(r => r === "green")
-    const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
-
-    /* eslint-disable react-hooks/exhaustive-deps */
-    // Only re-run when the outcome flips — other values are intentionally omitted.
-    useEffect(() => {
-        if (!user || !game_start || result_saved.current) return
-        if (!has_won && !has_lost) return
-        result_saved.current = true
-        supabase.from('game_results').insert({
-            user_id: user.id,
-            player_name: player,
-            result: has_won ? 'win' : 'loss',
-            wrong_guesses,
-            num_teams: teams.length,
-        }).then(({ error }) => {
-            if (error) console.error('Failed to save result:', error.message)
-        })
-    }, [has_won, has_lost])
-    /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) {
         return (
@@ -180,6 +215,8 @@ function App() {
                     max_guesses={MAX_WRONG_GUESSES}
                     hint_active={hint_active}
                     on_hint={() => set_hint_active(true)}
+                    elapsed={elapsed}
+                    final_time={final_time}
                     on_play_again={reset_game}
                 />
             )}
