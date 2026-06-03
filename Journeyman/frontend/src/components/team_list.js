@@ -1,3 +1,5 @@
+import { useState, useRef, useEffect } from 'react'
+
 const NBA_TEAMS = [
     "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets",
     "chicago bulls", "cleveland cavaliers", "dallas mavericks", "denver nuggets",
@@ -15,6 +17,102 @@ const RESULT_COLORS = {
     green: "correct",
     yellow: "close",
     gray: "wrong",
+}
+
+function toTitleCase(str) {
+    return str.replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function TeamSearch({ value, onChange, disabled }) {
+    const [input, setInput] = useState("")
+    const [open, setOpen] = useState(false)
+    const [filtered, setFiltered] = useState([])
+    const [highlighted, setHighlighted] = useState(-1)
+    const containerRef = useRef(null)
+
+    useEffect(() => {
+        setInput(value ? toTitleCase(value) : "")
+        setOpen(false)
+    }, [value])
+
+    const handleChange = (e) => {
+        const q = e.target.value
+        setInput(q)
+        setHighlighted(-1)
+        if (q.trim().length > 0) {
+            const matches = NBA_TEAMS.filter(t => t.includes(q.toLowerCase().trim()))
+            setFiltered(matches)
+            setOpen(matches.length > 0)
+        } else {
+            setFiltered([])
+            setOpen(false)
+            onChange("")
+        }
+    }
+
+    const select = (team) => {
+        setInput(toTitleCase(team))
+        setFiltered([])
+        setOpen(false)
+        setHighlighted(-1)
+        onChange(team)
+    }
+
+    const handleKeyDown = (e) => {
+        if (!open) return
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setHighlighted(h => Math.min(h + 1, filtered.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setHighlighted(h => Math.max(h - 1, 0))
+        } else if (e.key === 'Enter' && highlighted >= 0) {
+            e.preventDefault()
+            select(filtered[highlighted])
+        } else if (e.key === 'Escape') {
+            setOpen(false)
+        }
+    }
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [])
+
+    return (
+        <div ref={containerRef} className="team-search">
+            <input
+                type="text"
+                className="team-input"
+                value={input}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Type city or team name..."
+                disabled={disabled}
+                autoComplete="off"
+                spellCheck="false"
+            />
+            {open && (
+                <ul className="team-suggestions">
+                    {filtered.map((t, i) => (
+                        <li
+                            key={t}
+                            className={i === highlighted ? 'highlighted' : ''}
+                            onMouseDown={() => select(t)}
+                            onMouseEnter={() => setHighlighted(i)}
+                        >
+                            {toTitleCase(t)}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
 }
 
 function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_over }) {
@@ -37,17 +135,11 @@ function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_ov
                         <div className={`stop-card ${cardClass}`}>
                             <span className="stop-number">Stop {index + 1}</span>
 
-                            <select
-                                className="team-select"
+                            <TeamSearch
                                 value={guesses[index] ?? ""}
-                                onChange={(e) => on_guess_change(index, e.target.value)}
+                                onChange={(val) => on_guess_change(index, val)}
                                 disabled={isLocked || game_over}
-                            >
-                                <option value="">— select a team —</option>
-                                {NBA_TEAMS.map(t => (
-                                    <option key={t} value={t}>{t.replace(/\b\w/g, c => c.toUpperCase())}</option>
-                                ))}
-                            </select>
+                            />
 
                             <button
                                 className="guess-btn"

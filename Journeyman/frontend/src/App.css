@@ -234,27 +234,61 @@ body {
   white-space: nowrap;
 }
 
-.team-select {
+.team-search {
   flex: 1;
+  position: relative;
+}
+
+.team-input {
+  width: 100%;
   background: transparent;
   border: none;
   color: var(--text-primary);
   font-family: 'Barlow', sans-serif;
   font-size: 0.95rem;
   outline: none;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+  cursor: text;
 }
 
-.team-select option {
-  background: var(--court-mid);
-  color: var(--text-primary);
+.team-input::placeholder {
+  color: var(--text-muted);
 }
 
-.team-select:disabled {
+.team-input:disabled {
   cursor: default;
   opacity: 0.7;
+}
+
+.team-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -1rem;
+  right: -1rem;
+  background: var(--court-mid);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  list-style: none;
+  padding: 0.25rem 0;
+  margin: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.team-suggestions li {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: background 0.1s;
+}
+
+.team-suggestions li:hover,
+.team-suggestions li.highlighted {
+  background: rgba(245, 197, 24, 0.15);
+  color: var(--road-line);
 }
 
 .guess-btn {
