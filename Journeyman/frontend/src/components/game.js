@@ -1,10 +1,15 @@
 import TeamList from "./team_list"
+import WinAnimation from "./WinAnimation"
+import LoseAnimation from "./LoseAnimation"
 
 function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, on_play_again }) {
     const game_over = has_won || has_lost
 
     return (
         <div className="game-screen">
+            <WinAnimation  active={has_won} />
+            <LoseAnimation active={has_lost} />
+
             <div className="player-header">
                 <div className="player-label">Today's Journeyman</div>
                 <div className="player-name">{player}</div>

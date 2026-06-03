@@ -469,6 +469,76 @@ body {
   50% { opacity: 1; }
 }
 
+/* WIN BANNER entrance */
+.win-banner {
+  animation: win-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes win-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* LOSE BANNER entrance — shake then settle */
+.game-over-banner {
+  animation: lose-shake 0.55s ease both;
+}
+
+@keyframes lose-shake {
+  0%   { opacity: 0; transform: translateX(0); }
+  15%  { opacity: 1; transform: translateX(-8px); }
+  30%  { transform: translateX(7px); }
+  45%  { transform: translateX(-5px); }
+  60%  { transform: translateX(4px); }
+  75%  { transform: translateX(-2px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* LOSE ANIMATION overlay */
+.lose-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  overflow: hidden;
+}
+
+/* Red flash that fades immediately */
+.lose-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--gray-wrong);
+  animation: lose-flash 0.5s ease-out forwards;
+}
+
+@keyframes lose-flash {
+  0%   { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+/* Falling ash particles */
+.lose-particle {
+  position: absolute;
+  top: -12px;
+  border-radius: 2px;
+  background: var(--gray-wrong);
+  animation: ash-fall linear forwards;
+}
+
+@keyframes ash-fall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: inherit;
+  }
+  80% {
+    opacity: inherit;
+  }
+  100% {
+    transform: translateY(105vh) translateX(var(--drift)) rotate(300deg);
+    opacity: 0;
+  }
+}
+
 /* HAMBURGER MENU BUTTON */
 .menu-btn {
   position: fixed;
