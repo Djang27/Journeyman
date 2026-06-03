@@ -1,11 +1,22 @@
 import TeamList from "./team_list"
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, on_play_again }) {
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, on_play_again }) {
+    const game_over = has_won || has_lost
+
     return (
         <div className="game-screen">
             <div className="player-header">
                 <div className="player-label">Today's Journeyman</div>
                 <div className="player-name">{player}</div>
+            </div>
+
+            <div className="lives-indicator">
+                <span className="lives-label">Wrong Guesses</span>
+                <div className="lives-dots">
+                    {[...Array(max_guesses)].map((_, i) => (
+                        <span key={i} className={`life-dot ${i < wrong_guesses ? 'used' : 'remaining'}`} />
+                    ))}
+                </div>
             </div>
 
             <TeamList
@@ -14,6 +25,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 results={results}
                 on_guess_change={on_guess_change}
                 on_submit={on_submit}
+                game_over={game_over}
             />
 
             {has_won && (
@@ -24,6 +36,21 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                     </p>
                     <button className="play-again-btn" onClick={on_play_again}>
                         New Journey
+                    </button>
+                </div>
+            )}
+
+            {has_lost && (
+                <div className="game-over-banner">
+                    <div className="game-over-title">Journey Ended</div>
+                    <p className="game-over-subtitle">{player}'s career path was:</p>
+                    <ol className="correct-teams-list">
+                        {teams.map((team, i) => (
+                            <li key={i}>{team.replace(/\b\w/g, c => c.toUpperCase())}</li>
+                        ))}
+                    </ol>
+                    <button className="play-again-btn game-over-btn" onClick={on_play_again}>
+                        Try Again
                     </button>
                 </div>
             )}

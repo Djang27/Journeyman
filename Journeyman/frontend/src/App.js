@@ -9,7 +9,9 @@ function App() {
     const [game_start, set_game_status] = useState(false)
     const [guesses, set_guesses] = useState([])
     const [results, set_results] = useState([])
+    const [wrong_guesses, set_wrong_guesses] = useState(0)
     const [loading, set_loading] = useState(false)
+    const MAX_WRONG_GUESSES = 3
 
     const start_game = () => {
         set_loading(true)
@@ -20,6 +22,7 @@ function App() {
                 set_teams(data.Teams)
                 set_guesses(Array(data.Teams.length).fill(""))
                 set_results(Array(data.Teams.length).fill(null))
+                set_wrong_guesses(0)
                 set_game_status(true)
                 set_loading(false)
             })
@@ -42,6 +45,9 @@ function App() {
                     updated[position] = data.result
                     return updated
                 })
+                if (data.result === "gray") {
+                    set_wrong_guesses(prev => prev + 1)
+                }
             })
     }
 
@@ -58,10 +64,12 @@ function App() {
         set_teams([])
         set_guesses([])
         set_results([])
+        set_wrong_guesses(0)
         set_game_status(false)
     }
 
     const has_won = results.length > 0 && results.every(r => r === "green")
+    const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
 
     if (loading) {
         return (
@@ -83,6 +91,9 @@ function App() {
                     on_guess_change={update_guess}
                     on_submit={check_guess}
                     has_won={has_won}
+                    has_lost={has_lost}
+                    wrong_guesses={wrong_guesses}
+                    max_guesses={MAX_WRONG_GUESSES}
                     on_play_again={reset_game}
                 />
             )}

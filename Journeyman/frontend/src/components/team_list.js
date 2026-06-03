@@ -17,7 +17,7 @@ const RESULT_COLORS = {
     gray: "wrong",
 }
 
-function TeamList({ teams, guesses, results, on_guess_change, on_submit }) {
+function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_over }) {
     return (
         <div className="roadmap">
             <div className="road-spine"></div>
@@ -41,7 +41,7 @@ function TeamList({ teams, guesses, results, on_guess_change, on_submit }) {
                                 className="team-select"
                                 value={guesses[index] ?? ""}
                                 onChange={(e) => on_guess_change(index, e.target.value)}
-                                disabled={isLocked}
+                                disabled={isLocked || game_over}
                             >
                                 <option value="">— select a team —</option>
                                 {NBA_TEAMS.map(t => (
@@ -52,7 +52,7 @@ function TeamList({ teams, guesses, results, on_guess_change, on_submit }) {
                             <button
                                 className="guess-btn"
                                 onClick={() => on_submit(index)}
-                                disabled={isLocked || !(guesses[index] ?? "").trim()}
+                                disabled={isLocked || game_over || !(guesses[index] ?? "").trim()}
                             >
                                 Guess
                             </button>

@@ -8,7 +8,7 @@
   --road-line: #f5c518;
   --green-correct: #538d4e;
   --yellow-close: #b59f3b;
-  --gray-wrong: #3a3a3c;
+  --gray-wrong: #c8102e;
   --text-primary: #f0f0f0;
   --text-muted: #9a9a9a;
   --nba-red: #c8102e;
@@ -222,6 +222,7 @@ body {
 
 .stop-card.wrong {
   border-color: var(--gray-wrong);
+  background: rgba(200, 16, 46, 0.12);
 }
 
 .stop-number {
@@ -280,6 +281,98 @@ body {
 .guess-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* LIVES INDICATOR */
+.lives-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding: 0.6rem 1rem;
+  background: var(--court-mid);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.lives-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lives-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.life-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background 0.3s;
+}
+
+.life-dot.remaining {
+  background: var(--green-correct);
+}
+
+.life-dot.used {
+  background: var(--gray-wrong);
+}
+
+/* GAME OVER SCREEN */
+.game-over-banner {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 2rem;
+  background: var(--court-mid);
+  border: 1px solid var(--gray-wrong);
+  border-radius: 12px;
+}
+
+.game-over-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gray-wrong);
+  margin-bottom: 0.75rem;
+}
+
+.game-over-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.correct-teams-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.correct-teams-list li {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.game-over-btn {
+  background: var(--gray-wrong) !important;
+}
+
+.game-over-btn:hover {
+  box-shadow: 0 8px 24px rgba(200, 16, 46, 0.4) !important;
 }
 
 /* WIN SCREEN */
