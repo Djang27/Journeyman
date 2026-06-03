@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import StartScreen from "./components/start"
 import GameScreen from "./components/game"
+import HowToPlay from "./components/HowToPlay"
 import './App.css'
 
 const PLAYED_KEY = "journeyman_played"
@@ -28,6 +29,7 @@ function App() {
     const [results, set_results] = useState([])
     const [wrong_guesses, set_wrong_guesses] = useState(0)
     const [loading, set_loading] = useState(false)
+    const [show_info, set_show_info] = useState(false)
     const MAX_WRONG_GUESSES = 3
 
     const start_game = () => {
@@ -101,7 +103,7 @@ function App() {
 
     return (
         <div className="app-container">
-            {!game_start && <StartScreen onStart={start_game} />}
+            {!game_start && <StartScreen onStart={start_game} onInfo={() => set_show_info(true)} />}
             {game_start && (
                 <GameScreen
                     player={player}
@@ -115,8 +117,10 @@ function App() {
                     wrong_guesses={wrong_guesses}
                     max_guesses={MAX_WRONG_GUESSES}
                     on_play_again={reset_game}
+                    onInfo={() => set_show_info(true)}
                 />
             )}
+            <HowToPlay open={show_info} onClose={() => set_show_info(false)} />
         </div>
     )
 }

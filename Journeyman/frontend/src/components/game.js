@@ -1,12 +1,15 @@
 import TeamList from "./team_list"
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, on_play_again }) {
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, on_play_again, onInfo }) {
     const game_over = has_won || has_lost
 
     return (
         <div className="game-screen">
             <div className="player-header">
-                <div className="player-label">Today's Journeyman</div>
+                <div className="player-header-top">
+                    <div className="player-label">Today's Journeyman</div>
+                    <button className="info-btn" onClick={onInfo} aria-label="How to play">?</button>
+                </div>
                 <div className="player-name">{player}</div>
             </div>
 
