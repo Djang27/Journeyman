@@ -383,8 +383,13 @@ function HistoryTab({ user }) {
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────── */
-function Sidebar({ open, onClose, user, recoveryMode }) {
+function Sidebar({ open, onClose, user, recoveryMode, initialTab }) {
     const [tab, setTab] = useState('howto')
+
+    // Switch to requested tab when sidebar opens
+    useEffect(() => {
+        if (open && initialTab) setTab(initialTab)
+    }, [open, initialTab])
 
     // Auto-switch to Account tab when a recovery link is detected
     useEffect(() => {

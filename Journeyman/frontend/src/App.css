@@ -508,6 +508,111 @@ body {
   background: var(--road-line);
 }
 
+/* USER MENU (top-right, signed-in only) */
+.user-menu {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.1rem;
+  z-index: 90;
+}
+
+.user-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--court-accent);
+  border: 2px solid var(--road-line);
+  color: var(--road-line);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.user-avatar-btn:hover {
+  background: var(--court-mid);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.3);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 210px;
+  background: var(--court-mid);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.user-dropdown-header {
+  padding: 0.8rem 1rem;
+}
+
+.user-dropdown-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+.user-dropdown-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+.user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.88rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.user-dropdown-item:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+
+.user-dropdown-icon {
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.user-dropdown-item.signout {
+  color: var(--gray-wrong);
+}
+
+.user-dropdown-item.signout:hover {
+  background: rgba(200, 16, 46, 0.1);
+  color: var(--gray-wrong);
+}
+
 /* SIDEBAR BACKDROP */
 .sidebar-backdrop {
   position: fixed;

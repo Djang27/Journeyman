@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
+import UserMenu from "./components/UserMenu"
 import { supabase } from './lib/supabase'
 import './App.css'
 
@@ -31,6 +32,7 @@ function App() {
     const [wrong_guesses, set_wrong_guesses] = useState(0)
     const [loading, set_loading]         = useState(false)
     const [show_sidebar, set_show_sidebar] = useState(false)
+    const [sidebar_tab, set_sidebar_tab]   = useState('howto')
     const [user, set_user]               = useState(null)
     const [recovery_mode, set_recovery_mode] = useState(false)
     const MAX_WRONG_GUESSES = 3
@@ -113,6 +115,11 @@ function App() {
         set_game_status(false)
     }
 
+    function open_sidebar(tab = 'howto') {
+        set_sidebar_tab(tab)
+        set_show_sidebar(true)
+    }
+
     const has_won  = results.length > 0 && results.every(r => r === "green")
     const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
 
@@ -126,9 +133,16 @@ function App() {
 
     return (
         <div className="app-container">
-            <button className="menu-btn" onClick={() => set_show_sidebar(true)} aria-label="Open menu">
+            <button className="menu-btn" onClick={() => open_sidebar()} aria-label="Open menu">
                 <span /><span /><span />
             </button>
+            {user && (
+                <UserMenu
+                    user={user}
+                    onOpenHistory={() => open_sidebar('history')}
+                    onOpenAccount={() => open_sidebar('account')}
+                />
+            )}
             {!game_start && <StartScreen onStart={start_game} />}
             {game_start && (
                 <GameScreen
@@ -150,6 +164,7 @@ function App() {
                 onClose={() => set_show_sidebar(false)}
                 user={user}
                 recoveryMode={recovery_mode}
+                initialTab={sidebar_tab}
             />
         </div>
     )
