@@ -936,6 +936,197 @@ body {
   margin-bottom: 0.25rem;
 }
 
+/* HISTORY TAB */
+.hist-loading {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.hist-section {
+  margin-bottom: 1.75rem;
+}
+
+.hist-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Stats row */
+.hist-stats {
+  display: flex;
+  align-items: center;
+  background: var(--court-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.hist-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.85rem 0.5rem;
+  gap: 0.2rem;
+}
+
+.hist-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.hist-stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.hist-stat-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hist-stat.win  .hist-stat-val { color: var(--green-correct); }
+.hist-stat.loss .hist-stat-val { color: var(--gray-wrong); }
+
+/* Recent games list */
+.hist-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.hist-game {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  background: var(--court-dark);
+  border-left: 3px solid transparent;
+}
+
+.hist-game.win  { border-left-color: var(--green-correct); }
+.hist-game.loss { border-left-color: var(--gray-wrong); }
+
+.hist-result-icon {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.hist-result-icon.win  { color: var(--green-correct); }
+.hist-result-icon.loss { color: var(--gray-wrong); }
+
+.hist-player {
+  flex: 1;
+  font-size: 0.87rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Leaderboard */
+.hist-leaderboard {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.hist-lb-header,
+.hist-lb-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 32px 32px 44px;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.hist-lb-header {
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.hist-lb-header span {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hist-lb-row {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.hist-lb-row:last-child { border-bottom: none; }
+
+.hist-lb-row:hover { background: rgba(255,255,255,0.03); }
+
+.hist-lb-row.you {
+  background: rgba(245, 197, 24, 0.06);
+  border-left: 2px solid var(--road-line);
+}
+
+.hist-lb-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.hist-lb-row.you .hist-lb-rank { color: var(--road-line); }
+
+.hist-lb-name {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-lb-you {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--road-line);
+  margin-left: 0.3rem;
+}
+
+.hist-lb-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
+}
+
 /* HISTORY / COMING SOON TAB */
 .coming-soon-box {
   display: flex;

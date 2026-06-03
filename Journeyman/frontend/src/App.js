@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
@@ -35,6 +35,7 @@ function App() {
     const [sidebar_tab, set_sidebar_tab]   = useState('howto')
     const [user, set_user]               = useState(null)
     const [recovery_mode, set_recovery_mode] = useState(false)
+    const result_saved = useRef(false)
     const MAX_WRONG_GUESSES = 3
 
     // Auth state listener — single source of truth for the current user
@@ -113,7 +114,24 @@ function App() {
         set_results([])
         set_wrong_guesses(0)
         set_game_status(false)
+        result_saved.current = false
     }
+
+    // Save result to Supabase when a game ends (once per game)
+    useEffect(() => {
+        if (!user || !game_start || result_saved.current) return
+        if (!has_won && !has_lost) return
+        result_saved.current = true
+        supabase.from('game_results').insert({
+            user_id: user.id,
+            player_name: player,
+            result: has_won ? 'win' : 'loss',
+            wrong_guesses,
+            num_teams: teams.length,
+        }).then(({ error }) => {
+            if (error) console.error('Failed to save result:', error.message)
+        })
+    }, [has_won, has_lost])
 
     function open_sidebar(tab = 'howto') {
         set_sidebar_tab(tab)

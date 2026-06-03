@@ -352,32 +352,174 @@ function AccountTab({ user, recoveryMode }) {
 }
 
 /* ── HISTORY ─────────────────────────────────────────── */
+function timeAgo(dateString) {
+    const diff = Date.now() - new Date(dateString).getTime()
+    const mins  = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days  = Math.floor(diff / 86400000)
+    if (mins  <  1) return 'just now'
+    if (mins  < 60) return `${mins}m ago`
+    if (hours < 24) return `${hours}h ago`
+    if (days  <  7) return `${days}d ago`
+    return new Date(dateString).toLocaleDateString()
+}
+
 function HistoryTab({ user }) {
+    const [loading, setLoading]       = useState(true)
+    const [stats, setStats]           = useState(null)
+    const [recent, setRecent]         = useState([])
+    const [leaderboard, setLeaderboard] = useState([])
+    const [lbError, setLbError]       = useState(false)
+
+    useEffect(() => {
+        fetchAll()
+    }, [user])
+
+    async function fetchAll() {
+        setLoading(true)
+
+        // Personal history (only if signed in)
+        if (user) {
+            const { data } = await supabase
+                .from('game_results')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+
+            if (data) {
+                const wins   = data.filter(r => r.result === 'win').length
+                const losses = data.filter(r => r.result === 'loss').length
+                setStats({ played: data.length, wins, losses })
+                setRecent(data.slice(0, 6))
+            }
+        }
+
+        // Leaderboard (public — no sign-in needed)
+        const { data: lb, error } = await supabase
+            .from('leaderboard')
+            .select('*')
+            .limit(10)
+
+        if (error) {
+            setLbError(true)
+        } else {
+            setLeaderboard(lb || [])
+        }
+
+        setLoading(false)
+    }
+
+    if (loading) {
+        return (
+            <div className="sidebar-tab-content">
+                <p className="hist-loading">Loading…</p>
+            </div>
+        )
+    }
+
     return (
         <div className="sidebar-tab-content">
-            <div className="coming-soon-box">
-                <div className="coming-soon-road">
-                    <div className="cs-spine" />
-                    {[1, 2, 3].map(n => (
-                        <div key={n} className="cs-stop">
-                            <div className="cs-dot" />
-                            <div className="cs-bar" style={{ width: `${40 + n * 20}%` }} />
+
+            {/* ── Personal record ── */}
+            {user && stats && (
+                <div className="hist-section">
+                    <span className="info-heading">Your Record</span>
+                    <div className="hist-stats">
+                        <div className="hist-stat">
+                            <span className="hist-stat-val">{stats.played}</span>
+                            <span className="hist-stat-label">Played</span>
                         </div>
-                    ))}
+                        <div className="hist-stat-divider" />
+                        <div className="hist-stat win">
+                            <span className="hist-stat-val">{stats.wins}</span>
+                            <span className="hist-stat-label">Won</span>
+                        </div>
+                        <div className="hist-stat-divider" />
+                        <div className="hist-stat loss">
+                            <span className="hist-stat-val">{stats.losses}</span>
+                            <span className="hist-stat-label">Lost</span>
+                        </div>
+                        <div className="hist-stat-divider" />
+                        <div className="hist-stat">
+                            <span className="hist-stat-val">
+                                {stats.played > 0 ? Math.round(stats.wins / stats.played * 100) : 0}%
+                            </span>
+                            <span className="hist-stat-label">Win %</span>
+                        </div>
+                    </div>
                 </div>
-                <p className="coming-soon-title">History</p>
-                <p className="coming-soon-text">
-                    {user
-                        ? 'Your win/loss history and streaks will appear here soon.'
-                        : 'Sign in to track wins, losses, streaks, and your guess accuracy over time.'}
-                </p>
-                <div className="coming-soon-stats">
-                    <div className="cs-stat"><span className="cs-stat-val">—</span><span className="cs-stat-label">Played</span></div>
-                    <div className="cs-stat"><span className="cs-stat-val">—</span><span className="cs-stat-label">Won</span></div>
-                    <div className="cs-stat"><span className="cs-stat-val">—</span><span className="cs-stat-label">Streak</span></div>
+            )}
+
+            {user && !stats && (
+                <div className="hist-section">
+                    <p className="hist-empty">No games played yet. Start your first journey!</p>
                 </div>
-                <p className="coming-soon-badge">Coming Soon</p>
+            )}
+
+            {!user && (
+                <div className="hist-section">
+                    <p className="hist-empty">Sign in to track your personal win/loss record.</p>
+                </div>
+            )}
+
+            {/* ── Recent games ── */}
+            {recent.length > 0 && (
+                <div className="hist-section">
+                    <span className="info-heading">Recent Games</span>
+                    <div className="hist-recent">
+                        {recent.map(game => (
+                            <div key={game.id} className={`hist-game ${game.result}`}>
+                                <span className={`hist-result-icon ${game.result}`}>
+                                    {game.result === 'win' ? '✓' : '✗'}
+                                </span>
+                                <span className="hist-player">{game.player_name}</span>
+                                <span className="hist-time">{timeAgo(game.created_at)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Leaderboard ── */}
+            <div className="hist-section">
+                <span className="info-heading">Leaderboard</span>
+
+                {lbError && (
+                    <p className="hist-empty">Leaderboard not available yet.</p>
+                )}
+
+                {!lbError && leaderboard.length === 0 && (
+                    <p className="hist-empty">No entries yet — be the first to finish a journey!</p>
+                )}
+
+                {!lbError && leaderboard.length > 0 && (
+                    <div className="hist-leaderboard">
+                        <div className="hist-lb-header">
+                            <span className="hist-lb-rank">#</span>
+                            <span className="hist-lb-name">Player</span>
+                            <span className="hist-lb-num">W</span>
+                            <span className="hist-lb-num">L</span>
+                            <span className="hist-lb-num">Win%</span>
+                        </div>
+                        {leaderboard.map((row, i) => (
+                            <div
+                                key={row.id}
+                                className={`hist-lb-row ${user && row.id === user.id ? 'you' : ''}`}
+                            >
+                                <span className="hist-lb-rank">{i + 1}</span>
+                                <span className="hist-lb-name">
+                                    {row.display_name}
+                                    {user && row.id === user.id && <span className="hist-lb-you"> you</span>}
+                                </span>
+                                <span className="hist-lb-num">{row.wins}</span>
+                                <span className="hist-lb-num">{row.losses}</span>
+                                <span className="hist-lb-num">{row.win_rate}%</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
+
         </div>
     )
 }
