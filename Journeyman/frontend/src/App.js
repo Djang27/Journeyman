@@ -117,7 +117,16 @@ function App() {
         result_saved.current = false
     }
 
-    // Save result to Supabase when a game ends (once per game)
+    function open_sidebar(tab = 'howto') {
+        set_sidebar_tab(tab)
+        set_show_sidebar(true)
+    }
+
+    const has_won  = results.length > 0 && results.every(r => r === "green")
+    const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
+
+    /* eslint-disable react-hooks/exhaustive-deps */
+    // Only re-run when the outcome flips — other values are intentionally omitted.
     useEffect(() => {
         if (!user || !game_start || result_saved.current) return
         if (!has_won && !has_lost) return
@@ -132,14 +141,7 @@ function App() {
             if (error) console.error('Failed to save result:', error.message)
         })
     }, [has_won, has_lost])
-
-    function open_sidebar(tab = 'howto') {
-        set_sidebar_tab(tab)
-        set_show_sidebar(true)
-    }
-
-    const has_won  = results.length > 0 && results.every(r => r === "green")
-    const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) {
         return (

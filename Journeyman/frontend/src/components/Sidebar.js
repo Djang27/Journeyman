@@ -371,9 +371,8 @@ function HistoryTab({ user }) {
     const [leaderboard, setLeaderboard] = useState([])
     const [lbError, setLbError]       = useState(false)
 
-    useEffect(() => {
-        fetchAll()
-    }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { fetchAll() }, [user])
 
     async function fetchAll() {
         setLoading(true)
