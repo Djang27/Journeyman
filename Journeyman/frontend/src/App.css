@@ -346,6 +346,55 @@ body {
   color: var(--road-line);
 }
 
+/* SCORE DISPLAY (in win/lose banners) */
+.score-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.score-pts {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.score-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.score-display.win  .score-pts   { color: var(--road-line); }
+.score-display.win  .score-label { color: var(--road-line); opacity: 0.7; }
+.score-display.loss .score-pts   { color: var(--text-muted); opacity: 0.5; }
+.score-display.loss .score-label { color: var(--text-muted); opacity: 0.5; }
+
+/* SCORE BREAKDOWN */
+.score-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.sb-item {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.sb-item.base  { color: var(--green-correct); }
+.sb-item.pen   { color: var(--gray-wrong); opacity: 0.8; }
+.sb-item.floor { color: var(--text-muted); font-style: italic; }
+
 /* TIME IN WIN / LOSE BANNERS */
 .result-time {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1217,6 +1266,25 @@ body {
   flex-shrink: 0;
 }
 
+.hist-total-score {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+  text-align: center;
+}
+
+.hist-total-score strong {
+  color: var(--road-line);
+}
+
+.hist-score-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--road-line);
+  letter-spacing: 0.5px;
+}
+
 .hist-game-time {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.78rem;
@@ -1239,10 +1307,29 @@ body {
   overflow: hidden;
 }
 
+.hist-lb-pts {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--road-line);
+  text-align: right;
+  min-width: 52px;
+}
+
+.hist-lb-header .hist-lb-pts {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.hist-lb-row.you .hist-lb-pts { color: var(--road-line); }
+
 .hist-lb-header,
 .hist-lb-row {
   display: grid;
-  grid-template-columns: 28px 1fr 32px 32px 44px;
+  grid-template-columns: 28px 1fr 28px 28px 52px;
   align-items: center;
   gap: 0.25rem;
   padding: 0.45rem 0.75rem;

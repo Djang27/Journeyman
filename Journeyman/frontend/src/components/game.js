@@ -1,6 +1,7 @@
 import TeamList from "./team_list"
 import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
+import { score_breakdown, SCORE_FLOOR } from "../lib/scoring"
 
 function fmt_time(s) {
     const m   = Math.floor(s / 60)
@@ -8,7 +9,26 @@ function fmt_time(s) {
     return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, elapsed, final_time, on_play_again }) {
+function ScoreBreakdown({ final_time, wrong_guesses, hint_active }) {
+    const { base, time_pen, hint_pen, wrong_pen } = score_breakdown({
+        time_seconds: final_time,
+        wrong_guesses,
+        hint_used: hint_active,
+    })
+    const floored = (base - time_pen - hint_pen - wrong_pen) < SCORE_FLOOR
+
+    return (
+        <div className="score-breakdown">
+            <span className="sb-item base">+{base}</span>
+            {time_pen  > 0 && <span className="sb-item pen">−{time_pen} time</span>}
+            {hint_pen  > 0 && <span className="sb-item pen">−{hint_pen} hint</span>}
+            {wrong_pen > 0 && <span className="sb-item pen">−{wrong_pen} wrong</span>}
+            {floored        && <span className="sb-item floor">(floor {SCORE_FLOOR})</span>}
+        </div>
+    )
+}
+
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, elapsed, final_time, final_score, on_play_again }) {
     const game_over      = has_won || has_lost
     const hint_available = wrong_guesses >= 2 && !hint_active && !game_over
 
@@ -56,18 +76,25 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 hint_active={hint_active}
             />
 
-            {has_won && (
+            {has_won && final_score !== null && (
                 <div className="win-banner">
                     <div className="win-title">Journey Complete</div>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
                         You traced {player}'s full career path.
                     </p>
                     {final_time !== null && (
-                        <p className="result-time win">
-                            Completed in {fmt_time(final_time)}
-                        </p>
+                        <p className="result-time win">Completed in {fmt_time(final_time)}</p>
                     )}
-                    <button className="play-again-btn" style={{ marginTop: '1.25rem' }} onClick={on_play_again}>
+                    <div className="score-display win">
+                        <span className="score-pts">{final_score.toLocaleString()}</span>
+                        <span className="score-label">pts</span>
+                    </div>
+                    <ScoreBreakdown
+                        final_time={final_time}
+                        wrong_guesses={wrong_guesses}
+                        hint_active={hint_active}
+                    />
+                    <button className="play-again-btn" style={{ marginTop: '1.5rem' }} onClick={on_play_again}>
                         New Journey
                     </button>
                 </div>
@@ -79,7 +106,11 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                     {final_time !== null && (
                         <p className="result-time loss">Time: {fmt_time(final_time)}</p>
                     )}
-                    <p className="game-over-subtitle" style={{ marginTop: '0.75rem' }}>
+                    <div className="score-display loss">
+                        <span className="score-pts">0</span>
+                        <span className="score-label">pts</span>
+                    </div>
+                    <p className="game-over-subtitle" style={{ marginTop: '1rem' }}>
                         {player}'s career path was:
                     </p>
                     <ol className="correct-teams-list">

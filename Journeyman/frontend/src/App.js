@@ -4,6 +4,7 @@ import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
 import UserMenu from "./components/UserMenu"
 import { supabase } from './lib/supabase'
+import { calculate_score } from './lib/scoring'
 import './App.css'
 
 const PLAYED_KEY = "journeyman_played"
@@ -24,34 +25,33 @@ function record_played_id(id) {
 }
 
 function App() {
-    const [player, set_player]           = useState("")
-    const [teams, set_teams]             = useState([])
-    const [game_start, set_game_status]  = useState(false)
-    const [guesses, set_guesses]         = useState([])
-    const [results, set_results]         = useState([])
+    const [player, set_player]               = useState("")
+    const [teams, set_teams]                 = useState([])
+    const [game_start, set_game_status]      = useState(false)
+    const [guesses, set_guesses]             = useState([])
+    const [results, set_results]             = useState([])
     const [wrong_guesses, set_wrong_guesses] = useState(0)
-    const [hint_active, set_hint_active] = useState(false)
-    const [loading, set_loading]         = useState(false)
-    const [show_sidebar, set_show_sidebar] = useState(false)
-    const [sidebar_tab, set_sidebar_tab]   = useState('howto')
-    const [user, set_user]               = useState(null)
+    const [hint_active, set_hint_active]     = useState(false)
+    const [loading, set_loading]             = useState(false)
+    const [show_sidebar, set_show_sidebar]   = useState(false)
+    const [sidebar_tab, set_sidebar_tab]     = useState('howto')
+    const [user, set_user]                   = useState(null)
     const [recovery_mode, set_recovery_mode] = useState(false)
+    const [elapsed, set_elapsed]             = useState(0)
+    const [final_time, set_final_time]       = useState(null)
+    const [final_score, set_final_score]     = useState(null)
 
-    // Timer
-    const [elapsed, set_elapsed]         = useState(0)
-    const [final_time, set_final_time]   = useState(null)
-    const start_time_ref  = useRef(null)
-    const timer_ref       = useRef(null)
-    const result_saved    = useRef(false)
+    const start_time_ref = useRef(null)
+    const timer_ref      = useRef(null)
+    const result_saved   = useRef(false)
+    const hint_ref       = useRef(false)   // ref mirror of hint_active for the save effect
 
     const MAX_WRONG_GUESSES = 3
 
-    // Auth state listener
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             set_user(session?.user ?? null)
         })
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             set_user(session?.user ?? null)
             if (event === 'PASSWORD_RECOVERY') {
@@ -61,45 +61,50 @@ function App() {
                 set_recovery_mode(false)
             }
         })
-
         return () => subscription.unsubscribe()
     }, [])
 
-    // Timer interval — runs while game is active, stops on win/loss
+    // Live timer — ticks every 500 ms while game is running
     useEffect(() => {
         if (!game_start || !start_time_ref.current) return
-
-        const tick = () => {
-            const secs = Math.floor((Date.now() - start_time_ref.current) / 1000)
-            set_elapsed(secs)
-        }
-
-        timer_ref.current = setInterval(tick, 500)
-        return () => clearInterval(timer_ref.current)
+        const id = setInterval(() => {
+            set_elapsed(Math.floor((Date.now() - start_time_ref.current) / 1000))
+        }, 500)
+        timer_ref.current = id
+        return () => clearInterval(id)
     }, [game_start])
 
     const has_won  = results.length > 0 && results.every(r => r === "green")
     const has_lost = wrong_guesses >= MAX_WRONG_GUESSES
 
-    // Freeze timer and save result when game ends
     /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
-        if (!game_start) return
-        if (!has_won && !has_lost) return
+        if (!game_start || (!has_won && !has_lost)) return
 
         clearInterval(timer_ref.current)
         const game_time = Math.floor((Date.now() - start_time_ref.current) / 1000)
+        const result    = has_won ? 'win' : 'loss'
+        const score     = calculate_score({
+            result,
+            time_seconds:   game_time,
+            wrong_guesses,
+            hint_used:      hint_ref.current,
+        })
+
         set_final_time(game_time)
+        set_final_score(score)
 
         if (!user || result_saved.current) return
         result_saved.current = true
         supabase.from('game_results').insert({
-            user_id: user.id,
-            player_name: player,
-            result: has_won ? 'win' : 'loss',
+            user_id:      user.id,
+            player_name:  player,
+            result,
             wrong_guesses,
-            num_teams: teams.length,
+            num_teams:    teams.length,
             time_seconds: game_time,
+            hint_used:    hint_ref.current,
+            score,
         }).then(({ error }) => {
             if (error) console.error('Failed to save result:', error.message)
         })
@@ -108,7 +113,7 @@ function App() {
 
     const start_game = () => {
         set_loading(true)
-        const played_ids = get_played_ids()
+        const played_ids    = get_played_ids()
         const exclude_param = played_ids.length ? `?exclude=${played_ids.join(",")}` : ""
         fetch(`/new-game${exclude_param}`)
             .then(res => res.json())
@@ -121,8 +126,10 @@ function App() {
                 set_hint_active(false)
                 set_elapsed(0)
                 set_final_time(null)
+                set_final_score(null)
+                hint_ref.current      = false
+                result_saved.current  = false
                 start_time_ref.current = Date.now()
-                result_saved.current = false
                 set_game_status(true)
                 set_loading(false)
                 record_played_id(data.PlayerID)
@@ -131,12 +138,12 @@ function App() {
 
     const check_guess = (position) => {
         fetch("/check-guess", {
-            method: "POST",
+            method:  "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                guess: guesses[position].toLowerCase().trim(),
-                teams: teams,
-                position: position,
+                guess:    guesses[position].toLowerCase().trim(),
+                teams,
+                position,
             }),
         })
             .then(res => res.json())
@@ -146,9 +153,7 @@ function App() {
                     updated[position] = data.result
                     return updated
                 })
-                if (data.result === "gray") {
-                    set_wrong_guesses(prev => prev + 1)
-                }
+                if (data.result === "gray") set_wrong_guesses(prev => prev + 1)
             })
     }
 
@@ -158,6 +163,11 @@ function App() {
             updated[position] = value
             return updated
         })
+    }
+
+    const activate_hint = () => {
+        hint_ref.current = true
+        set_hint_active(true)
     }
 
     const reset_game = () => {
@@ -170,8 +180,10 @@ function App() {
         set_hint_active(false)
         set_elapsed(0)
         set_final_time(null)
+        set_final_score(null)
+        hint_ref.current       = false
+        result_saved.current   = false
         start_time_ref.current = null
-        result_saved.current = false
         set_game_status(false)
     }
 
@@ -214,9 +226,10 @@ function App() {
                     wrong_guesses={wrong_guesses}
                     max_guesses={MAX_WRONG_GUESSES}
                     hint_active={hint_active}
-                    on_hint={() => set_hint_active(true)}
+                    on_hint={activate_hint}
                     elapsed={elapsed}
                     final_time={final_time}
+                    final_score={final_score}
                     on_play_again={reset_game}
                 />
             )}

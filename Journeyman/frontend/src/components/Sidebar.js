@@ -372,11 +372,11 @@ function timeAgo(dateString) {
 }
 
 function HistoryTab({ user }) {
-    const [loading, setLoading]       = useState(true)
-    const [stats, setStats]           = useState(null)
-    const [recent, setRecent]         = useState([])
+    const [loading, setLoading]         = useState(true)
+    const [stats, setStats]             = useState(null)
+    const [recent, setRecent]           = useState([])
     const [leaderboard, setLeaderboard] = useState([])
-    const [lbError, setLbError]       = useState(false)
+    const [lbError, setLbError]         = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchAll() }, [user])
@@ -384,7 +384,6 @@ function HistoryTab({ user }) {
     async function fetchAll() {
         setLoading(true)
 
-        // Personal history (only if signed in)
         if (user) {
             const { data } = await supabase
                 .from('game_results')
@@ -393,24 +392,23 @@ function HistoryTab({ user }) {
                 .order('created_at', { ascending: false })
 
             if (data) {
-                const wins   = data.filter(r => r.result === 'win').length
-                const losses = data.filter(r => r.result === 'loss').length
-                setStats({ played: data.length, wins, losses })
+                const wins      = data.filter(r => r.result === 'win').length
+                const losses    = data.filter(r => r.result === 'loss').length
+                const scores    = data.map(r => r.score || 0).filter(s => s > 0)
+                const bestScore = scores.length ? Math.max(...scores) : null
+                const totalScore = scores.reduce((a, b) => a + b, 0)
+                setStats({ played: data.length, wins, losses, bestScore, totalScore })
                 setRecent(data.slice(0, 6))
             }
         }
 
-        // Leaderboard (public — no sign-in needed)
         const { data: lb, error } = await supabase
             .from('leaderboard')
             .select('*')
             .limit(10)
 
-        if (error) {
-            setLbError(true)
-        } else {
-            setLeaderboard(lb || [])
-        }
+        if (error) setLbError(true)
+        else setLeaderboard(lb || [])
 
         setLoading(false)
     }
@@ -448,11 +446,16 @@ function HistoryTab({ user }) {
                         <div className="hist-stat-divider" />
                         <div className="hist-stat">
                             <span className="hist-stat-val">
-                                {stats.played > 0 ? Math.round(stats.wins / stats.played * 100) : 0}%
+                                {stats.bestScore !== null ? stats.bestScore.toLocaleString() : '—'}
                             </span>
-                            <span className="hist-stat-label">Win %</span>
+                            <span className="hist-stat-label">Best</span>
                         </div>
                     </div>
+                    {stats.totalScore > 0 && (
+                        <p className="hist-total-score">
+                            Total: <strong>{stats.totalScore.toLocaleString()} pts</strong>
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -464,7 +467,7 @@ function HistoryTab({ user }) {
 
             {!user && (
                 <div className="hist-section">
-                    <p className="hist-empty">Sign in to track your personal win/loss record.</p>
+                    <p className="hist-empty">Sign in to track your score and history.</p>
                 </div>
             )}
 
@@ -480,6 +483,9 @@ function HistoryTab({ user }) {
                                 </span>
                                 <span className="hist-player">{game.player_name}</span>
                                 <span className="hist-meta">
+                                    {game.score > 0 && (
+                                        <span className="hist-score-badge">{game.score.toLocaleString()}</span>
+                                    )}
                                     {fmtTime(game.time_seconds) && (
                                         <span className="hist-game-time">{fmtTime(game.time_seconds)}</span>
                                     )}
@@ -495,9 +501,7 @@ function HistoryTab({ user }) {
             <div className="hist-section">
                 <span className="info-heading">Leaderboard</span>
 
-                {lbError && (
-                    <p className="hist-empty">Leaderboard not available yet.</p>
-                )}
+                {lbError && <p className="hist-empty">Leaderboard not available yet.</p>}
 
                 {!lbError && leaderboard.length === 0 && (
                     <p className="hist-empty">No entries yet — be the first to finish a journey!</p>
@@ -510,13 +514,10 @@ function HistoryTab({ user }) {
                             <span className="hist-lb-name">Player</span>
                             <span className="hist-lb-num">W</span>
                             <span className="hist-lb-num">L</span>
-                            <span className="hist-lb-num">Win%</span>
+                            <span className="hist-lb-pts">Pts</span>
                         </div>
                         {leaderboard.map((row, i) => (
-                            <div
-                                key={row.id}
-                                className={`hist-lb-row ${user && row.id === user.id ? 'you' : ''}`}
-                            >
+                            <div key={row.id} className={`hist-lb-row ${user && row.id === user.id ? 'you' : ''}`}>
                                 <span className="hist-lb-rank">{i + 1}</span>
                                 <span className="hist-lb-name">
                                     {row.display_name}
@@ -524,7 +525,7 @@ function HistoryTab({ user }) {
                                 </span>
                                 <span className="hist-lb-num">{row.wins}</span>
                                 <span className="hist-lb-num">{row.losses}</span>
-                                <span className="hist-lb-num">{row.win_rate}%</span>
+                                <span className="hist-lb-pts">{(row.total_score || 0).toLocaleString()}</span>
                             </div>
                         ))}
                     </div>
