@@ -47,7 +47,7 @@ TEAM_NAMES_BY_ABBR = {
     "MIN": "minnesota timberwolves",
     "NJN": "new jersey nets",
     "NOH": "new orleans hornets",
-    "NOK": "new orleans/oklahoma city hornets",
+    "NOK": "new orleans hornets",
     "NOP": "new orleans pelicans",
     "NYK": "new york knicks",
     "OKC": "oklahoma city thunder",
