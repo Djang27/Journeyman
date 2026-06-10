@@ -165,6 +165,19 @@ function App() {
         })
     }
 
+    const clear_guess = (position) => {
+        set_guesses(prev => {
+            const updated = [...prev]
+            updated[position] = ""
+            return updated
+        })
+        set_results(prev => {
+            const updated = [...prev]
+            updated[position] = null
+            return updated
+        })
+    }
+
     const activate_hint = () => {
         hint_ref.current = true
         set_hint_active(true)
@@ -221,6 +234,7 @@ function App() {
                     results={results}
                     on_guess_change={update_guess}
                     on_submit={check_guess}
+                    on_clear={clear_guess}
                     has_won={has_won}
                     has_lost={has_lost}
                     wrong_guesses={wrong_guesses}

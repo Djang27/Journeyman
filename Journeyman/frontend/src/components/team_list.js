@@ -154,18 +154,19 @@ function TeamSearch({ value, onChange, disabled }) {
     )
 }
 
-function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_over, hint_active }) {
+function TeamList({ teams, guesses, results, on_guess_change, on_submit, on_clear, game_over, hint_active }) {
     return (
         <div className="roadmap">
             <div className="road-spine"></div>
             <div className="road-dashes"></div>
 
             {teams.map((team, index) => {
-                const result    = results[index]
-                const cardClass = result ? RESULT_COLORS[result] : ""
-                const isLocked  = result === "green"
-                const showHint  = hint_active && !isLocked
-                const conf      = showHint ? CONFERENCE[team] : null
+                const result     = results[index]
+                const cardClass  = result ? RESULT_COLORS[result] : ""
+                const isLocked   = result === "green"
+                const showHint   = hint_active && !isLocked
+                const conf       = showHint ? CONFERENCE[team] : null
+                const showClear  = !isLocked && !game_over && !!(guesses[index] ?? "")
 
                 return (
                     <div className="road-stop" key={index}>
@@ -181,6 +182,16 @@ function TeamList({ teams, guesses, results, on_guess_change, on_submit, game_ov
                                 onChange={(val) => on_guess_change(index, val)}
                                 disabled={isLocked || game_over}
                             />
+
+                            {showClear && (
+                                <button
+                                    className="clear-btn"
+                                    onClick={() => on_clear(index)}
+                                    aria-label="Clear guess"
+                                >
+                                    ✕
+                                </button>
+                            )}
 
                             {conf && (
                                 <span className={`conf-badge ${conf === "East" ? "east" : "west"}`}>

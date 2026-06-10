@@ -28,7 +28,7 @@ function ScoreBreakdown({ final_time, wrong_guesses, hint_active }) {
     )
 }
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, elapsed, final_time, final_score, on_play_again }) {
+function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, elapsed, final_time, final_score, on_play_again }) {
     const game_over      = has_won || has_lost
     const hint_available = wrong_guesses >= 2 && !hint_active && !game_over
 
@@ -72,6 +72,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 results={results}
                 on_guess_change={on_guess_change}
                 on_submit={on_submit}
+                on_clear={on_clear}
                 game_over={game_over}
                 hint_active={hint_active}
             />
