@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 
 const NBA_TEAMS = [
-    "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets",
+    "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte bobcats", "charlotte hornets",
     "chicago bulls", "cleveland cavaliers", "dallas mavericks", "denver nuggets",
     "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
     "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat",
@@ -17,6 +17,7 @@ const CONFERENCE = {
     "atlanta hawks":                    "East",
     "boston celtics":                   "East",
     "brooklyn nets":                    "East",
+    "charlotte bobcats":                "East",
     "charlotte hornets":                "East",
     "chicago bulls":                    "East",
     "cleveland cavaliers":              "East",

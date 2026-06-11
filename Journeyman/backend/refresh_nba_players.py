@@ -29,7 +29,6 @@ TEAM_NAMES_BY_ABBR = {
     "ATL": "atlanta hawks",
     "BKN": "brooklyn nets",
     "BOS": "boston celtics",
-    "CHA": "charlotte hornets",
     "CHH": "charlotte hornets",
     "CHI": "chicago bulls",
     "CLE": "cleveland cavaliers",
@@ -120,7 +119,14 @@ def career_stats_for_player(player_id):
         if abbr == "TOT":
             continue
 
-        team_name = TEAM_NAMES_BY_ABBR.get(abbr)
+        if abbr == "CHA":
+            try:
+                start_year = int(str(row.get("SEASON_ID", ""))[:4])
+                team_name = "charlotte bobcats" if start_year < 2014 else "charlotte hornets"
+            except (ValueError, TypeError):
+                team_name = "charlotte hornets"
+        else:
+            team_name = TEAM_NAMES_BY_ABBR.get(abbr)
 
         if not team_name:
             return [], 0.0
