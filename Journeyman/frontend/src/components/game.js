@@ -61,7 +61,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 <div className="lives-indicator">
                     <span className="lives-label">Wrong Guesses</span>
                     <div className="lives-dots">
-                        {[...Array(max_guesses)].map((_, i) => (
+                        {[...Array(hard_mode ? 1 : max_guesses)].map((_, i) => (
                             <span key={i} className={`life-dot ${i < wrong_guesses ? 'used' : 'remaining'}`} />
                         ))}
                     </div>
@@ -88,7 +88,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                         role="button"
                         aria-pressed={hard_mode}
                     >
-                        <span className="hard-mode-toggle-label">Hard</span>
+                        <span className="hard-mode-toggle-label">Hard Mode</span>
                         <div className="hard-mode-switch">
                             <div className="hard-mode-knob" />
                         </div>
