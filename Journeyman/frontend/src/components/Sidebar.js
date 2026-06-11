@@ -403,12 +403,17 @@ function StatsTab({ user }) {
 
             const { current: currentStreak, best: bestStreak } = calculate_streaks(data)
 
+            const hardGames = data.filter(r => r.hard_mode)
+            const hardWins  = hardGames.filter(r => r.result === 'win').length
+            const hardRate  = hardGames.length ? Math.round((hardWins / hardGames.length) * 100) : null
+
             setStats({
                 played, wins: wins.length, winRate,
                 bestScore, avgScore,
                 bestTime, avgTime,
                 hintRate, avgWrong,
                 currentStreak, bestStreak,
+                hardPlayed: hardGames.length, hardWins, hardRate,
             })
         } else {
             setStats(null)
@@ -503,6 +508,22 @@ function StatsTab({ user }) {
                     <span className="stats-cell-label">Hint Usage</span>
                 </div>
             </div>
+
+            {stats.hardPlayed > 0 && (
+                <>
+                    <div className="stats-section-label hard-label">Hard Mode</div>
+                    <div className="stats-grid">
+                        <div className="stats-cell hard-cell">
+                            <span className="stats-cell-val">{stats.hardRate}%</span>
+                            <span className="stats-cell-label">Win Rate</span>
+                        </div>
+                        <div className="stats-cell hard-cell">
+                            <span className="stats-cell-val">{stats.hardWins} / {stats.hardPlayed}</span>
+                            <span className="stats-cell-label">W / Played</span>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

@@ -32,6 +32,7 @@ function App() {
     const [results, set_results]             = useState([])
     const [wrong_guesses, set_wrong_guesses] = useState(0)
     const [hint_active, set_hint_active]     = useState(false)
+    const [hard_mode, set_hard_mode]         = useState(false)
     const [loading, set_loading]             = useState(false)
     const [show_sidebar, set_show_sidebar]   = useState(false)
     const [sidebar_tab, set_sidebar_tab]     = useState('howto')
@@ -45,6 +46,7 @@ function App() {
     const timer_ref      = useRef(null)
     const result_saved   = useRef(false)
     const hint_ref       = useRef(false)   // ref mirror of hint_active for the save effect
+    const hard_mode_ref  = useRef(false)   // ref mirror of hard_mode for the save effect
 
     const MAX_WRONG_GUESSES = 3
 
@@ -89,6 +91,7 @@ function App() {
             time_seconds:   game_time,
             wrong_guesses,
             hint_used:      hint_ref.current,
+            hard_mode:      hard_mode_ref.current,
         })
 
         set_final_time(game_time)
@@ -104,6 +107,7 @@ function App() {
             num_teams:    teams.length,
             time_seconds: game_time,
             hint_used:    hint_ref.current,
+            hard_mode:    hard_mode_ref.current,
             score,
         }).then(({ error }) => {
             if (error) console.error('Failed to save result:', error.message)
@@ -124,10 +128,12 @@ function App() {
                 set_results(Array(data.Teams.length).fill(null))
                 set_wrong_guesses(0)
                 set_hint_active(false)
+                set_hard_mode(false)
                 set_elapsed(0)
                 set_final_time(null)
                 set_final_score(null)
                 hint_ref.current      = false
+                hard_mode_ref.current = false
                 result_saved.current  = false
                 start_time_ref.current = Date.now()
                 set_game_status(true)
@@ -153,8 +159,20 @@ function App() {
                     updated[position] = data.result
                     return updated
                 })
-                if (data.result === "gray") set_wrong_guesses(prev => prev + 1)
+                if (data.result === "gray") {
+                    set_wrong_guesses(prev =>
+                        hard_mode_ref.current ? MAX_WRONG_GUESSES : prev + 1
+                    )
+                }
             })
+    }
+
+    const toggle_hard_mode = () => {
+        set_hard_mode(prev => {
+            const next = !prev
+            hard_mode_ref.current = next
+            return next
+        })
     }
 
     const update_guess = (position, value) => {
@@ -191,10 +209,12 @@ function App() {
         set_results([])
         set_wrong_guesses(0)
         set_hint_active(false)
+        set_hard_mode(false)
         set_elapsed(0)
         set_final_time(null)
         set_final_score(null)
         hint_ref.current       = false
+        hard_mode_ref.current  = false
         result_saved.current   = false
         start_time_ref.current = null
         set_game_status(false)
@@ -242,6 +262,8 @@ function App() {
                     max_guesses={MAX_WRONG_GUESSES}
                     hint_active={hint_active}
                     on_hint={activate_hint}
+                    hard_mode={hard_mode}
+                    on_hard_mode_toggle={toggle_hard_mode}
                     elapsed={elapsed}
                     final_time={final_time}
                     final_score={final_score}
