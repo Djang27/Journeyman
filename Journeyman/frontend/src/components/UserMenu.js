@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-function UserMenu({ user, onOpenHistory, onOpenAccount }) {
+function UserMenu({ user, onOpenStats, onOpenHistory, onOpenAccount }) {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
 
@@ -41,6 +41,10 @@ function UserMenu({ user, onOpenHistory, onOpenAccount }) {
 
                     <div className="user-dropdown-divider" />
 
+                    <button className="user-dropdown-item" onClick={() => { setOpen(false); onOpenStats() }}>
+                        <span className="user-dropdown-icon">◈</span>
+                        Stats
+                    </button>
                     <button className="user-dropdown-item" onClick={() => { setOpen(false); onOpenHistory() }}>
                         <span className="user-dropdown-icon">▤</span>
                         History

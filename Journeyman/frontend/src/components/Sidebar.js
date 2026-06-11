@@ -4,8 +4,9 @@ import { calculate_streaks } from '../lib/scoring'
 
 const TABS = [
     { id: 'howto',   label: 'How to Play' },
-    { id: 'account', label: 'Account' },
+    { id: 'stats',   label: 'Stats' },
     { id: 'history', label: 'History' },
+    { id: 'account', label: 'Account' },
 ]
 
 /* ── HOW TO PLAY ─────────────────────────────────────── */
@@ -352,13 +353,161 @@ function AccountTab({ user, recoveryMode }) {
     )
 }
 
-/* ── HISTORY ─────────────────────────────────────────── */
+/* ── STATS ───────────────────────────────────────────── */
 function fmtTime(s) {
     if (!s && s !== 0) return null
     const m   = Math.floor(s / 60)
     const sec = s % 60
     return `${m}:${String(sec).padStart(2, '0')}`
 }
+
+function StatsTab({ user }) {
+    const [loading, setLoading] = useState(true)
+    const [stats, setStats]     = useState(null)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { if (user) fetchStats(); else setLoading(false) }, [user])
+
+    async function fetchStats() {
+        setLoading(true)
+        const { data } = await supabase
+            .from('game_results')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+
+        if (data && data.length > 0) {
+            const wins    = data.filter(r => r.result === 'win')
+            const played  = data.length
+            const winRate = Math.round((wins.length / played) * 100)
+
+            const winScores = wins.map(r => r.score || 0).filter(s => s > 0)
+            const bestScore = winScores.length ? Math.max(...winScores) : null
+            const avgScore  = winScores.length
+                ? Math.round(winScores.reduce((a, b) => a + b, 0) / winScores.length)
+                : null
+
+            const winTimes = wins.map(r => r.time_seconds).filter(t => t != null)
+            const bestTime = winTimes.length ? Math.min(...winTimes) : null
+            const avgTime  = winTimes.length
+                ? Math.round(winTimes.reduce((a, b) => a + b, 0) / winTimes.length)
+                : null
+
+            const hintsUsed = data.filter(r => r.hint_used).length
+            const hintRate  = Math.round((hintsUsed / played) * 100)
+
+            const wrongArr = wins.map(r => r.wrong_guesses || 0)
+            const avgWrong = wrongArr.length
+                ? (wrongArr.reduce((a, b) => a + b, 0) / wrongArr.length).toFixed(1)
+                : null
+
+            const { current: currentStreak, best: bestStreak } = calculate_streaks(data)
+
+            setStats({
+                played, wins: wins.length, winRate,
+                bestScore, avgScore,
+                bestTime, avgTime,
+                hintRate, avgWrong,
+                currentStreak, bestStreak,
+            })
+        } else {
+            setStats(null)
+        }
+        setLoading(false)
+    }
+
+    if (!user) return (
+        <div className="sidebar-tab-content">
+            <p className="hist-empty">Sign in to view your stats.</p>
+        </div>
+    )
+
+    if (loading) return (
+        <div className="sidebar-tab-content">
+            <p className="hist-loading">Loading…</p>
+        </div>
+    )
+
+    if (!stats) return (
+        <div className="sidebar-tab-content">
+            <p className="hist-empty">No games played yet. Start your first journey!</p>
+        </div>
+    )
+
+    return (
+        <div className="sidebar-tab-content">
+            <div className="stats-hero">
+                <span className="stats-hero-val">{stats.winRate}%</span>
+                <span className="stats-hero-label">Win Rate</span>
+                <span className="stats-hero-sub">
+                    {stats.wins}W &mdash; {stats.played - stats.wins}L &mdash; {stats.played} played
+                </span>
+            </div>
+
+            <div className="stats-section-label">Streaks</div>
+            <div className="stats-grid">
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.currentStreak > 0 ? `🔥 ${stats.currentStreak}` : '—'}
+                    </span>
+                    <span className="stats-cell-label">Current</span>
+                </div>
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.bestStreak > 0 ? `🏆 ${stats.bestStreak}` : '—'}
+                    </span>
+                    <span className="stats-cell-label">Best</span>
+                </div>
+            </div>
+
+            <div className="stats-section-label">Score</div>
+            <div className="stats-grid">
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.bestScore ? stats.bestScore.toLocaleString() : '—'}
+                    </span>
+                    <span className="stats-cell-label">Best</span>
+                </div>
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.avgScore ? stats.avgScore.toLocaleString() : '—'}
+                    </span>
+                    <span className="stats-cell-label">Average</span>
+                </div>
+            </div>
+
+            <div className="stats-section-label">Time (wins)</div>
+            <div className="stats-grid">
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.bestTime != null ? fmtTime(stats.bestTime) : '—'}
+                    </span>
+                    <span className="stats-cell-label">Best</span>
+                </div>
+                <div className="stats-cell">
+                    <span className="stats-cell-val">
+                        {stats.avgTime != null ? fmtTime(stats.avgTime) : '—'}
+                    </span>
+                    <span className="stats-cell-label">Average</span>
+                </div>
+            </div>
+
+            <div className="stats-section-label">Play Style</div>
+            <div className="stats-grid">
+                <div className="stats-cell">
+                    <span className="stats-cell-val">{stats.avgWrong ?? '—'}</span>
+                    <span className="stats-cell-label">Avg Wrong</span>
+                </div>
+                <div className="stats-cell">
+                    <span className="stats-cell-val">{stats.hintRate}%</span>
+                    <span className="stats-cell-label">Hint Usage</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* ── HISTORY ─────────────────────────────────────────── */
 
 function timeAgo(dateString) {
     const diff = Date.now() - new Date(dateString).getTime()
@@ -590,6 +739,7 @@ function Sidebar({ open, onClose, user, recoveryMode, initialTab }) {
 
                 <div className="sidebar-body">
                     {tab === 'howto'   && <HowToPlayTab />}
+                    {tab === 'stats'   && <StatsTab user={user} />}
                     {tab === 'account' && <AccountTab user={user} recoveryMode={recoveryMode} />}
                     {tab === 'history' && <HistoryTab user={user} />}
                 </div>

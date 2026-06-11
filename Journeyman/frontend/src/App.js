@@ -221,6 +221,7 @@ function App() {
             {user && (
                 <UserMenu
                     user={user}
+                    onOpenStats={() => open_sidebar('stats')}
                     onOpenHistory={() => open_sidebar('history')}
                     onOpenAccount={() => open_sidebar('account')}
                 />
