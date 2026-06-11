@@ -2081,3 +2081,114 @@ body {
 .stats-cell.hard-cell .stats-cell-val {
   color: #ff4d6d;
 }
+
+/* CAREER TIMELINE (results modal) */
+.ct-section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.career-timeline {
+  position: relative;
+  text-align: left;
+}
+
+.career-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.ct-stop {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.3rem 0;
+  position: relative;
+}
+
+.ct-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ct-marker.ct-correct {
+  background: var(--green-correct);
+  color: white;
+  border: 2px solid var(--green-correct);
+}
+
+.ct-marker.ct-close {
+  background: var(--court-mid);
+  color: var(--yellow-close);
+  border: 2px solid var(--yellow-close);
+}
+
+.ct-marker.ct-wrong {
+  background: var(--court-mid);
+  color: var(--gray-wrong);
+  border: 2px solid var(--gray-wrong);
+}
+
+.ct-marker.ct-empty {
+  background: var(--court-mid);
+  color: var(--text-muted);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.ct-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-top: 3px;
+}
+
+.ct-team {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.ct-stop.ct-correct .ct-team {
+  color: var(--green-correct);
+}
+
+.ct-stop.ct-close .ct-team {
+  color: var(--text-primary);
+}
+
+.ct-guess {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+  line-height: 1.3;
+}

@@ -4,10 +4,50 @@ import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
 
+function toTitleCase(str) {
+    if (!str) return ''
+    return str.replace(/\b\w/g, c => c.toUpperCase())
+}
+
 function fmt_time(s) {
     const m   = Math.floor(s / 60)
     const sec = s % 60
     return `${m}:${String(sec).padStart(2, '0')}`
+}
+
+function CareerTimeline({ teams, guesses, results }) {
+    return (
+        <div className="career-timeline">
+            {teams.map((team, i) => {
+                const result    = results[i]
+                const guess     = guesses[i]
+                const isCorrect = result === 'green'
+                const isClose   = result === 'yellow'
+                const isWrong   = result === 'gray'
+
+                let markerClass = 'ct-empty'
+                if (isCorrect)     markerClass = 'ct-correct'
+                else if (isClose)  markerClass = 'ct-close'
+                else if (isWrong)  markerClass = 'ct-wrong'
+
+                const showGuess = !isCorrect && guess && guess.trim()
+
+                return (
+                    <div key={i} className={`ct-stop ${markerClass}`}>
+                        <div className={`ct-marker ${markerClass}`}>
+                            {isCorrect ? '✓' : i + 1}
+                        </div>
+                        <div className="ct-content">
+                            <span className="ct-team">{toTitleCase(team)}</span>
+                            {showGuess && (
+                                <span className="ct-guess">{toTitleCase(guess)}</span>
+                            )}
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
 }
 
 function ScoreBreakdown({ final_time, wrong_guesses, hint_active, hard_mode }) {
@@ -140,9 +180,6 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                             <>
                                 <div className="win-title">Journey Complete</div>
                                 {hard_mode && <div className="hard-mode-badge">HARD MODE</div>}
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                                    You traced {player}'s full career path.
-                                </p>
                                 {final_time !== null && (
                                     <p className="result-time win">Completed in {fmt_time(final_time)}</p>
                                 )}
@@ -155,6 +192,12 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     wrong_guesses={wrong_guesses}
                                     hint_active={hint_active}
                                     hard_mode={hard_mode}
+                                />
+                                <div className="ct-section-label">Career Path</div>
+                                <CareerTimeline
+                                    teams={teams}
+                                    guesses={guesses}
+                                    results={results}
                                 />
                                 <div className="results-modal-actions">
                                     <button className="results-review-btn" onClick={() => set_show_results(false)}>
@@ -173,14 +216,14 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                 {final_time !== null && (
                                     <p className="result-time loss">Time: {fmt_time(final_time)}</p>
                                 )}
-                                <p className="game-over-subtitle" style={{ marginTop: '1rem' }}>
-                                    {player}'s career path was:
-                                </p>
-                                <ol className="correct-teams-list">
-                                    {teams.map((team, i) => (
-                                        <li key={i}>{team.replace(/\b\w/g, c => c.toUpperCase())}</li>
-                                    ))}
-                                </ol>
+                                <div className="ct-section-label" style={{ marginTop: '1rem' }}>
+                                    {player}'s Career Path
+                                </div>
+                                <CareerTimeline
+                                    teams={teams}
+                                    guesses={guesses}
+                                    results={results}
+                                />
                                 <div className="results-modal-actions">
                                     <button className="results-review-btn" onClick={() => set_show_results(false)}>
                                         Review Guesses
