@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TeamList from "./team_list"
 import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
@@ -36,7 +36,12 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
     const hard_mode_locked = results.some(r => r !== null) || game_over
 
-    const [hard_flash, set_hard_flash] = useState(false)
+    const [hard_flash,    set_hard_flash]    = useState(false)
+    const [show_results,  set_show_results]  = useState(false)
+
+    useEffect(() => {
+        if (game_over) set_show_results(true)
+    }, [game_over])
 
     function handleHardModeToggle() {
         if (hard_mode_locked) return
@@ -107,53 +112,86 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                 hint_active={hint_active}
             />
 
-            {has_won && final_score !== null && (
-                <div className="win-banner">
-                    <div className="win-title">Journey Complete</div>
-                    {hard_mode && <div className="hard-mode-badge">HARD MODE</div>}
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                        You traced {player}'s full career path.
-                    </p>
-                    {final_time !== null && (
-                        <p className="result-time win">Completed in {fmt_time(final_time)}</p>
-                    )}
-                    <div className="score-display win">
-                        <span className="score-pts">{final_score.toLocaleString()}</span>
-                        <span className="score-label">pts</span>
-                    </div>
-                    <ScoreBreakdown
-                        final_time={final_time}
-                        wrong_guesses={wrong_guesses}
-                        hint_active={hint_active}
-                        hard_mode={hard_mode}
-                    />
-                    <button className="play-again-btn" style={{ marginTop: '1.5rem' }} onClick={on_play_again}>
-                        New Journey
+            {/* Re-open bar — shown when modal is dismissed */}
+            {game_over && !show_results && (
+                <div className="see-results-bar">
+                    <button className="see-results-btn" onClick={() => set_show_results(true)}>
+                        See Results
+                    </button>
+                    <button className="play-again-btn secondary-play-btn" onClick={on_play_again}>
+                        {has_won ? 'New Journey' : 'Try Again'}
                     </button>
                 </div>
             )}
 
-            {has_lost && (
-                <div className="game-over-banner">
-                    <div className="game-over-title">Journey Ended</div>
-                    {final_time !== null && (
-                        <p className="result-time loss">Time: {fmt_time(final_time)}</p>
-                    )}
-                    <div className="score-display loss">
-                        <span className="score-pts">0</span>
-                        <span className="score-label">pts</span>
+            {/* Results modal overlay */}
+            {game_over && show_results && (
+                <div className="results-overlay" onClick={() => set_show_results(false)}>
+                    <div className="results-modal" onClick={e => e.stopPropagation()}>
+                        <button
+                            className="results-close-btn"
+                            onClick={() => set_show_results(false)}
+                            aria-label="Close results"
+                        >
+                            ✕
+                        </button>
+
+                        {has_won && final_score !== null && (
+                            <>
+                                <div className="win-title">Journey Complete</div>
+                                {hard_mode && <div className="hard-mode-badge">HARD MODE</div>}
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                                    You traced {player}'s full career path.
+                                </p>
+                                {final_time !== null && (
+                                    <p className="result-time win">Completed in {fmt_time(final_time)}</p>
+                                )}
+                                <div className="score-display win">
+                                    <span className="score-pts">{final_score.toLocaleString()}</span>
+                                    <span className="score-label">pts</span>
+                                </div>
+                                <ScoreBreakdown
+                                    final_time={final_time}
+                                    wrong_guesses={wrong_guesses}
+                                    hint_active={hint_active}
+                                    hard_mode={hard_mode}
+                                />
+                                <div className="results-modal-actions">
+                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
+                                        Review Guesses
+                                    </button>
+                                    <button className="play-again-btn" onClick={on_play_again}>
+                                        New Journey
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {has_lost && (
+                            <>
+                                <div className="game-over-title">Journey Ended</div>
+                                {final_time !== null && (
+                                    <p className="result-time loss">Time: {fmt_time(final_time)}</p>
+                                )}
+                                <p className="game-over-subtitle" style={{ marginTop: '1rem' }}>
+                                    {player}'s career path was:
+                                </p>
+                                <ol className="correct-teams-list">
+                                    {teams.map((team, i) => (
+                                        <li key={i}>{team.replace(/\b\w/g, c => c.toUpperCase())}</li>
+                                    ))}
+                                </ol>
+                                <div className="results-modal-actions">
+                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
+                                        Review Guesses
+                                    </button>
+                                    <button className="play-again-btn game-over-btn" onClick={on_play_again}>
+                                        Try Again
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
-                    <p className="game-over-subtitle" style={{ marginTop: '1rem' }}>
-                        {player}'s career path was:
-                    </p>
-                    <ol className="correct-teams-list">
-                        {teams.map((team, i) => (
-                            <li key={i}>{team.replace(/\b\w/g, c => c.toUpperCase())}</li>
-                        ))}
-                    </ol>
-                    <button className="play-again-btn game-over-btn" onClick={on_play_again}>
-                        Try Again
-                    </button>
                 </div>
             )}
         </div>
