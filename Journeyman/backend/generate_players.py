@@ -1,9 +1,12 @@
+import hashlib
 import json
 import random
+from datetime import date
 from pathlib import Path
 
 
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
+LAUNCH_DATE = date(2026, 6, 11)
 
 
 def _load_players():
@@ -18,6 +21,10 @@ def _load_players():
     return players
 
 
+def day_number():
+    return (date.today() - LAUNCH_DATE).days + 1
+
+
 def randomPlayer(exclude_ids=None):
     players = _load_players()
 
@@ -28,3 +35,11 @@ def randomPlayer(exclude_ids=None):
 
     player = random.choice(available)
     return player["name"], player["teams"], player["id"]
+
+
+def daily_player():
+    players = _load_players()
+    today_str = date.today().isoformat()
+    index = int(hashlib.md5(today_str.encode()).hexdigest(), 16) % len(players)
+    player = players[index]
+    return player["name"], player["teams"], player["id"], day_number()

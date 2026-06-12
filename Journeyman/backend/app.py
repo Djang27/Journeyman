@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from generate_players import randomPlayer
+from generate_players import randomPlayer, daily_player
 from game_logic import guess_check
 
 app = Flask(__name__)
@@ -24,6 +24,17 @@ def new_game():
         "PlayerID": player_id,
         "Teams": teams,
         "Number of Teams": len(teams),
+    })
+
+@app.route("/daily-game")
+def daily_game():
+    player_name, teams, player_id, day_num = daily_player()
+    return jsonify({
+        "Player": player_name,
+        "PlayerID": player_id,
+        "Teams": teams,
+        "Number of Teams": len(teams),
+        "DayNumber": day_num,
     })
 
 @app.route("/check-guess", methods=["POST"])

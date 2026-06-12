@@ -8,6 +8,8 @@ import { calculate_score } from './lib/scoring'
 import './App.css'
 
 const PLAYED_KEY = "journeyman_played"
+const today_str  = new Date().toISOString().slice(0, 10)
+const DAILY_KEY  = `journeyman_daily_${today_str}`
 
 function get_played_ids() {
     try {
@@ -24,6 +26,14 @@ function record_played_id(id) {
     }
 }
 
+function get_daily_done() {
+    try { return !!localStorage.getItem(DAILY_KEY) } catch { return false }
+}
+
+function save_daily_result(result, score) {
+    try { localStorage.setItem(DAILY_KEY, JSON.stringify({ result, score })) } catch {}
+}
+
 function App() {
     const [player, set_player]               = useState("")
     const [teams, set_teams]                 = useState([])
@@ -33,6 +43,9 @@ function App() {
     const [wrong_guesses, set_wrong_guesses] = useState(0)
     const [hint_active, set_hint_active]     = useState(false)
     const [hard_mode, set_hard_mode]         = useState(false)
+    const [game_mode, set_game_mode]         = useState('unlimited')
+    const [day_number, set_day_number]       = useState(1)
+    const [daily_done, set_daily_done]       = useState(get_daily_done)
     const [loading, set_loading]             = useState(false)
     const [show_sidebar, set_show_sidebar]   = useState(false)
     const [sidebar_tab, set_sidebar_tab]     = useState('howto')
@@ -45,8 +58,9 @@ function App() {
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
     const result_saved   = useRef(false)
-    const hint_ref       = useRef(false)   // ref mirror of hint_active for the save effect
-    const hard_mode_ref  = useRef(false)   // ref mirror of hard_mode for the save effect
+    const hint_ref       = useRef(false)
+    const hard_mode_ref  = useRef(false)
+    const game_mode_ref  = useRef('unlimited')
 
     const MAX_WRONG_GUESSES = 3
 
@@ -97,6 +111,11 @@ function App() {
         set_final_time(game_time)
         set_final_score(score)
 
+        if (game_mode_ref.current === 'daily') {
+            save_daily_result(result, score)
+            set_daily_done(true)
+        }
+
         if (!user || result_saved.current) return
         result_saved.current = true
         supabase.from('game_results').insert({
@@ -115,11 +134,16 @@ function App() {
     }, [has_won, has_lost])
     /* eslint-enable react-hooks/exhaustive-deps */
 
-    const start_game = () => {
+    const start_game = (mode = 'unlimited') => {
         set_loading(true)
-        const played_ids    = get_played_ids()
-        const exclude_param = played_ids.length ? `?exclude=${played_ids.join(",")}` : ""
-        fetch(`/new-game${exclude_param}`)
+        set_game_mode(mode)
+        game_mode_ref.current = mode
+
+        const url = mode === 'daily'
+            ? '/daily-game'
+            : `/new-game${get_played_ids().length ? `?exclude=${get_played_ids().join(",")}` : ""}`
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 set_player(data.Player)
@@ -132,13 +156,14 @@ function App() {
                 set_elapsed(0)
                 set_final_time(null)
                 set_final_score(null)
-                hint_ref.current      = false
-                hard_mode_ref.current = false
-                result_saved.current  = false
+                hint_ref.current       = false
+                hard_mode_ref.current  = false
+                result_saved.current   = false
                 start_time_ref.current = Date.now()
+                if (data.DayNumber) set_day_number(data.DayNumber)
                 set_game_status(true)
                 set_loading(false)
-                record_played_id(data.PlayerID)
+                if (mode !== 'daily') record_played_id(data.PlayerID)
             })
     }
 
@@ -246,7 +271,14 @@ function App() {
                     onOpenAccount={() => open_sidebar('account')}
                 />
             )}
-            {!game_start && <StartScreen onStart={start_game} />}
+            {!game_start && (
+                <StartScreen
+                    on_start_daily={() => start_game('daily')}
+                    on_start_unlimited={() => start_game('unlimited')}
+                    daily_done={daily_done}
+                    day_number={day_number}
+                />
+            )}
             {game_start && (
                 <GameScreen
                     player={player}
@@ -268,6 +300,8 @@ function App() {
                     final_time={final_time}
                     final_score={final_score}
                     on_play_again={reset_game}
+                    game_mode={game_mode}
+                    day_number={day_number}
                 />
             )}
             <Sidebar

@@ -1,4 +1,4 @@
-function StartScreen({ onStart }) {
+function StartScreen({ on_start_daily, on_start_unlimited, daily_done, day_number }) {
     return (
         <div className="start-screen">
             <div>
@@ -9,9 +9,18 @@ function StartScreen({ onStart }) {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '300px', lineHeight: 1.6 }}>
                 A player's name. Guess every team they played for, in order.
             </p>
-            <button className="start-btn" onClick={onStart}>
-                Start Game
-            </button>
+            <div className="start-mode-btns">
+                <button
+                    className={`start-btn daily-start-btn ${daily_done ? 'daily-done' : ''}`}
+                    onClick={on_start_daily}
+                    disabled={daily_done}
+                >
+                    {daily_done ? `Daily #${day_number} Complete ✓` : `Daily Journey #${day_number}`}
+                </button>
+                <button className="start-btn unlimited-start-btn" onClick={on_start_unlimited}>
+                    Unlimited
+                </button>
+            </div>
         </div>
     )
 }
