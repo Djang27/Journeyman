@@ -87,7 +87,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
         if (hard_mode_locked) return
         if (!hard_mode) {
             set_hard_flash(true)
-            setTimeout(() => set_hard_flash(false), 800)
+            setTimeout(() => set_hard_flash(false), 1500)
         }
         on_hard_mode_toggle()
     }
