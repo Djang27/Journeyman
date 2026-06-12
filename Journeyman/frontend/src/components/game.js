@@ -94,7 +94,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
 
     return (
         <div className={`game-screen ${hard_flash ? 'hard-flash' : ''}`}>
-            <WinAnimation  active={has_won} />
+            <WinAnimation  active={has_won && show_results} />
             <LoseAnimation active={has_lost} />
 
             <div className="player-header">

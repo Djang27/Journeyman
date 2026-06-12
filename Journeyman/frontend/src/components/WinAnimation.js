@@ -1,61 +1,47 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 
 const GOLD  = '#f5c518'
 const GREEN = '#538d4e'
 const WHITE = '#ffffff'
 
-function burst(origin, angle) {
-    confetti({
-        particleCount: 60,
-        angle,
-        spread: 70,
-        origin,
-        colors: [GOLD, GREEN, WHITE],
-        scalar: 1.1,
-        gravity: 0.9,
-    })
-}
-
 function WinAnimation({ active }) {
+    const canvasRef = useRef(null)
+
     useEffect(() => {
-        if (!active) return
+        if (!active || !canvasRef.current) return
 
-        // Opening double-burst from both sides
-        burst({ x: 0, y: 0.6 }, 60)
-        burst({ x: 1, y: 0.6 }, 120)
+        const fire = confetti.create(canvasRef.current, { resize: true })
 
-        // Sustained shower for 3 seconds
+        fire({ particleCount: 60, angle: 60,  spread: 70, origin: { x: 0, y: 0.6 }, colors: [GOLD, GREEN, WHITE], scalar: 1.1, gravity: 0.9 })
+        fire({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.6 }, colors: [GOLD, GREEN, WHITE], scalar: 1.1, gravity: 0.9 })
+
         const end = Date.now() + 3000
         let frame
 
         const shower = () => {
-            confetti({
-                particleCount: 4,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0, y: 0.5 },
-                colors: [GOLD, GREEN, WHITE],
-                gravity: 1,
-            })
-            confetti({
-                particleCount: 4,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1, y: 0.5 },
-                colors: [GOLD, GREEN, WHITE],
-                gravity: 1,
-            })
-            if (Date.now() < end) {
-                frame = requestAnimationFrame(shower)
-            }
+            fire({ particleCount: 4, angle: 60,  spread: 55, origin: { x: 0, y: 0.5 }, colors: [GOLD, GREEN, WHITE], gravity: 1 })
+            fire({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.5 }, colors: [GOLD, GREEN, WHITE], gravity: 1 })
+            if (Date.now() < end) frame = requestAnimationFrame(shower)
         }
 
         shower()
         return () => cancelAnimationFrame(frame)
     }, [active])
 
-    return null
+    return (
+        <canvas
+            ref={canvasRef}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 999,
+            }}
+        />
+    )
 }
 
 export default WinAnimation
