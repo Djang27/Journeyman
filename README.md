@@ -65,7 +65,7 @@ npm install
 npm start
 ```
 
-The frontend proxies API requests to the Flask backend during local development.
+The frontend proxies API requests to the Flask backend during local development. Database schema and RLS setup for Supabase is in `Journeyman/supabase_setup.sql`.
 
 ## Player Database
 
@@ -87,16 +87,6 @@ To re-score and filter an existing database without re-fetching all players:
 ```bash
 python refresh_nba_players.py --filter
 ```
-
-## Supabase Setup
-
-The SQL schema for the `game_results` table and `leaderboard` view lives in:
-
-```
-Journeyman/supabase_setup.sql
-```
-
-The `game_results` table includes a `hard_mode` boolean column for tracking hard mode stats separately in the Stats sidebar.
 
 ## Deployment
 
