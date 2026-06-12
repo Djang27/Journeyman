@@ -1982,20 +1982,32 @@ body {
 }
 
 /* HARD MODE */
-@keyframes hard-mode-flash {
-  0%   { opacity: 0; }
-  15%  { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes fire-rise {
+  0%   { opacity: 0;   transform: scaleY(0.3); }
+  20%  { opacity: 1;   transform: scaleY(1); }
+  65%  { opacity: 0.9; transform: scaleY(1.04); }
+  100% { opacity: 0;   transform: scaleY(0.85); }
 }
 
 .game-screen.hard-flash::after {
   content: '';
   position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(200, 16, 46, 0.5) 0%, rgba(140, 0, 20, 0.8) 100%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 75vh;
+  background: linear-gradient(
+    to top,
+    rgba(210, 35, 0, 0.9)  0%,
+    rgba(255, 80, 0, 0.7)  18%,
+    rgba(255, 140, 0, 0.5) 36%,
+    rgba(255, 200, 40, 0.2) 56%,
+    transparent            75%
+  );
   pointer-events: none;
   z-index: 500;
-  animation: hard-mode-flash 0.8s ease-out forwards;
+  transform-origin: bottom center;
+  animation: fire-rise 1.4s ease-out forwards;
 }
 
 .hard-mode-toggle {
