@@ -4,6 +4,36 @@ import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
 
+const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
+
+function build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won }) {
+    const grid = results.map(r => EMOJI[r] ?? '⬜').join('')
+    const header = game_mode === 'daily'
+        ? `Journeyman Daily #${day_number} 🏀`
+        : `Journeyman 🏀`
+    const outcome  = has_won ? '✅' : '❌'
+    const score_str = final_score ? `${final_score.toLocaleString()} pts` : ''
+    const time_str  = final_time != null ? fmt_time(final_time) : ''
+    const hard_str  = hard_mode ? ' 🔥' : ''
+    const details   = [outcome, score_str, time_str].filter(Boolean).join(' · ')
+    return `${header}${hard_str}\n${grid}\n${details}`
+}
+
+function ShareButton({ shareText }) {
+    const [copied, setCopied] = useState(false)
+    const handle = () => {
+        navigator.clipboard.writeText(shareText).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        })
+    }
+    return (
+        <button className="share-btn" onClick={handle}>
+            {copied ? 'Copied! ✓' : 'Share'}
+        </button>
+    )
+}
+
 function toTitleCase(str) {
     if (!str) return ''
     return str.replace(/\b\w/g, c => c.toUpperCase())
@@ -202,6 +232,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     results={results}
                                 />
                                 <div className="results-modal-actions">
+                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: true })} />
                                     <button className="results-review-btn" onClick={() => set_show_results(false)}>
                                         Review Guesses
                                     </button>
@@ -229,6 +260,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     results={results}
                                 />
                                 <div className="results-modal-actions">
+                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: false })} />
                                     <button className="results-review-btn" onClick={() => set_show_results(false)}>
                                         Review Guesses
                                     </button>
