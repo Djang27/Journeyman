@@ -4,6 +4,7 @@ import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
 
+// v2
 const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
 
 function build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won }) {
