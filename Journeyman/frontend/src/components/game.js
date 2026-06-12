@@ -225,21 +225,21 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     hint_active={hint_active}
                                     hard_mode={hard_mode}
                                 />
+                                <div className="results-modal-actions">
+                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: true })} />
+                                    <button className="play-again-btn" onClick={on_play_again}>
+                                        New Journey
+                                    </button>
+                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
+                                        Review Guesses
+                                    </button>
+                                </div>
                                 <div className="ct-section-label">Career Path</div>
                                 <CareerTimeline
                                     teams={teams}
                                     guesses={guesses}
                                     results={results}
                                 />
-                                <div className="results-modal-actions">
-                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: true })} />
-                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
-                                        Review Guesses
-                                    </button>
-                                    <button className="play-again-btn" onClick={on_play_again}>
-                                        New Journey
-                                    </button>
-                                </div>
                             </>
                         )}
 
@@ -251,6 +251,15 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                 {final_time !== null && (
                                     <p className="result-time loss">Time: {fmt_time(final_time)}</p>
                                 )}
+                                <div className="results-modal-actions">
+                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: false })} />
+                                    <button className="play-again-btn game-over-btn" onClick={on_play_again}>
+                                        Try Again
+                                    </button>
+                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
+                                        Review Guesses
+                                    </button>
+                                </div>
                                 <div className="ct-section-label" style={{ marginTop: '1rem' }}>
                                     {player}'s Career Path
                                 </div>
@@ -259,15 +268,6 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     guesses={guesses}
                                     results={results}
                                 />
-                                <div className="results-modal-actions">
-                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: false })} />
-                                    <button className="results-review-btn" onClick={() => set_show_results(false)}>
-                                        Review Guesses
-                                    </button>
-                                    <button className="play-again-btn game-over-btn" onClick={on_play_again}>
-                                        Try Again
-                                    </button>
-                                </div>
                             </>
                         )}
                     </div>
