@@ -8,6 +8,10 @@
       "destination": "/api/app"
     },
     {
+      "source": "/daily-game",
+      "destination": "/api/app"
+    },
+    {
       "source": "/check-guess",
       "destination": "/api/app"
     },
