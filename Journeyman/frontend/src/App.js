@@ -128,6 +128,7 @@ function App() {
             hint_used:    hint_ref.current,
             hard_mode:    hard_mode_ref.current,
             score,
+            game_mode:    game_mode_ref.current,
         }).then(({ error }) => {
             if (error) console.error('Failed to save result:', error.message)
         })

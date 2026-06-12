@@ -1960,6 +1960,34 @@ body {
 }
 
 /* STATS TAB */
+.stats-mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.stats-mode-btn {
+  flex: 1;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--court-mid);
+  border-radius: 4px;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stats-mode-btn.active {
+  background: var(--road-line);
+  color: var(--court-dark);
+  border-color: var(--road-line);
+}
+
 .stats-hero {
   display: flex;
   flex-direction: column;

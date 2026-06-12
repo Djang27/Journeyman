@@ -361,9 +361,49 @@ function fmtTime(s) {
     return `${m}:${String(sec).padStart(2, '0')}`
 }
 
+function computeStats(data) {
+    if (!data || data.length === 0) return null
+    const wins    = data.filter(r => r.result === 'win')
+    const played  = data.length
+    const winRate = Math.round((wins.length / played) * 100)
+
+    const winScores = wins.map(r => r.score || 0).filter(s => s > 0)
+    const bestScore = winScores.length ? Math.max(...winScores) : null
+    const avgScore  = winScores.length
+        ? Math.round(winScores.reduce((a, b) => a + b, 0) / winScores.length) : null
+
+    const winTimes = wins.map(r => r.time_seconds).filter(t => t != null)
+    const bestTime = winTimes.length ? Math.min(...winTimes) : null
+    const avgTime  = winTimes.length
+        ? Math.round(winTimes.reduce((a, b) => a + b, 0) / winTimes.length) : null
+
+    const hintsUsed = data.filter(r => r.hint_used).length
+    const hintRate  = Math.round((hintsUsed / played) * 100)
+
+    const wrongArr = wins.map(r => r.wrong_guesses || 0)
+    const avgWrong = wrongArr.length
+        ? (wrongArr.reduce((a, b) => a + b, 0) / wrongArr.length).toFixed(1) : null
+
+    const { current: currentStreak, best: bestStreak } = calculate_streaks(data)
+
+    const hardGames = data.filter(r => r.hard_mode)
+    const hardWins  = hardGames.filter(r => r.result === 'win').length
+    const hardRate  = hardGames.length ? Math.round((hardWins / hardGames.length) * 100) : null
+
+    return {
+        played, wins: wins.length, winRate,
+        bestScore, avgScore,
+        bestTime, avgTime,
+        hintRate, avgWrong,
+        currentStreak, bestStreak,
+        hardPlayed: hardGames.length, hardWins, hardRate,
+    }
+}
+
 function StatsTab({ user }) {
     const [loading, setLoading] = useState(true)
-    const [stats, setStats]     = useState(null)
+    const [allData, setAllData] = useState([])
+    const [mode, setMode]       = useState('all')
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { if (user) fetchStats(); else setLoading(false) }, [user])
@@ -375,49 +415,7 @@ function StatsTab({ user }) {
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
-
-        if (data && data.length > 0) {
-            const wins    = data.filter(r => r.result === 'win')
-            const played  = data.length
-            const winRate = Math.round((wins.length / played) * 100)
-
-            const winScores = wins.map(r => r.score || 0).filter(s => s > 0)
-            const bestScore = winScores.length ? Math.max(...winScores) : null
-            const avgScore  = winScores.length
-                ? Math.round(winScores.reduce((a, b) => a + b, 0) / winScores.length)
-                : null
-
-            const winTimes = wins.map(r => r.time_seconds).filter(t => t != null)
-            const bestTime = winTimes.length ? Math.min(...winTimes) : null
-            const avgTime  = winTimes.length
-                ? Math.round(winTimes.reduce((a, b) => a + b, 0) / winTimes.length)
-                : null
-
-            const hintsUsed = data.filter(r => r.hint_used).length
-            const hintRate  = Math.round((hintsUsed / played) * 100)
-
-            const wrongArr = wins.map(r => r.wrong_guesses || 0)
-            const avgWrong = wrongArr.length
-                ? (wrongArr.reduce((a, b) => a + b, 0) / wrongArr.length).toFixed(1)
-                : null
-
-            const { current: currentStreak, best: bestStreak } = calculate_streaks(data)
-
-            const hardGames = data.filter(r => r.hard_mode)
-            const hardWins  = hardGames.filter(r => r.result === 'win').length
-            const hardRate  = hardGames.length ? Math.round((hardWins / hardGames.length) * 100) : null
-
-            setStats({
-                played, wins: wins.length, winRate,
-                bestScore, avgScore,
-                bestTime, avgTime,
-                hintRate, avgWrong,
-                currentStreak, bestStreak,
-                hardPlayed: hardGames.length, hardWins, hardRate,
-            })
-        } else {
-            setStats(null)
-        }
+        setAllData(data || [])
         setLoading(false)
     }
 
@@ -433,14 +431,33 @@ function StatsTab({ user }) {
         </div>
     )
 
+    const filtered = mode === 'all' ? allData
+        : allData.filter(r => (r.game_mode || 'unlimited') === mode)
+    const stats = computeStats(filtered)
+
     if (!stats) return (
         <div className="sidebar-tab-content">
-            <p className="hist-empty">No games played yet. Start your first journey!</p>
+            <div className="stats-mode-toggle">
+                {['all', 'daily', 'unlimited'].map(m => (
+                    <button key={m} className={`stats-mode-btn ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
+                        {m === 'all' ? 'All' : m === 'daily' ? 'Daily' : 'Unlimited'}
+                    </button>
+                ))}
+            </div>
+            <p className="hist-empty">No {mode === 'all' ? '' : mode + ' '}games yet.</p>
         </div>
     )
 
     return (
         <div className="sidebar-tab-content">
+            <div className="stats-mode-toggle">
+                {['all', 'daily', 'unlimited'].map(m => (
+                    <button key={m} className={`stats-mode-btn ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
+                        {m === 'all' ? 'All' : m === 'daily' ? 'Daily' : 'Unlimited'}
+                    </button>
+                ))}
+            </div>
+
             <div className="stats-hero">
                 <span className="stats-hero-val">{stats.winRate}%</span>
                 <span className="stats-hero-label">Win Rate</span>
