@@ -8,7 +8,7 @@ import { calculate_score } from './lib/scoring'
 import './App.css'
 
 const PLAYED_KEY = "journeyman_played"
-const today_str  = new Date().toISOString().slice(0, 10)
+const today_str  = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date())
 const DAILY_KEY  = `journeyman_daily_${today_str}`
 
 function get_played_ids() {

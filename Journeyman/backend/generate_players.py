@@ -1,12 +1,18 @@
 import hashlib
 import json
 import random
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 LAUNCH_DATE = date(2026, 6, 11)
+EASTERN = ZoneInfo("America/New_York")
+
+
+def _eastern_today():
+    return datetime.now(EASTERN).date()
 
 
 def _load_players():
@@ -22,7 +28,7 @@ def _load_players():
 
 
 def day_number():
-    return (date.today() - LAUNCH_DATE).days + 1
+    return (_eastern_today() - LAUNCH_DATE).days + 1
 
 
 def randomPlayer(exclude_ids=None):
@@ -39,7 +45,7 @@ def randomPlayer(exclude_ids=None):
 
 def daily_player():
     players = _load_players()
-    today_str = date.today().isoformat()
+    today_str = _eastern_today().isoformat()
     index = int(hashlib.md5(today_str.encode()).hexdigest(), 16) % len(players)
     player = players[index]
     return player["name"], player["teams"], player["id"], day_number()
