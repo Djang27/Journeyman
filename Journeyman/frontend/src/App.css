@@ -1982,34 +1982,14 @@ body {
 }
 
 /* HARD MODE */
-@keyframes fire-rise {
-  0%   { opacity: 0;    transform: scaleY(0.1) translateY(8%); }
-  12%  { opacity: 1;    transform: scaleY(1.0) translateY(0); }
-  40%  { opacity: 1;    transform: scaleY(1.05) translateY(-1%); }
-  70%  { opacity: 0.85; transform: scaleY(0.97) translateY(0); }
-  100% { opacity: 0;    transform: scaleY(0.55) translateY(4%); }
+@keyframes hard-mode-flash {
+  0%   { box-shadow: inset 0 0 0px   rgba(200, 16, 46, 0); }
+  25%  { box-shadow: inset 0 0 100px rgba(200, 16, 46, 0.45); }
+  100% { box-shadow: inset 0 0 0px   rgba(200, 16, 46, 0); }
 }
 
-.game-screen.hard-flash::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: -10%;
-  right: -10%;
-  height: 75vh;
-  /* multiple narrow radial gradients = individual flame tongues; blur makes them organic */
-  background:
-    radial-gradient(ellipse 18% 80% at 10%  100%, rgba(255, 30,  0, 1)    0%, rgba(255, 110, 0, 0.5) 50%, transparent 72%),
-    radial-gradient(ellipse 24% 90% at 28%  100%, rgba(255, 50,  0, 1)    0%, rgba(255, 130, 0, 0.6) 55%, transparent 75%),
-    radial-gradient(ellipse 18% 70% at 46%  100%, rgba(255, 40,  0, 1)    0%, rgba(255, 100, 0, 0.5) 48%, transparent 70%),
-    radial-gradient(ellipse 22% 85% at 64%  100%, rgba(255, 55,  0, 1)    0%, rgba(255, 120, 0, 0.55) 52%, transparent 73%),
-    radial-gradient(ellipse 18% 75% at 82%  100%, rgba(255, 35,  0, 1)    0%, rgba(255, 105, 0, 0.5) 50%, transparent 71%),
-    radial-gradient(ellipse 60% 45% at 50%  100%, rgba(180, 15,  0, 0.95) 0%, rgba(255,  70, 0, 0.5) 52%, transparent 74%);
-  filter: blur(16px);
-  pointer-events: none;
-  z-index: 500;
-  transform-origin: bottom center;
-  animation: fire-rise 1.5s ease-out forwards;
+.game-screen.hard-flash {
+  animation: hard-mode-flash 0.8s ease-out;
 }
 
 .hard-mode-toggle {
