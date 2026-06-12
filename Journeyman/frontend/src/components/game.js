@@ -19,20 +19,6 @@ function build_share_text({ results, final_score, final_time, game_mode, day_num
     return `${header}${hard_str}\n${grid}\n${details}`
 }
 
-function ShareButton({ shareText }) {
-    const [copied, setCopied] = useState(false)
-    const handle = () => {
-        navigator.clipboard.writeText(shareText).then(() => {
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
-        })
-    }
-    return (
-        <button className="share-btn" onClick={handle}>
-            {copied ? 'Copied! ✓' : 'Share'}
-        </button>
-    )
-}
 
 function toTitleCase(str) {
     if (!str) return ''
@@ -108,6 +94,15 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
 
     const [hard_flash,    set_hard_flash]    = useState(false)
     const [show_results,  set_show_results]  = useState(false)
+    const [copied,        set_copied]        = useState(false)
+
+    function handle_share(has_won) {
+        const text = build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won })
+        navigator.clipboard.writeText(text).then(() => {
+            set_copied(true)
+            setTimeout(() => set_copied(false), 2000)
+        })
+    }
 
     useEffect(() => {
         if (game_over) set_show_results(true)
@@ -226,7 +221,9 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     hard_mode={hard_mode}
                                 />
                                 <div className="results-modal-actions">
-                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: true })} />
+                                    <button className="share-btn" onClick={() => handle_share(true)}>
+                                        {copied ? 'Copied! ✓' : 'Share Result'}
+                                    </button>
                                     <button className="play-again-btn" onClick={on_play_again}>
                                         New Journey
                                     </button>
@@ -252,7 +249,9 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     <p className="result-time loss">Time: {fmt_time(final_time)}</p>
                                 )}
                                 <div className="results-modal-actions">
-                                    <ShareButton shareText={build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won: false })} />
+                                    <button className="share-btn" onClick={() => handle_share(false)}>
+                                        {copied ? 'Copied! ✓' : 'Share Result'}
+                                    </button>
                                     <button className="play-again-btn game-over-btn" onClick={on_play_again}>
                                         Try Again
                                     </button>
