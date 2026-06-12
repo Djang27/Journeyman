@@ -787,8 +787,7 @@ body {
   margin-top: 1.5rem;
 }
 
-.share-btn {
-  display: block !important;
+.copy-result-btn {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 1rem;
   font-weight: 700;
@@ -804,7 +803,7 @@ body {
   width: 100%;
 }
 
-.share-btn:hover {
+.copy-result-btn:hover {
   filter: brightness(1.1);
 }
 

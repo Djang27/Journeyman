@@ -222,7 +222,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     hard_mode={hard_mode}
                                 />
                                 <div className="results-modal-actions">
-                                    <button className="share-btn" onClick={() => handle_share(true)}>
+                                    <button className="copy-result-btn" onClick={() => handle_share(true)}>
                                         {copied ? 'Copied! ✓' : 'Share Result'}
                                     </button>
                                     <button className="play-again-btn" onClick={on_play_again}>
@@ -250,7 +250,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     <p className="result-time loss">Time: {fmt_time(final_time)}</p>
                                 )}
                                 <div className="results-modal-actions">
-                                    <button className="share-btn" onClick={() => handle_share(false)}>
+                                    <button className="copy-result-btn" onClick={() => handle_share(false)}>
                                         {copied ? 'Copied! ✓' : 'Share Result'}
                                     </button>
                                     <button className="play-again-btn game-over-btn" onClick={on_play_again}>
