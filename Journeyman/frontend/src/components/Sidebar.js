@@ -591,10 +591,10 @@ function HistoryTab({ user }) {
             }
         }
 
+        // Called as a function, not a table: reading across every user's results
+        // needs elevated rights, and get_leaderboard is where that is declared.
         const { data: lb, error } = await supabase
-            .from('leaderboard')
-            .select('*')
-            .limit(10)
+            .rpc('get_leaderboard', { limit_count: 10 })
 
         if (error) setLbError(true)
         else setLeaderboard(lb || [])
