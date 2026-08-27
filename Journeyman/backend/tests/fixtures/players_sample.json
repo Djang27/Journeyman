@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-01-01T00:00:00",
+  "season": "2025-26",
+  "source": "test fixture",
+  "players": [
+    {
+      "id": 1,
+      "name": "Test Journeyman",
+      "ppg": 12.5,
+      "teams": ["boston celtics", "miami heat", "utah jazz"]
+    },
+    {
+      "id": 2,
+      "name": "Return Player",
+      "ppg": 27.1,
+      "teams": ["cleveland cavaliers", "miami heat", "cleveland cavaliers"]
+    },
+    {
+      "id": 3,
+      "name": "Hornets Guy",
+      "ppg": 8.4,
+      "teams": ["charlotte hornets", "new orleans hornets"]
+    },
+    {
+      "id": 4,
+      "name": "Blazer Guy",
+      "ppg": 15.0,
+      "teams": ["portland trail blazers", "philadelphia 76ers"]
+    }
+  ]
+}
