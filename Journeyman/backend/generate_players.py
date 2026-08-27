@@ -5,7 +5,6 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 LAUNCH_DATE = date(2026, 6, 11)
 EASTERN = ZoneInfo("America/New_York")

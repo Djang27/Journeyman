@@ -1,12 +1,14 @@
 from flask import Flask, jsonify, request
-from generate_players import randomPlayer, daily_player
 from game_logic import guess_check
+from generate_players import daily_player, randomPlayer
 
 app = Flask(__name__)
+
 
 @app.route("/")
 def home():
     return "Welcome to Journeyman"
+
 
 @app.route("/new-game")
 def new_game():
@@ -19,23 +21,29 @@ def new_game():
             pass
 
     player_name, teams, player_id = randomPlayer(exclude_ids=exclude_ids)
-    return jsonify({
-        "Player": player_name,
-        "PlayerID": player_id,
-        "Teams": teams,
-        "Number of Teams": len(teams),
-    })
+    return jsonify(
+        {
+            "Player": player_name,
+            "PlayerID": player_id,
+            "Teams": teams,
+            "Number of Teams": len(teams),
+        }
+    )
+
 
 @app.route("/daily-game")
 def daily_game():
     player_name, teams, player_id, day_num = daily_player()
-    return jsonify({
-        "Player": player_name,
-        "PlayerID": player_id,
-        "Teams": teams,
-        "Number of Teams": len(teams),
-        "DayNumber": day_num,
-    })
+    return jsonify(
+        {
+            "Player": player_name,
+            "PlayerID": player_id,
+            "Teams": teams,
+            "Number of Teams": len(teams),
+            "DayNumber": day_num,
+        }
+    )
+
 
 @app.route("/check-guess", methods=["POST"])
 def check_guess():
@@ -46,9 +54,7 @@ def check_guess():
 
     result = guess_check(guess, correct_teams, position)
 
-    return jsonify({
-        "result": result
-    })
+    return jsonify({"result": result})
 
 
 if __name__ == "__main__":
