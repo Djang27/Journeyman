@@ -60,8 +60,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Matches Vercel's build image rather than your local Node 24.
-          node-version: "22"
+          # Must match the npm that generated package-lock.json. npm 10 (Node
+          # 22) and npm 11 (Node 24) resolve this tree differently, and npm 10's
+          # `npm ci` rejects the committed lock. See the Node-parity follow-up.
+          node-version: "24"
           cache: npm
           cache-dependency-path: Journeyman/frontend/package-lock.json
 
