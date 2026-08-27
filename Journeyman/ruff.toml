@@ -1,17 +1,9 @@
-[tool.pytest.ini_options]
-# backend/ is on the path so tests import the modules the same way app.py does.
-pythonpath = ["backend"]
-testpaths = ["backend/tests"]
-addopts = "-q --strict-markers"
-
-[tool.ruff]
 line-length = 100
 # Vercel's runtime. Note this is ahead of the Python 3.9 currently installed
-# locally -- see the version-pinning note in the README before relying on any
-# 3.10+ syntax.
+# locally -- see the version-pinning note before relying on any 3.10+ syntax.
 target-version = "py312"
 
-[tool.ruff.lint]
+[lint]
 select = ["E", "F", "I", "UP", "B"]
 # zip(strict=) is 3.10+. Re-enable once local and deployed Python are pinned to
 # the same version; until then it would produce code that runs in CI and
