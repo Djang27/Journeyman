@@ -1,0 +1,85 @@
+name: Journeyman CI
+
+# Journeyman shares this repository with unrelated projects, so every trigger is
+# path-filtered. If Journeyman is ever extracted to its own repo, delete the
+# `paths:` blocks and the `working-directory` defaults.
+on:
+  pull_request:
+    paths:
+      - "Journeyman/**"
+      - ".github/workflows/journeyman-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Journeyman/**"
+      - ".github/workflows/journeyman-ci.yml"
+
+# A second push to the same branch cancels the first run still in flight.
+concurrency:
+  group: journeyman-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — ruff + pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Matches the Vercel runtime, not the 3.9 you have locally. See the
+          # note in the PR description about pinning both to the same version.
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Journeyman/backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: pytest
+
+  frontend:
+    name: Frontend — tests + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Journeyman/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Must match the npm that generated package-lock.json. npm 10 (Node
+          # 22) and npm 11 (Node 24) resolve this tree differently, and npm 10's
+          # `npm ci` rejects the committed lock. See the Node-parity follow-up.
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: Journeyman/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test -- --watchAll=false
+        env:
+          CI: true
+
+      - name: Build
+        # Catches the class of failure that produced "Force Vercel cache bust":
+        # a build that only breaks outside your machine.
+        run: npm run build
+        env:
+          CI: true
+          REACT_APP_SUPABASE_URL: https://placeholder.supabase.co
+          REACT_APP_SUPABASE_ANON_KEY: placeholder-anon-key

@@ -6,7 +6,6 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-
 NBA_STATS_BASE_URL = "https://stats.nba.com/stats"
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 TARGET_PLAYER_COUNT = 200
@@ -146,11 +145,7 @@ def career_stats_for_player(player_id):
 
 
 def build_player_database():
-    candidates = [
-        player
-        for player in all_nba_players()
-        if player.get("GAMES_PLAYED_FLAG") == "Y"
-    ]
+    candidates = [player for player in all_nba_players() if player.get("GAMES_PLAYED_FLAG") == "Y"]
     random.shuffle(candidates)
 
     players = []
@@ -186,7 +181,7 @@ def build_player_database():
 
 
 def filter_existing_database():
-    """Re-check career PPG for every player in the current database and drop those below MIN_CAREER_PPG."""
+    """Re-check career PPG for every player in the database, dropping those below MIN_CAREER_PPG."""
     with PLAYER_DATABASE_PATH.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -197,7 +192,7 @@ def filter_existing_database():
     for player in existing:
         _, ppg = career_stats_for_player(player["id"])
         status = "KEEP" if ppg >= MIN_CAREER_PPG else "DROP"
-        safe_name = player['name'].encode('ascii', errors='replace').decode()
+        safe_name = player["name"].encode("ascii", errors="replace").decode()
         print(f"  [{status}] {safe_name}: {ppg} PPG")
         if ppg >= MIN_CAREER_PPG:
             player["ppg"] = ppg
@@ -215,6 +210,7 @@ def filter_existing_database():
 
 if __name__ == "__main__":
     import sys
+
     if "--filter" in sys.argv:
         filter_existing_database()
     else:

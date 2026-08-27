@@ -1,0 +1,11 @@
+line-length = 100
+# Vercel's runtime. Note this is ahead of the Python 3.9 currently installed
+# locally -- see the version-pinning note before relying on any 3.10+ syntax.
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+# zip(strict=) is 3.10+. Re-enable once local and deployed Python are pinned to
+# the same version; until then it would produce code that runs in CI and
+# crashes on a 3.9 laptop.
+ignore = ["B905"]
