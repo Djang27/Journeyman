@@ -52,7 +52,12 @@ def check_guess():
     correct_teams = player_data.get("teams")
     position = player_data.get("position")
 
-    result = guess_check(guess, correct_teams, position)
+    try:
+        result = guess_check(guess, correct_teams, position)
+    except ValueError as exc:
+        # Every field here comes from the request body, so malformed input is a
+        # 400 rather than an unhandled 500.
+        return jsonify({"error": str(exc)}), 400
 
     return jsonify({"result": result})
 

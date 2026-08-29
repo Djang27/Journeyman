@@ -69,29 +69,27 @@ class TestGuessCheckHardening:
     def test_empty_guess_is_gray(self):
         assert guess_check("", SIMPLE_CAREER, 0) == "gray"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="guess is never lowercased server-side; App.js does it before sending, "
-        "so a direct API call with 'Celtics' grades as gray",
-    )
     def test_guess_is_case_insensitive(self):
         assert guess_check("Celtics", SIMPLE_CAREER, 0) == "green"
+        assert guess_check("BOSTON CELTICS", SIMPLE_CAREER, 0) == "green"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="negative position silently indexes from the end, so -1 grades "
-        "against the last team instead of being rejected",
-    )
+    def test_surrounding_whitespace_is_ignored(self):
+        assert guess_check("  celtics  ", SIMPLE_CAREER, 0) == "green"
+
     def test_negative_position_is_rejected(self):
-        with pytest.raises((IndexError, ValueError)):
+        # Python would happily read -1 as "the last team". Rejected explicitly,
+        # because position arrives in the request body.
+        with pytest.raises(ValueError):
             guess_check("jazz", SIMPLE_CAREER, -1)
 
-    def test_position_past_the_end_raises(self):
-        # Documents today's behaviour: an out-of-range position is a 500, not a
-        # 400. Phase 0 should validate the bound and return a clean error.
-        with pytest.raises(IndexError):
+    def test_position_past_the_end_is_rejected(self):
+        with pytest.raises(ValueError):
             guess_check("celtics", SIMPLE_CAREER, 99)
 
-    def test_empty_career_raises(self):
-        with pytest.raises(IndexError):
+    def test_non_integer_position_is_rejected(self):
+        with pytest.raises(ValueError):
+            guess_check("celtics", SIMPLE_CAREER, "0")
+
+    def test_empty_career_is_rejected(self):
+        with pytest.raises(ValueError):
             guess_check("celtics", [], 0)
