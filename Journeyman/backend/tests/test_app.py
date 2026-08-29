@@ -66,6 +66,29 @@ class TestCheckGuess:
         )
         assert response.get_json() == {"result": "gray"}
 
+    def test_grades_regardless_of_casing(self, client):
+        response = client.post(
+            "/check-guess",
+            json={"guess": "Celtics", "teams": ["boston celtics", "miami heat"], "position": 0},
+        )
+        assert response.get_json() == {"result": "green"}
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"guess": "celtics", "teams": ["boston celtics"], "position": -1},
+            {"guess": "celtics", "teams": ["boston celtics"], "position": 99},
+            {"guess": "celtics", "teams": ["boston celtics"], "position": "0"},
+            {"guess": "celtics", "teams": [], "position": 0},
+            {"guess": None, "teams": ["boston celtics"], "position": 0},
+        ],
+        ids=["negative", "past-end", "not-an-int", "empty-teams", "guess-missing"],
+    )
+    def test_malformed_input_is_a_400_not_a_500(self, client, payload):
+        response = client.post("/check-guess", json=payload)
+        assert response.status_code == 400
+        assert "error" in response.get_json()
+
     def test_the_answer_is_supplied_by_the_caller(self, client):
         """The vulnerability, written down.
 
