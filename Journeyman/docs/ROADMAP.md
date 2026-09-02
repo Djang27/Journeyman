@@ -21,10 +21,10 @@ Three environments, each with one job:
 - [x] `test/characterize-existing` — pytest + ruff config, backend and frontend
       test suites, GitHub Actions CI
 - [ ] `chore/tooling` — pre-commit hooks
-- [ ] `chore/supabase-local` — Supabase CLI config, convert `supabase_setup.sql`
+- [x] `chore/supabase-local` — Supabase CLI config, convert `supabase_setup.sql`
       to migration `0001`, `seed.sql`, local setup docs
-- [ ] `chore/environments` — fail-fast config module; throw on missing Supabase
-      env vars instead of logging; `.env.example` per package; **pin Python and
+- [x] `chore/environments` — throw on missing Supabase env vars instead of
+      logging; `.env.example` per package; **pin Python and
       Node versions** across local/CI/Vercel; env var reference doc
 - [ ] `ci/github-actions` — verify migrations apply from empty; apply to prod on
       merge to `main`
@@ -74,7 +74,7 @@ The fix — a session lifecycle:
    `game_results`, closes the session.
 4. `revoke insert on game_results from authenticated`.
 
-- [ ] `db/session-schema` — `games`, `puzzles`, `game_sessions`; `game_slug` on
+- [~] `db/session-schema` — `games`, `puzzles`, `game_sessions`; `game_slug` on
       `game_results`. Additive only.
 - [ ] `feat/session-api` — port scoring to Python; **scoring parity tests against
       the JS fixtures before switching anything**; session repository; the three
