@@ -37,6 +37,12 @@ class Config:
         # public JavaScript bundle.
         self.supabase_service_key = env.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
+        # Verifies access tokens locally, so identifying a player costs no
+        # network round trip. Supabase Dashboard -> Settings -> API -> JWT
+        # Secret. Without it every token is refused: the server fails closed
+        # rather than trusting whoever is asking.
+        self.supabase_jwt_secret = env.get("SUPABASE_JWT_SECRET", "")
+
         # Falls back to the in-memory store when Supabase is not configured, so
         # `python app.py` works out of the box for someone cloning the repo.
         self.use_database = bool(self.supabase_url and self.supabase_service_key)

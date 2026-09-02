@@ -1,3 +1,4 @@
+from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
 from game_logic import guess_check
@@ -34,6 +35,17 @@ def _build_session_store():
 
 
 session_store = _build_session_store()
+config = load_config()
+
+
+def _current_user_id():
+    """The signed-in player, or None for anonymous play.
+
+    Read from a verified token rather than the request body. A body field would
+    let any caller write results under someone else's account, which is the last
+    place the API still trusted the client.
+    """
+    return user_id_from_headers(request.headers, config.supabase_jwt_secret)
 
 
 @app.route("/")
@@ -134,12 +146,39 @@ def _session_error(exc, status):
     return jsonify({"error": str(exc)}), status
 
 
+def _authorise(session):
+    """Confirm the caller owns this session.
+
+    A session belonging to an account may only be acted on by that account --
+    otherwise a leaked or logged session id would let anyone else play out
+    someone's daily and bank the score against their name.
+
+    An anonymous session has no owner to check against, so possession of the id
+    is the only credential there is. That is the cost of allowing play without
+    an account, and it is bounded: the ids are random UUIDs, and an anonymous
+    session writes no result anyone can claim.
+    """
+    if session.user_id is None:
+        return None
+
+    caller = _current_user_id()
+    if caller != session.user_id:
+        return jsonify({"error": "this game belongs to someone else"}), 403
+
+    return None
+
+
 @app.route("/api/game/start", methods=["POST"])
 def api_game_start():
     body = request.get_json(silent=True) or {}
     mode = body.get("mode", "unlimited")
-    user_id = body.get("user_id")
     hard_mode = bool(body.get("hard_mode", False))
+
+    # Never body.get("user_id") -- see _current_user_id.
+    try:
+        user_id = _current_user_id()
+    except AuthError as exc:
+        return _session_error(exc, 401)
 
     puzzle_date = None
     if mode == "daily":
@@ -172,11 +211,30 @@ def api_game_get(session_id):
     session = session_store.get(session_id)
     if session is None:
         return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(session)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
     return jsonify(public_view(session))
 
 
 @app.route("/api/game/<session_id>/guess", methods=["POST"])
 def api_game_guess(session_id):
+    existing = session_store.get(session_id)
+    if existing is None:
+        return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(existing)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
     body = request.get_json(silent=True) or {}
     try:
         session = submit_guess(
@@ -195,6 +253,17 @@ def api_game_guess(session_id):
 
 @app.route("/api/game/<session_id>/hint", methods=["POST"])
 def api_game_hint(session_id):
+    existing = session_store.get(session_id)
+    if existing is None:
+        return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(existing)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
     try:
         session = use_hint(session_store, session_id)
     except SessionNotFound as exc:
@@ -207,6 +276,17 @@ def api_game_hint(session_id):
 
 @app.route("/api/game/<session_id>/abandon", methods=["POST"])
 def api_game_abandon(session_id):
+    existing = session_store.get(session_id)
+    if existing is None:
+        return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(existing)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
     try:
         session = abandon(session_store, session_id)
     except SessionNotFound as exc:
