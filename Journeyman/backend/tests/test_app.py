@@ -232,6 +232,7 @@ class TestSessionAPI:
         import jwt
 
         secret = "super-secret-jwt-token-with-at-least-32-characters-long"
+        monkeypatch.setattr(app_module.config, "jwks_url", "")
         monkeypatch.setattr(app_module.config, "supabase_jwt_secret", secret)
         token = jwt.encode(
             {
@@ -327,6 +328,7 @@ class TestSessionOwnership:
         from sessions import InMemorySessionStore
 
         app_module.session_store = InMemorySessionStore()
+        monkeypatch.setattr(app_module.config, "jwks_url", "")
         monkeypatch.setattr(app_module.config, "supabase_jwt_secret", self.SECRET)
 
     def auth(self, user_id, secret=None):
