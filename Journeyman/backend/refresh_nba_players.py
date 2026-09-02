@@ -82,7 +82,10 @@ def result_set(data, name):
     for result in data.get("resultSets", []):
         if result.get("name") == name:
             headers = result["headers"]
-            return [dict(zip(headers, row)) for row in result["rowSet"]]
+            # strict=True: a row whose length does not match the headers means
+            # the upstream response shape changed, which should fail loudly
+            # rather than silently drop columns.
+            return [dict(zip(headers, row, strict=True)) for row in result["rowSet"]]
 
     return []
 

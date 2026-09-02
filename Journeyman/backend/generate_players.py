@@ -26,6 +26,11 @@ def _load_players():
     return players
 
 
+def today_eastern():
+    """Public wrapper. Delegates so tests patching _eastern_today still apply."""
+    return _eastern_today()
+
+
 def day_number():
     return (_eastern_today() - LAUNCH_DATE).days + 1
 

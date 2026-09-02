@@ -1,0 +1,247 @@
+"""Session lifecycle, including the cases a hostile client would try.
+
+Runs entirely against InMemorySessionStore, so the suite needs no database and
+CI never touches Supabase.
+"""
+
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from sessions import (
+    MAX_WRONG_GUESSES,
+    InMemorySessionStore,
+    SessionError,
+    SessionNotFound,
+    abandon,
+    public_view,
+    start_session,
+    submit_guess,
+    use_hint,
+)
+
+CAREER = ["boston celtics", "miami heat", "utah jazz"]
+T0 = datetime(2026, 8, 29, 12, 0, 0, tzinfo=UTC)
+
+
+@pytest.fixture
+def store():
+    return InMemorySessionStore()
+
+
+def new_game(store, **kwargs):
+    params = {
+        "mode": "unlimited",
+        "player_name": "Test Journeyman",
+        "player_id": 1,
+        "teams": CAREER,
+        "now": T0,
+    }
+    params.update(kwargs)
+    return start_session(store, **params)
+
+
+class TestStart:
+    def test_creates_an_active_session_with_a_blank_board(self, store):
+        session = new_game(store)
+        assert session.status == "active"
+        assert session.results == [None, None, None]
+        assert session.wrong_guesses == 0
+
+    def test_rejects_an_unknown_mode(self, store):
+        with pytest.raises(SessionError, match="unknown mode"):
+            new_game(store, mode="freeplay")
+
+    def test_rejects_an_empty_career(self, store):
+        with pytest.raises(SessionError):
+            new_game(store, teams=[])
+
+    def test_a_second_daily_for_the_same_user_is_refused(self, store):
+        new_game(store, mode="daily", user_id="u1", puzzle_date="2026-08-29")
+        with pytest.raises(SessionError, match="daily already played"):
+            new_game(store, mode="daily", user_id="u1", puzzle_date="2026-08-29")
+
+    def test_the_next_day_is_a_new_daily(self, store):
+        new_game(store, mode="daily", user_id="u1", puzzle_date="2026-08-29")
+        assert new_game(store, mode="daily", user_id="u1", puzzle_date="2026-08-30")
+
+    def test_unlimited_games_repeat_freely(self, store):
+        for _ in range(5):
+            assert new_game(store, mode="unlimited", user_id="u1")
+
+
+class TestGuessing:
+    def test_a_correct_guess_turns_the_slot_green(self, store):
+        session = submit_guess(store, new_game(store).id, 0, "celtics")
+        assert session.results[0] == "green"
+        assert session.wrong_guesses == 0
+
+    def test_a_misplaced_team_is_yellow_and_counts_as_wrong(self, store):
+        session = submit_guess(store, new_game(store).id, 0, "jazz")
+        assert session.results[0] == "yellow"
+        assert session.wrong_guesses == 1
+
+    def test_an_absent_team_is_gray_and_counts_as_wrong(self, store):
+        session = submit_guess(store, new_game(store).id, 0, "lakers")
+        assert session.results[0] == "gray"
+        assert session.wrong_guesses == 1
+
+    def test_casing_and_whitespace_do_not_matter(self, store):
+        session = submit_guess(store, new_game(store).id, 0, "  CELTICS  ")
+        assert session.results[0] == "green"
+
+    def test_solving_every_slot_wins(self, store):
+        sid = new_game(store).id
+        for position, team in enumerate(CAREER):
+            session = submit_guess(store, sid, position, team)
+        assert session.status == "won"
+        assert session.finished_at is not None
+
+    def test_three_wrong_guesses_lose(self, store):
+        sid = new_game(store).id
+        for position in range(MAX_WRONG_GUESSES):
+            session = submit_guess(store, sid, position, "lakers")
+        assert session.status == "lost"
+        assert session.score == 0
+
+    def test_hard_mode_loses_on_the_first_mistake(self, store):
+        sid = new_game(store, hard_mode=True).id
+        session = submit_guess(store, sid, 0, "lakers")
+        assert session.status == "lost"
+        assert session.wrong_guesses == MAX_WRONG_GUESSES
+
+
+class TestHostileInput:
+    """Everything here arrives in a request body and must not be trusted."""
+
+    def test_an_unknown_session_id_is_rejected(self, store):
+        with pytest.raises(SessionNotFound):
+            submit_guess(store, "not-a-session", 0, "celtics")
+
+    def test_a_negative_position_is_rejected(self, store):
+        with pytest.raises(SessionError, match="outside"):
+            submit_guess(store, new_game(store).id, -1, "jazz")
+
+    def test_a_position_past_the_end_is_rejected(self, store):
+        with pytest.raises(SessionError, match="outside"):
+            submit_guess(store, new_game(store).id, 99, "celtics")
+
+    def test_a_non_integer_position_is_rejected(self, store):
+        with pytest.raises(SessionError, match="outside"):
+            submit_guess(store, new_game(store).id, "0", "celtics")
+
+    def test_a_solved_slot_cannot_be_replayed(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "celtics")
+        with pytest.raises(SessionError, match="already solved"):
+            submit_guess(store, sid, 0, "celtics")
+
+    def test_a_finished_game_accepts_no_more_guesses(self, store):
+        sid = new_game(store).id
+        for position, team in enumerate(CAREER):
+            submit_guess(store, sid, position, team)
+        with pytest.raises(SessionError, match="already over"):
+            submit_guess(store, sid, 0, "celtics")
+
+    def test_a_lost_game_cannot_be_resumed(self, store):
+        sid = new_game(store).id
+        for position in range(MAX_WRONG_GUESSES):
+            submit_guess(store, sid, position, "lakers")
+        with pytest.raises(SessionError, match="already over"):
+            submit_guess(store, sid, 2, "jazz")
+
+
+class TestScoringAndTime:
+    def test_elapsed_time_comes_from_the_server_clock(self, store):
+        sid = new_game(store).id
+        finished = submit_guess(store, sid, 0, "celtics", now=T0 + timedelta(seconds=45))
+        submit_guess(store, sid, 1, "heat", now=T0 + timedelta(seconds=45))
+        finished = submit_guess(store, sid, 2, "jazz", now=T0 + timedelta(seconds=45))
+
+        assert finished.status == "won"
+        # 45s elapsed, 15s past the 30s grace, so 1000 - 15.
+        assert finished.score == 985
+
+    def test_a_slow_win_is_floored_not_negative(self, store):
+        sid = new_game(store).id
+        late = T0 + timedelta(hours=2)
+        for position, team in enumerate(CAREER):
+            session = submit_guess(store, sid, position, team, now=late)
+        assert session.score == 100
+
+    def test_a_loss_scores_zero(self, store):
+        sid = new_game(store).id
+        for position in range(MAX_WRONG_GUESSES):
+            session = submit_guess(store, sid, position, "lakers")
+        assert session.score == 0
+
+
+class TestHint:
+    def test_is_locked_until_two_wrong_guesses(self, store):
+        sid = new_game(store).id
+        with pytest.raises(SessionError, match="not available"):
+            use_hint(store, sid)
+
+    def test_unlocks_after_two_wrong_guesses(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers")
+        submit_guess(store, sid, 1, "lakers")
+        assert use_hint(store, sid).hint_used is True
+
+    def test_costs_points(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers", now=T0)
+        submit_guess(store, sid, 1, "lakers", now=T0)
+        use_hint(store, sid)
+        # A wrong slot stays open -- only green locks -- so the player retries
+        # both, then finishes. Two wrong guesses and the hint, inside the grace.
+        submit_guess(store, sid, 0, "celtics", now=T0)
+        submit_guess(store, sid, 1, "heat", now=T0)
+        session = submit_guess(store, sid, 2, "jazz", now=T0)
+
+        assert session.status == "won"
+        assert session.score == 1000 - 200 - 150
+
+
+class TestAbandon:
+    def test_marks_the_session_abandoned(self, store):
+        session = abandon(store, new_game(store).id)
+        assert session.status == "abandoned"
+        assert session.score == 0
+
+    def test_is_idempotent(self, store):
+        sid = new_game(store).id
+        first = abandon(store, sid)
+        assert abandon(store, sid).finished_at == first.finished_at
+
+
+class TestPublicView:
+    """The contract with the browser. This is where Phase 0 either holds or leaks."""
+
+    def test_an_active_game_never_exposes_the_answer(self, store):
+        view = public_view(new_game(store))
+        assert "teams" not in view
+        assert "score" not in view
+        assert view["num_teams"] == len(CAREER)
+
+    def test_the_answer_is_still_hidden_mid_game(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "celtics")
+        assert "teams" not in public_view(store.get(sid))
+
+    def test_a_finished_game_reveals_the_answer(self, store):
+        sid = new_game(store).id
+        for position, team in enumerate(CAREER):
+            session = submit_guess(store, sid, position, team)
+        view = public_view(session)
+        assert view["teams"] == CAREER
+        assert view["status"] == "won"
+        assert view["score"] > 0
+
+    def test_no_serialised_field_leaks_a_team_name(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "celtics")
+        # "celtics" is a guess the player made, so it is legitimately echoed.
+        # No *unguessed* team may appear anywhere in the payload.
+        blob = repr(public_view(store.get(sid)))
+        assert "miami heat" not in blob
+        assert "utah jazz" not in blob

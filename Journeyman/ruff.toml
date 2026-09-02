@@ -5,7 +5,3 @@ target-version = "py312"
 
 [lint]
 select = ["E", "F", "I", "UP", "B"]
-# zip(strict=) is 3.10+. Re-enable once local and deployed Python are pinned to
-# the same version; until then it would produce code that runs in CI and
-# crashes on a 3.9 laptop.
-ignore = ["B905"]
