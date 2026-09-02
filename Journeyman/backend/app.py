@@ -1,3 +1,4 @@
+from config import load_config
 from flask import Flask, jsonify, request
 from game_logic import guess_check
 from generate_players import daily_player, randomPlayer, today_eastern
@@ -14,12 +15,25 @@ from sessions import (
 
 app = Flask(__name__)
 
-# The store the session endpoints use. In-memory for now, which is correct for
-# tests and local runs but NOT for production -- each serverless invocation gets
-# its own empty dict, so /guess would not find what /start created. The
-# Postgres-backed store replaces this before feat/session-frontend switches the
-# browser over; the legacy endpoints below are still what the game runs on.
-session_store = InMemorySessionStore()
+
+def _build_session_store():
+    """Postgres when configured, in-memory otherwise.
+
+    The in-memory fallback keeps `python app.py` and the test suite working with
+    no setup. It is NOT viable in production: each serverless invocation gets its
+    own empty dict, so /guess would not find what /start created. Deployments
+    must set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.
+    """
+    config = load_config()
+    if not config.use_database:
+        return InMemorySessionStore()
+
+    from supabase_store import SupabaseSessionStore
+
+    return SupabaseSessionStore.from_config(config)
+
+
+session_store = _build_session_store()
 
 
 @app.route("/")
