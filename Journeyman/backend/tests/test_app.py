@@ -254,3 +254,37 @@ class TestSessionAPI:
         body = client.post(f"/api/game/{session_id}/abandon").get_json()
         assert body["status"] == "abandoned"
         assert body["score"] == 0
+
+
+class TestHealth:
+    def test_reports_ok(self, client):
+        body = client.get("/api/health").get_json()
+        assert body["status"] == "ok"
+
+    def test_reports_the_memory_store_when_unconfigured(self, client):
+        # The test app builds an in-memory store, matching a deployment that is
+        # missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.
+        body = client.get("/api/health").get_json()
+        assert body["session_store"] == "memory"
+        assert body["persistent"] is False
+
+    def test_reports_the_database_store_when_configured(self, client):
+        import app as app_module
+
+        class FakeStore:
+            pass
+
+        original = app_module.session_store
+        app_module.session_store = FakeStore()
+        try:
+            body = client.get("/api/health").get_json()
+            assert body["session_store"] == "database"
+            assert body["persistent"] is True
+        finally:
+            app_module.session_store = original
+
+    def test_leaks_no_configuration_detail(self, client):
+        """It is a public endpoint. Nothing about keys or projects may appear."""
+        raw = client.get("/api/health").get_data(as_text=True).lower()
+        for forbidden in ("supabase.co", "key", "eyj", "url", "postgres"):
+            assert forbidden not in raw
