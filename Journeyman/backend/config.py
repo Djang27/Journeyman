@@ -7,6 +7,8 @@ as a confusing error on someone's first game.
 
 import os
 
+from auth import jwks_url_for
+
 
 class ConfigError(RuntimeError):
     """A required environment variable is missing or unusable."""
@@ -37,10 +39,14 @@ class Config:
         # public JavaScript bundle.
         self.supabase_service_key = env.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-        # Verifies access tokens locally, so identifying a player costs no
-        # network round trip. Supabase Dashboard -> Settings -> API -> JWT
-        # Secret. Without it every token is refused: the server fails closed
-        # rather than trusting whoever is asking.
+        # Hosted Supabase projects sign tokens with asymmetric keys, so
+        # verification needs only the project's public keys -- derived from the
+        # URL above, with no extra variable to set or leak.
+        self.jwks_url = jwks_url_for(self.supabase_url)
+
+        # The legacy HS256 shared secret. Only used when there is no JWKS URL,
+        # which in practice means the local `supabase start` stack. Never set
+        # this alongside a hosted URL: see the note in auth.py about downgrade.
         self.supabase_jwt_secret = env.get("SUPABASE_JWT_SECRET", "")
 
         # Falls back to the in-memory store when Supabase is not configured, so

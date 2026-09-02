@@ -45,7 +45,11 @@ def _current_user_id():
     let any caller write results under someone else's account, which is the last
     place the API still trusted the client.
     """
-    return user_id_from_headers(request.headers, config.supabase_jwt_secret)
+    return user_id_from_headers(
+        request.headers,
+        jwks_url=config.jwks_url,
+        secret=config.supabase_jwt_secret,
+    )
 
 
 @app.route("/")
