@@ -1,0 +1,3637 @@
+{
+ "score": [
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 1000
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1500
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 850
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1275
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 900
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1350
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 750
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1125
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 800
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1200
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 650
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 975
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 700
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1050
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 550
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 825
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 1000
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1500
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 850
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1275
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 900
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1350
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 750
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1125
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 800
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1200
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 650
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 975
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 700
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1050
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 550
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 825
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 1000
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1500
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 850
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1275
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 900
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1350
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 750
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1125
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 800
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1200
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 650
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 975
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 700
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1050
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 550
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 825
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 1000
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1500
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 850
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1275
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 900
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1350
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 750
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1125
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 800
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1200
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 650
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 975
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 700
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1050
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 550
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 825
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 999
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1499
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 849
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1274
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 899
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1349
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 749
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1124
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 799
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1199
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 649
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 974
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 699
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1049
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 549
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 824
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 970
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1455
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 820
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1230
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 870
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1305
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 720
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1080
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 770
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1155
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 620
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 930
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 670
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1005
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 520
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 780
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 910
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1365
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 760
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 1140
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 810
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1215
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 660
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 990
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 710
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 1065
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 560
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 840
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 610
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 915
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 460
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 690
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 530
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 795
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 380
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 570
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 430
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 645
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 280
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 420
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 330
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 495
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 180
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 270
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 230
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 345
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 100
+  },
+  {
+   "input": {
+    "result": "win",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 150
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 0,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 29,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 30,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 31,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 60,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 120,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 500,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 930,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 1000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 0,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 1,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 2,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": false,
+    "hard_mode": true
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": false
+   },
+   "expected": 0
+  },
+  {
+   "input": {
+    "result": "loss",
+    "time_seconds": 10000,
+    "wrong_guesses": 3,
+    "hint_used": true,
+    "hard_mode": true
+   },
+   "expected": 0
+  }
+ ],
+ "streaks": [
+  {
+   "input": [],
+   "expected": {
+    "current": 0,
+    "best": 0
+   }
+  },
+  {
+   "input": [
+    "win"
+   ],
+   "expected": {
+    "current": 1,
+    "best": 1
+   }
+  },
+  {
+   "input": [
+    "loss"
+   ],
+   "expected": {
+    "current": 0,
+    "best": 0
+   }
+  },
+  {
+   "input": [
+    "win",
+    "win",
+    "loss",
+    "win"
+   ],
+   "expected": {
+    "current": 2,
+    "best": 2
+   }
+  },
+  {
+   "input": [
+    "loss",
+    "win",
+    "win",
+    "win"
+   ],
+   "expected": {
+    "current": 0,
+    "best": 3
+   }
+  },
+  {
+   "input": [
+    "win",
+    "loss",
+    "win",
+    "win",
+    "win",
+    "loss"
+   ],
+   "expected": {
+    "current": 1,
+    "best": 3
+   }
+  },
+  {
+   "input": [
+    "win",
+    "win",
+    "win",
+    "loss",
+    "win"
+   ],
+   "expected": {
+    "current": 3,
+    "best": 3
+   }
+  },
+  {
+   "input": [
+    "loss",
+    "loss"
+   ],
+   "expected": {
+    "current": 0,
+    "best": 0
+   }
+  },
+  {
+   "input": [
+    "win",
+    "win",
+    "win",
+    "win"
+   ],
+   "expected": {
+    "current": 4,
+    "best": 4
+   }
+  },
+  {
+   "input": [
+    "win",
+    "loss",
+    "loss",
+    "win",
+    "win"
+   ],
+   "expected": {
+    "current": 1,
+    "best": 2
+   }
+  }
+ ]
+}
