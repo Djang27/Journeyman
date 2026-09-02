@@ -225,11 +225,31 @@ class TestSessionAPI:
         )
         assert response.status_code == 400
 
-    def test_a_second_daily_for_the_same_user_is_409(self, client):
-        first = client.post("/api/game/start", json={"mode": "daily", "user_id": "u1"})
-        assert first.status_code == 201
+    def test_a_second_daily_for_the_same_user_is_409(self, client, monkeypatch):
+        import time
 
-        second = client.post("/api/game/start", json={"mode": "daily", "user_id": "u1"})
+        import app as app_module
+        import jwt
+
+        secret = "super-secret-jwt-token-with-at-least-32-characters-long"
+        monkeypatch.setattr(app_module.config, "supabase_jwt_secret", secret)
+        token = jwt.encode(
+            {
+                "sub": "11111111-1111-1111-1111-111111111111",
+                "aud": "authenticated",
+                "exp": int(time.time()) + 3600,
+            },
+            secret,
+            algorithm="HS256",
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+
+        assert (
+            client.post("/api/game/start", json={"mode": "daily"}, headers=headers).status_code
+            == 201
+        )
+
+        second = client.post("/api/game/start", json={"mode": "daily"}, headers=headers)
         assert second.status_code == 409
 
     def test_anonymous_dailies_are_not_blocked(self, client):
@@ -288,3 +308,132 @@ class TestHealth:
         raw = client.get("/api/health").get_data(as_text=True).lower()
         for forbidden in ("supabase.co", "key", "eyj", "url", "postgres"):
             assert forbidden not in raw
+
+
+class TestSessionOwnership:
+    """Identity comes from a verified token, and sessions belong to their owner.
+
+    These are the tests that stop one player writing results under another
+    player's account.
+    """
+
+    SECRET = "super-secret-jwt-token-with-at-least-32-characters-long"
+    ADA = "11111111-1111-1111-1111-111111111111"
+    GRACE = "22222222-2222-2222-2222-222222222222"
+
+    @pytest.fixture(autouse=True)
+    def _configured(self, client, monkeypatch):
+        import app as app_module
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+        monkeypatch.setattr(app_module.config, "supabase_jwt_secret", self.SECRET)
+
+    def auth(self, user_id, secret=None):
+        import time
+
+        import jwt
+
+        token = jwt.encode(
+            {
+                "sub": user_id,
+                "aud": "authenticated",
+                "role": "authenticated",
+                "exp": int(time.time()) + 3600,
+            },
+            secret or self.SECRET,
+            algorithm="HS256",
+        )
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_a_signed_in_start_records_the_token_subject(self, client):
+        import app as app_module
+
+        response = client.post(
+            "/api/game/start", json={"mode": "unlimited"}, headers=self.auth(self.ADA)
+        )
+        session_id = response.get_json()["session_id"]
+        assert app_module.session_store.get(session_id).user_id == self.ADA
+
+    def test_a_user_id_in_the_body_is_ignored(self, client):
+        """The attack this branch exists to close."""
+        import app as app_module
+
+        response = client.post(
+            "/api/game/start",
+            json={"mode": "unlimited", "user_id": self.GRACE},
+            headers=self.auth(self.ADA),
+        )
+        session_id = response.get_json()["session_id"]
+        assert app_module.session_store.get(session_id).user_id == self.ADA
+
+    def test_a_body_user_id_alone_buys_nothing(self, client):
+        """With no token, claiming an account in the body stays anonymous."""
+        import app as app_module
+
+        response = client.post("/api/game/start", json={"mode": "unlimited", "user_id": self.ADA})
+        session_id = response.get_json()["session_id"]
+        assert app_module.session_store.get(session_id).user_id is None
+
+    def test_a_forged_token_is_401(self, client):
+        response = client.post(
+            "/api/game/start",
+            json={"mode": "unlimited"},
+            headers=self.auth(self.ADA, secret="a-different-secret-entirely-abcdefgh"),
+        )
+        assert response.status_code == 401
+
+    def test_no_token_still_allows_anonymous_play(self, client):
+        assert client.post("/api/game/start", json={"mode": "unlimited"}).status_code == 201
+
+    def test_another_account_cannot_play_your_session(self, client):
+        session_id = client.post(
+            "/api/game/start", json={"mode": "unlimited"}, headers=self.auth(self.ADA)
+        ).get_json()["session_id"]
+
+        response = client.post(
+            f"/api/game/{session_id}/guess",
+            json={"position": 0, "guess": "celtics"},
+            headers=self.auth(self.GRACE),
+        )
+        assert response.status_code == 403
+
+    def test_an_anonymous_caller_cannot_play_an_owned_session(self, client):
+        session_id = client.post(
+            "/api/game/start", json={"mode": "unlimited"}, headers=self.auth(self.ADA)
+        ).get_json()["session_id"]
+
+        response = client.post(
+            f"/api/game/{session_id}/guess", json={"position": 0, "guess": "celtics"}
+        )
+        assert response.status_code == 403
+
+    def test_the_owner_can_play_their_own_session(self, client):
+        session_id = client.post(
+            "/api/game/start", json={"mode": "unlimited"}, headers=self.auth(self.ADA)
+        ).get_json()["session_id"]
+
+        response = client.post(
+            f"/api/game/{session_id}/guess",
+            json={"position": 0, "guess": "celtics"},
+            headers=self.auth(self.ADA),
+        )
+        assert response.status_code == 200
+
+    def test_ownership_is_enforced_on_reading_too(self, client):
+        session_id = client.post(
+            "/api/game/start", json={"mode": "unlimited"}, headers=self.auth(self.ADA)
+        ).get_json()["session_id"]
+
+        assert (
+            client.get(f"/api/game/{session_id}", headers=self.auth(self.GRACE)).status_code == 403
+        )
+
+    def test_anonymous_sessions_stay_playable_without_a_token(self, client):
+        session_id = client.post("/api/game/start", json={"mode": "unlimited"}).get_json()[
+            "session_id"
+        ]
+        response = client.post(
+            f"/api/game/{session_id}/guess", json={"position": 0, "guess": "celtics"}
+        )
+        assert response.status_code == 200
