@@ -41,6 +41,31 @@ def home():
     return "Welcome to Journeyman"
 
 
+@app.route("/api/health")
+def api_health():
+    """Liveness plus the one configuration fact worth checking from outside.
+
+    `session_store` reports which store the process actually built, not what the
+    environment claims. The in-memory fallback is silent by design -- it keeps
+    local development working with no setup -- which makes it easy to deploy with
+    a missing variable and not notice until sessions start vanishing between
+    requests. This is how you notice.
+
+    Deliberately says nothing about which project, which keys, or whether they
+    are valid: this endpoint is public, and "configured or not" is the most it
+    should ever reveal.
+    """
+    uses_database = type(session_store).__name__ != "InMemorySessionStore"
+
+    return jsonify(
+        {
+            "status": "ok",
+            "session_store": "database" if uses_database else "memory",
+            "persistent": uses_database,
+        }
+    )
+
+
 @app.route("/new-game")
 def new_game():
     exclude_param = request.args.get("exclude", "")
