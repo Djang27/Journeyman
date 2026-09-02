@@ -107,3 +107,150 @@ class TestCheckGuess:
 class TestHome:
     def test_serves_a_welcome_string(self, client):
         assert client.get("/").status_code == 200
+
+
+class TestSessionAPI:
+    """The Phase 0 endpoints, running beside the legacy ones.
+
+    The app module holds a single in-memory store, so each test resets it to
+    stay independent.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _fresh_store(self, client):
+        import app as app_module
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+
+    def start(self, client, **body):
+        return client.post("/api/game/start", json={"mode": "unlimited", **body})
+
+    def test_start_returns_a_session_without_the_answer(self, client):
+        response = self.start(client)
+        assert response.status_code == 201
+
+        body = response.get_json()
+        assert body["session_id"]
+        assert body["num_teams"] >= 2
+        assert body["status"] == "active"
+        assert "teams" not in body, "the answer must not leave the server"
+
+    def test_the_answer_is_absent_from_the_raw_response_bytes(self, client):
+        """Belt and braces: check the wire, not the parsed object."""
+        import app as app_module
+
+        session_id = self.start(client).get_json()["session_id"]
+        answer = app_module.session_store.get(session_id).answer
+
+        raw = client.get(f"/api/game/{session_id}").get_data(as_text=True).lower()
+        for team in answer:
+            assert team not in raw, f"{team!r} leaked in the session payload"
+
+    def test_a_correct_guess_grades_green(self, client):
+        import app as app_module
+
+        session_id = self.start(client).get_json()["session_id"]
+        answer = app_module.session_store.get(session_id).answer
+
+        response = client.post(
+            f"/api/game/{session_id}/guess", json={"position": 0, "guess": answer[0]}
+        )
+        assert response.get_json()["results"][0] == "green"
+
+    def test_winning_reveals_the_answer_and_a_score(self, client):
+        import app as app_module
+
+        session_id = self.start(client).get_json()["session_id"]
+        answer = app_module.session_store.get(session_id).answer
+
+        for position, team in enumerate(answer):
+            body = client.post(
+                f"/api/game/{session_id}/guess", json={"position": position, "guess": team}
+            ).get_json()
+
+        assert body["status"] == "won"
+        assert body["teams"] == answer
+        assert body["score"] > 0
+
+    def test_losing_scores_zero(self, client):
+        session_id = self.start(client).get_json()["session_id"]
+
+        # Slot 0 every time, rather than one slot per guess: the fixture pool
+        # holds players with as few as two teams, and a wrong slot stays open,
+        # so this is the only loop that works whichever player is drawn.
+        for _ in range(3):
+            body = client.post(
+                f"/api/game/{session_id}/guess",
+                json={"position": 0, "guess": "not a real team"},
+            ).get_json()
+
+        assert body["status"] == "lost"
+        assert body["score"] == 0
+
+    def test_an_unknown_session_is_404(self, client):
+        response = client.post(
+            "/api/game/00000000-0000-0000-0000-000000000000/guess",
+            json={"position": 0, "guess": "celtics"},
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"position": -1, "guess": "celtics"},
+            {"position": 99, "guess": "celtics"},
+            {"position": "0", "guess": "celtics"},
+            {"position": 0, "guess": None},
+            {},
+        ],
+        ids=["negative", "past-end", "not-an-int", "guess-missing", "empty-body"],
+    )
+    def test_malformed_guesses_are_400(self, client, payload):
+        session_id = self.start(client).get_json()["session_id"]
+        response = client.post(f"/api/game/{session_id}/guess", json=payload)
+        assert response.status_code == 400
+        assert "error" in response.get_json()
+
+    def test_a_finished_game_rejects_further_guesses(self, client):
+        import app as app_module
+
+        session_id = self.start(client).get_json()["session_id"]
+        answer = app_module.session_store.get(session_id).answer
+        for position, team in enumerate(answer):
+            client.post(f"/api/game/{session_id}/guess", json={"position": position, "guess": team})
+
+        response = client.post(
+            f"/api/game/{session_id}/guess", json={"position": 0, "guess": answer[0]}
+        )
+        assert response.status_code == 400
+
+    def test_a_second_daily_for_the_same_user_is_409(self, client):
+        first = client.post("/api/game/start", json={"mode": "daily", "user_id": "u1"})
+        assert first.status_code == 201
+
+        second = client.post("/api/game/start", json={"mode": "daily", "user_id": "u1"})
+        assert second.status_code == 409
+
+    def test_anonymous_dailies_are_not_blocked(self, client):
+        # No user_id means no way to attribute the attempt, so the database
+        # index cannot apply. Documented rather than silently permitted.
+        assert client.post("/api/game/start", json={"mode": "daily"}).status_code == 201
+        assert client.post("/api/game/start", json={"mode": "daily"}).status_code == 201
+
+    def test_the_hint_is_locked_until_two_wrong_guesses(self, client):
+        session_id = self.start(client).get_json()["session_id"]
+        assert client.post(f"/api/game/{session_id}/hint").status_code == 400
+
+        for position in range(2):
+            client.post(
+                f"/api/game/{session_id}/guess",
+                json={"position": position, "guess": "not a real team"},
+            )
+        assert client.post(f"/api/game/{session_id}/hint").get_json()["hint_used"] is True
+
+    def test_abandoning_closes_the_session(self, client):
+        session_id = self.start(client).get_json()["session_id"]
+        body = client.post(f"/api/game/{session_id}/abandon").get_json()
+        assert body["status"] == "abandoned"
+        assert body["score"] == 0
