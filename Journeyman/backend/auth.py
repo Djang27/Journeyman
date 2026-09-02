@@ -4,34 +4,75 @@ The session API needs to know who is playing. Taking that from the request body
 would let anyone write results under someone else's account, so the identity
 comes from a signed token the client cannot forge.
 
-Verification is local, against the project's JWT secret, rather than a call to
-Supabase's /auth/v1/user on every request. A guess endpoint runs several times a
-minute per player; adding a network round trip to each one would roughly double
-its latency for no extra safety, since the signature already proves the token
-came from Supabase.
+Two signing schemes are in play, because Supabase has moved from one to the
+other:
 
-Anonymous play stays supported: no Authorization header means no user, which is
-allowed. An Authorization header that is present but bad is rejected outright --
-falling back to anonymous there would hide real bugs and make a broken login
-look like a working one.
+* **Asymmetric (ES256/RS256)** -- what hosted projects issue now. Tokens are
+  verified against the project's public keys, fetched once from its JWKS
+  endpoint and cached. Nothing secret is needed to verify them.
+* **HS256 with a shared secret** -- the legacy scheme, still what the local
+  `supabase start` stack uses.
+
+Which one applies is decided by configuration, never by the token: if a JWKS URL
+is available, HS256 is refused outright. That matters. A project's legacy shared
+secret stays visible in its dashboard after rotation, so accepting HS256
+alongside asymmetric keys would let anyone holding that old secret forge tokens
+for any user -- an algorithm-confusion downgrade. Choosing the scheme from
+config closes it.
+
+Verification is local either way. A guess endpoint runs several times a minute
+per player; calling /auth/v1/user on each would roughly double its latency for
+no extra safety, since the signature already proves Supabase minted the token.
+
+Anonymous play stays supported: no Authorization header means no user. An
+Authorization header that is present but bad is rejected outright -- falling
+back to anonymous there would hide real bugs and make a broken login look like
+a working one.
 """
 
 from __future__ import annotations
 
+import threading
+
 import jwt
+from jwt import PyJWKClient
 
 # Supabase stamps every user token with this audience.
 AUDIENCE = "authenticated"
 
-# Supabase signs with HS256. Pinning the algorithm list is what stops the
-# classic JWT attack: a forged token declaring "alg": "none", or declaring HS256
-# against a server that would otherwise accept an asymmetric key, is refused
-# before the signature is even considered.
-ALGORITHMS = ["HS256"]
+# Pinning an explicit allowlist per scheme is what refuses the classic JWT
+# attacks: a token declaring "alg": "none", or one declaring HS256 so that a
+# public key gets used as an HMAC secret.
+ASYMMETRIC_ALGORITHMS = ["ES256", "RS256"]
+SYMMETRIC_ALGORITHMS = ["HS256"]
+
+_REQUIRED_CLAIMS = {"require": ["exp", "sub"]}
+
+# PyJWKClient caches keys by id, so this costs one fetch per process rather than
+# one per request. Cached per URL because preview and production are different
+# projects with different keys.
+_jwks_clients: dict[str, PyJWKClient] = {}
+_jwks_lock = threading.Lock()
 
 
 class AuthError(Exception):
     """The caller supplied a token that cannot be trusted."""
+
+
+def jwks_url_for(supabase_url):
+    """The public keys for a Supabase project. Empty when unconfigured."""
+    if not supabase_url:
+        return ""
+    return f"{supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+
+
+def _jwks_client(url):
+    with _jwks_lock:
+        client = _jwks_clients.get(url)
+        if client is None:
+            client = PyJWKClient(url, cache_keys=True, lifespan=3600)
+            _jwks_clients[url] = client
+        return client
 
 
 def bearer_token(headers):
@@ -47,18 +88,49 @@ def bearer_token(headers):
     return token.strip()
 
 
-def verify_token(token, secret):
-    """Return the token's claims, or raise AuthError."""
-    if not secret:
-        raise AuthError("token verification is not configured")
+def verify_token(token, jwks_url="", secret=""):
+    """Return the token's claims, or raise AuthError.
 
+    `jwks_url` wins when both are supplied -- see the module docstring on why
+    accepting both schemes at once would be a downgrade path.
+    """
+    if jwks_url:
+        return _verify_asymmetric(token, jwks_url)
+    if secret:
+        return _verify_symmetric(token, secret)
+
+    # Fail closed. A missing configuration must never mean "trust everyone".
+    raise AuthError("token verification is not configured")
+
+
+def _verify_asymmetric(token, jwks_url):
+    try:
+        signing_key = _jwks_client(jwks_url).get_signing_key_from_jwt(token)
+    except jwt.exceptions.PyJWKClientConnectionError as exc:
+        # Our problem, not the caller's -- checked before PyJWKClientError,
+        # which it subclasses. Reporting an outage as a forged token would send
+        # whoever is debugging it looking in entirely the wrong place.
+        raise AuthError("could not reach the token verification service") from exc
+    except jwt.exceptions.PyJWKClientError as exc:
+        # No key matching the token's `kid`: the token was not signed by this
+        # project.
+        raise AuthError("invalid token") from exc
+
+    return _decode(token, signing_key.key, ASYMMETRIC_ALGORITHMS)
+
+
+def _verify_symmetric(token, secret):
+    return _decode(token, secret, SYMMETRIC_ALGORITHMS)
+
+
+def _decode(token, key, algorithms):
     try:
         return jwt.decode(
             token,
-            secret,
-            algorithms=ALGORITHMS,
+            key,
+            algorithms=algorithms,
             audience=AUDIENCE,
-            options={"require": ["exp", "sub"]},
+            options=_REQUIRED_CLAIMS,
         )
     except jwt.ExpiredSignatureError as exc:
         raise AuthError("token has expired") from exc
@@ -71,7 +143,7 @@ def verify_token(token, secret):
         raise AuthError("invalid token") from exc
 
 
-def user_id_from_headers(headers, secret):
+def user_id_from_headers(headers, jwks_url="", secret=""):
     """The verified user id, or None for anonymous play.
 
     Raises AuthError when a token is supplied but unusable, so a broken client
@@ -81,7 +153,7 @@ def user_id_from_headers(headers, secret):
     if token is None:
         return None
 
-    claims = verify_token(token, secret)
+    claims = verify_token(token, jwks_url=jwks_url, secret=secret)
 
     subject = claims.get("sub")
     if not subject:
