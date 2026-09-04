@@ -58,7 +58,7 @@ def main(argv=None):
             start,
             args.days,
             already_scheduled=puzzles.scheduled_between(start, end),
-            recently_used=puzzles.recently_used_ids(start),
+            last_used=puzzles.last_used(start),
         )
     except NotEnoughPlayers as exc:
         print(f"cannot schedule: {exc}")
