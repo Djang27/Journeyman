@@ -564,6 +564,7 @@ function HistoryTab({ user }) {
     const [stats, setStats]             = useState(null)
     const [recent, setRecent]           = useState([])
     const [leaderboard, setLeaderboard] = useState([])
+    const [lbRefreshedAt, setLbRefreshedAt] = useState(null)
     const [lbError, setLbError]         = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -598,6 +599,12 @@ function HistoryTab({ user }) {
 
         if (error) setLbError(true)
         else setLeaderboard(lb || [])
+
+        // The leaderboard is a materialized view refreshed on a schedule, so a
+        // game just finished may not be counted yet. Better to say so than to
+        // let someone wonder why their score is missing.
+        const { data: refreshedAt } = await supabase.rpc('leaderboard_refreshed_at')
+        if (refreshedAt) setLbRefreshedAt(refreshedAt)
 
         setLoading(false)
     }
@@ -732,12 +739,28 @@ function HistoryTab({ user }) {
                                 <span className="hist-lb-pts">{(row.total_score || 0).toLocaleString()}</span>
                             </div>
                         ))}
+                        {lbRefreshedAt && (
+                            <p className="hist-lb-freshness">
+                                Updated {formatAge(lbRefreshedAt)}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>
 
         </div>
     )
+}
+
+// The leaderboard is a snapshot, not a live read. Saying how old it is costs a
+// line and saves someone wondering where their last game went.
+function formatAge(timestamp) {
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000))
+    if (seconds < 90) return 'just now'
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes} minutes ago`
+    const hours = Math.floor(minutes / 60)
+    return hours === 1 ? 'an hour ago' : `${hours} hours ago`
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────── */

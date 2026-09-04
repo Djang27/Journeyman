@@ -84,3 +84,9 @@ values
   ('33333333-3333-3333-3333-333333333333', 'Drew Gooden',     'win',  2, 7, 150, true,  false,  530, 'unlimited', now() - interval '1 day'),
   ('33333333-3333-3333-3333-333333333333', 'Joe Smith',       'loss', 3, 8, 240, true,  false,    0, 'unlimited', now() - interval '5 days')
 on conflict do nothing;
+
+-- The leaderboard is a materialized view, and migrations run before this file.
+-- Without a refresh here it holds a snapshot of an empty table, so a freshly
+-- reset local database shows no leaderboard at all. Production is unaffected --
+-- the view is populated at creation from data that already exists.
+select public.refresh_leaderboard();
