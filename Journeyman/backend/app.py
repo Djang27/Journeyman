@@ -9,6 +9,7 @@ from sessions import (
     SessionNotFound,
     abandon,
     public_view,
+    set_hard_mode,
     start_session,
     submit_guess,
     use_hint,
@@ -270,6 +271,30 @@ def api_game_hint(session_id):
 
     try:
         session = use_hint(session_store, session_id)
+    except SessionNotFound as exc:
+        return _session_error(exc, 404)
+    except SessionError as exc:
+        return _session_error(exc, 400)
+
+    return jsonify(public_view(session))
+
+
+@app.route("/api/game/<session_id>/hard-mode", methods=["POST"])
+def api_game_hard_mode(session_id):
+    existing = session_store.get(session_id)
+    if existing is None:
+        return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(existing)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
+    body = request.get_json(silent=True) or {}
+    try:
+        session = set_hard_mode(session_store, session_id, body.get("enabled", False))
     except SessionNotFound as exc:
         return _session_error(exc, 404)
     except SessionError as exc:
