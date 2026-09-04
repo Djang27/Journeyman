@@ -61,12 +61,33 @@ class TestPlan:
         chosen = plan(pool(10), START, 5, already_scheduled=existing)
         assert 3 not in {player["id"] for _, player in chosen}
 
-    def test_recently_used_players_are_skipped(self):
-        chosen = plan(pool(10), START, 5, recently_used={1, 2, 3, 4, 5})
-        assert not ({p["id"] for _, p in chosen} & {1, 2, 3, 4, 5})
+    def test_recently_used_players_are_avoided_when_the_pool_allows(self):
+        recent = {
+            1: "2026-09-01",
+            2: "2026-09-02",
+            3: "2026-09-03",
+            4: "2026-09-01",
+            5: "2026-09-02",
+        }
+        chosen = plan(pool(10), START, 5, last_used=recent)
+        assert not ({p["id"] for _, p in chosen} & set(recent))
 
-    def test_it_refuses_rather_than_repeating(self):
-        """Silently repeating would be worse than failing the schedule run."""
+    def test_the_least_recently_used_are_preferred(self):
+        """Once everyone has been used, the oldest come back first."""
+        recent = {i: f"2026-0{i}-01" for i in range(1, 6)}
+        chosen = plan(pool(5), START, 2, last_used=recent)
+        assert [p["id"] for _, p in chosen] == [1, 2]
+
+    def test_it_still_schedules_when_everyone_was_used_recently(self):
+        """Hard exclusion could not do this, and the arithmetic requires it.
+
+        With 193 promoted players, filling 90 days while excluding 180 days of
+        history needs 270 distinct players. Ranking never runs out.
+        """
+        recent = {i: "2026-09-01" for i in range(1, 11)}
+        assert len(plan(pool(10), START, 10, last_used=recent)) == 10
+
+    def test_it_refuses_only_when_the_pool_cannot_cover_the_horizon(self):
         with pytest.raises(NotEnoughPlayers, match="days to fill"):
             plan(pool(3), START, 10)
 
@@ -74,8 +95,8 @@ class TestPlan:
         with pytest.raises(NotEnoughPlayers, match="Promote more players"):
             plan(pool(3), START, 10)
 
-    def test_the_repeat_window_is_wide_enough_to_matter(self):
-        assert REPEAT_WINDOW_DAYS >= 90
+    def test_the_lookback_window_is_wide_enough_to_matter(self):
+        assert REPEAT_WINDOW_DAYS >= 180
 
     def test_it_is_deterministic_for_a_given_seed(self):
         """So a dry run shows what the real run will do."""
