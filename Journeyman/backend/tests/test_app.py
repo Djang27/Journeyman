@@ -16,94 +16,6 @@ def client(player_db):
         yield test_client
 
 
-class TestNewGame:
-    def test_returns_the_shape_app_js_destructures(self, client):
-        body = client.get("/new-game").get_json()
-        assert set(body) == {"Player", "PlayerID", "Teams", "Number of Teams"}
-        assert body["Number of Teams"] == len(body["Teams"])
-
-    def test_honours_the_exclude_list(self, client):
-        body = client.get("/new-game?exclude=1,2,4").get_json()
-        assert body["PlayerID"] == 3
-
-    def test_malformed_exclude_list_does_not_500(self, client):
-        # App.js builds this from localStorage, so it is untrusted input.
-        assert client.get("/new-game?exclude=abc,,7").status_code == 200
-
-    def test_empty_exclude_param_is_ignored(self, client):
-        assert client.get("/new-game?exclude=").status_code == 200
-
-
-class TestDailyGame:
-    def test_includes_the_day_number(self, client):
-        body = client.get("/daily-game").get_json()
-        assert set(body) == {"Player", "PlayerID", "Teams", "Number of Teams", "DayNumber"}
-        assert body["DayNumber"] >= 1
-
-    def test_is_the_same_puzzle_on_repeat_requests(self, client):
-        assert client.get("/daily-game").get_json() == client.get("/daily-game").get_json()
-
-
-class TestCheckGuess:
-    def test_grades_a_correct_guess(self, client):
-        response = client.post(
-            "/check-guess",
-            json={"guess": "celtics", "teams": ["boston celtics", "miami heat"], "position": 0},
-        )
-        assert response.get_json() == {"result": "green"}
-
-    def test_grades_a_misplaced_guess(self, client):
-        response = client.post(
-            "/check-guess",
-            json={"guess": "celtics", "teams": ["boston celtics", "miami heat"], "position": 1},
-        )
-        assert response.get_json() == {"result": "yellow"}
-
-    def test_grades_a_wrong_guess(self, client):
-        response = client.post(
-            "/check-guess",
-            json={"guess": "lakers", "teams": ["boston celtics", "miami heat"], "position": 0},
-        )
-        assert response.get_json() == {"result": "gray"}
-
-    def test_grades_regardless_of_casing(self, client):
-        response = client.post(
-            "/check-guess",
-            json={"guess": "Celtics", "teams": ["boston celtics", "miami heat"], "position": 0},
-        )
-        assert response.get_json() == {"result": "green"}
-
-    @pytest.mark.parametrize(
-        "payload",
-        [
-            {"guess": "celtics", "teams": ["boston celtics"], "position": -1},
-            {"guess": "celtics", "teams": ["boston celtics"], "position": 99},
-            {"guess": "celtics", "teams": ["boston celtics"], "position": "0"},
-            {"guess": "celtics", "teams": [], "position": 0},
-            {"guess": None, "teams": ["boston celtics"], "position": 0},
-        ],
-        ids=["negative", "past-end", "not-an-int", "empty-teams", "guess-missing"],
-    )
-    def test_malformed_input_is_a_400_not_a_500(self, client, payload):
-        response = client.post("/check-guess", json=payload)
-        assert response.status_code == 400
-        assert "error" in response.get_json()
-
-    def test_the_answer_is_supplied_by_the_caller(self, client):
-        """The vulnerability, written down.
-
-        The endpoint holds no state: it grades whatever `teams` the caller sends.
-        A client can therefore submit an answer it invented and be told it is
-        correct. This test should be deleted -- not fixed -- when Phase 0 moves
-        the answer server-side behind a session id.
-        """
-        response = client.post(
-            "/check-guess",
-            json={"guess": "anything", "teams": ["anything"], "position": 0},
-        )
-        assert response.get_json() == {"result": "green"}
-
-
 class TestHome:
     def test_serves_a_welcome_string(self, client):
         assert client.get("/").status_code == 200
@@ -582,3 +494,31 @@ class TestApiErrorsAreJson:
             assert "postgres://" not in body
         finally:
             app_module.session_store = original
+
+
+class TestNotFound:
+    """A missing route is a 404, not a 500.
+
+    The catch-all error handler originally re-raised every HTTPException, which
+    turned each unknown path into an internal error -- including the legacy
+    endpoints deleted in this branch.
+    """
+
+    def test_an_unknown_api_path_is_a_json_404(self, client):
+        response = client.get("/api/does-not-exist")
+        assert response.status_code == 404
+        assert response.is_json
+        assert "error" in response.get_json()
+
+    def test_an_unknown_page_is_a_plain_404(self, client):
+        assert client.get("/does-not-exist").status_code == 404
+
+    @pytest.mark.parametrize("path", ["/new-game", "/daily-game", "/check-guess"])
+    def test_the_legacy_endpoints_are_gone(self, client, path):
+        """They shipped the answer and graded a client-supplied one."""
+        assert client.get(path).status_code == 404
+
+    def test_the_wrong_method_is_a_405(self, client):
+        # Not /api/game/start -- a GET there matches /api/game/<session_id>
+        # with the id "start", so it is legitimately a 404.
+        assert client.get("/api/game/abc/guess").status_code == 405
