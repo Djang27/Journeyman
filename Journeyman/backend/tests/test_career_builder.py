@@ -156,3 +156,65 @@ class TestBuildStints:
 
     def test_an_empty_career(self):
         assert build_stints([], team_of) == ([], [])
+
+
+class TestEraNames:
+    """Franchises that kept an abbreviation through a rename.
+
+    Getting these wrong is invisible without checking: the shipped pool contains
+    no "washington bullets" at all, across players going back to the 1970s.
+    """
+
+    @pytest.fixture
+    def name_for(self):
+        from refresh_nba_players import team_name_for
+
+        return team_name_for
+
+    @pytest.mark.parametrize(
+        "season,expected",
+        [
+            ("1993-94", "washington bullets"),
+            ("1996-97", "washington bullets"),
+            ("1997-98", "washington wizards"),
+            ("2015-16", "washington wizards"),
+        ],
+    )
+    def test_washington_is_named_for_its_era(self, name_for, season, expected):
+        assert name_for({"SEASON_ID": season, "TEAM_ABBREVIATION": "WAS"}) == expected
+
+    @pytest.mark.parametrize(
+        "season,expected",
+        [
+            ("2004-05", "charlotte bobcats"),
+            ("2013-14", "charlotte bobcats"),
+            ("2014-15", "charlotte hornets"),
+            ("2020-21", "charlotte hornets"),
+        ],
+    )
+    def test_charlotte_is_named_for_its_era(self, name_for, season, expected):
+        assert name_for({"SEASON_ID": season, "TEAM_ABBREVIATION": "CHA"}) == expected
+
+    @pytest.mark.parametrize(
+        "season_id,expected",
+        [("22013", "charlotte bobcats"), ("21993", "charlotte hornets")],
+    )
+    def test_a_league_prefixed_season_still_reads_correctly(self, name_for, season_id, expected):
+        """SEASON_ID[:4] on '22013' reads as year 2201 and takes the wrong branch.
+
+        This is the likeliest cause of Cody Zeller losing his Bobcats season.
+        """
+        assert name_for({"SEASON_ID": season_id, "TEAM_ABBREVIATION": "CHA"}) == expected
+
+    def test_charlotte_before_the_bobcats_is_the_original_hornets(self, name_for):
+        """They left for New Orleans in 2002; the Bobcats arrived in 2004."""
+        assert name_for({"SEASON_ID": "1995-96", "TEAM_ABBREVIATION": "CHA"}) == "charlotte hornets"
+
+    def test_an_unreadable_season_falls_back_to_the_current_name(self, name_for):
+        assert name_for({"SEASON_ID": None, "TEAM_ABBREVIATION": "WAS"}) == "washington wizards"
+
+    def test_franchises_without_a_rename_are_unaffected(self, name_for):
+        assert name_for({"SEASON_ID": "1990-91", "TEAM_ABBREVIATION": "BOS"}) == "boston celtics"
+        assert (
+            name_for({"SEASON_ID": "1990-91", "TEAM_ABBREVIATION": "SEA"}) == "seattle supersonics"
+        )

@@ -2,17 +2,22 @@
   "_readme": [
     "Ground truth for scoring candidate NBA data sources.",
     "",
-    "`current_pool_teams` is what backend/nba_players.json claims today, which is",
-    "the thing under suspicion -- it is here to be checked, not trusted.",
+    "A career is the franchises a player ACTUALLY APPEARED FOR, in order, named as",
+    "the franchise was called at the time. Consecutive seasons at one club are one",
+    "entry; a later return is a separate entry, because that repetition is the",
+    "puzzle.",
     "",
-    "To verify one entry: look the player up on Basketball-Reference, read the",
-    "season-by-season team column, collapse consecutive seasons at the same",
-    "franchise into one entry, keep a later return as a separate entry, and use",
-    "the franchise name as it was AT THE TIME (Seattle SuperSonics, not Oklahoma",
-    "City). Put the result in `verified_teams` and set `verified` to true.",
+    "Appearances, not affiliation. Wikipedia infoboxes list teams a player was ON,",
+    "which is not the same thing -- Barbosa was traded to Washington while injured",
+    "and never played a game, so Washington is correctly absent from his career.",
+    "You cannot ask someone to name a team a player never played for.",
     "",
-    "Entries with verified=false are ignored when scoring a source, so this file",
-    "is useful from the first entry filled in rather than only when complete."
+    "Era names matter and are where sources go wrong: Seattle SuperSonics not",
+    "Oklahoma City, Washington Bullets before 1997, Charlotte Bobcats between 2004",
+    "and 2014.",
+    "",
+    "Verified 2026-09-04 against Wikipedia career infoboxes, cross-checked for",
+    "appearances where a trade looked like it may not have involved any games."
   ],
   "players": [
     {
@@ -30,8 +35,18 @@
         "philadelphia 76ers",
         "cleveland cavaliers"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "los angeles clippers",
+        "seattle supersonics",
+        "los angeles lakers",
+        "new jersey nets",
+        "vancouver grizzlies",
+        "milwaukee bucks",
+        "toronto raptors",
+        "philadelphia 76ers",
+        "cleveland cavaliers"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -45,8 +60,14 @@
         "boston celtics",
         "new jersey nets"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "seattle supersonics",
+        "phoenix suns",
+        "new york knicks",
+        "boston celtics",
+        "new jersey nets"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -67,8 +88,21 @@
         "milwaukee bucks",
         "houston rockets"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "new jersey nets",
+        "cleveland cavaliers",
+        "orlando magic",
+        "cleveland cavaliers",
+        "los angeles clippers",
+        "golden state warriors",
+        "denver nuggets",
+        "milwaukee bucks",
+        "charlotte bobcats",
+        "washington wizards",
+        "milwaukee bucks",
+        "houston rockets"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -84,8 +118,16 @@
         "new jersey nets",
         "charlotte bobcats"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "denver nuggets",
+        "washington wizards",
+        "los angeles clippers",
+        "portland trail blazers",
+        "cleveland cavaliers",
+        "new jersey nets",
+        "charlotte bobcats"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -101,8 +143,16 @@
         "new orleans hornets",
         "los angeles lakers"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "atlanta hawks",
+        "seattle supersonics",
+        "boston celtics",
+        "denver nuggets",
+        "orlando magic",
+        "new orleans hornets",
+        "los angeles lakers"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -116,8 +166,14 @@
         "charlotte bobcats",
         "los angeles clippers"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "new jersey nets",
+        "milwaukee bucks",
+        "dallas mavericks",
+        "charlotte bobcats",
+        "los angeles clippers"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -131,9 +187,13 @@
         "los angeles lakers",
         "atlanta hawks"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "phoenix suns",
+        "los angeles lakers",
+        "atlanta hawks"
+      ],
+      "verified": true,
+      "notes": "The pool records PHX/LAL/PHX/LAL/ATL, an interleaved mid-season trade."
     },
     {
       "player_id": 1737,
@@ -150,8 +210,18 @@
         "chicago bulls",
         "oklahoma city thunder"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "philadelphia 76ers",
+        "atlanta hawks",
+        "new york knicks",
+        "san antonio spurs",
+        "detroit pistons",
+        "charlotte bobcats",
+        "oklahoma city thunder",
+        "chicago bulls",
+        "oklahoma city thunder"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -167,9 +237,17 @@
         "golden state warriors",
         "phoenix suns"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "phoenix suns",
+        "toronto raptors",
+        "indiana pacers",
+        "boston celtics",
+        "phoenix suns",
+        "golden state warriors",
+        "phoenix suns"
+      ],
+      "verified": true,
+      "notes": "Traded to Washington in Feb 2013 while injured with a torn ACL and never appeared for them, so they are correctly absent."
     },
     {
       "player_id": 202362,
@@ -187,8 +265,19 @@
         "atlanta hawks",
         "indiana pacers"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "indiana pacers",
+        "charlotte hornets",
+        "los angeles clippers",
+        "memphis grizzlies",
+        "new orleans pelicans",
+        "minnesota timberwolves",
+        "indiana pacers",
+        "los angeles lakers",
+        "atlanta hawks",
+        "indiana pacers"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -203,8 +292,15 @@
         "minnesota timberwolves",
         "memphis grizzlies"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "dallas mavericks",
+        "philadelphia 76ers",
+        "denver nuggets",
+        "dallas mavericks",
+        "minnesota timberwolves",
+        "memphis grizzlies"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -217,8 +313,13 @@
         "orlando magic",
         "milwaukee bucks"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "milwaukee bucks",
+        "seattle supersonics",
+        "orlando magic",
+        "milwaukee bucks"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -240,8 +341,22 @@
         "new orleans pelicans",
         "toronto raptors"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "houston rockets",
+        "sacramento kings",
+        "san antonio spurs",
+        "milwaukee bucks",
+        "charlotte bobcats",
+        "washington wizards",
+        "sacramento kings",
+        "memphis grizzlies",
+        "los angeles clippers",
+        "brooklyn nets",
+        "chicago bulls",
+        "new orleans pelicans",
+        "toronto raptors"
+      ],
+      "verified": true,
       "notes": ""
     },
     {
@@ -262,9 +377,22 @@
         "sacramento kings",
         "golden state warriors"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "los angeles clippers",
+        "sacramento kings",
+        "new york knicks",
+        "philadelphia 76ers",
+        "golden state warriors",
+        "phoenix suns",
+        "orlando magic",
+        "los angeles lakers",
+        "los angeles clippers",
+        "memphis grizzlies",
+        "sacramento kings",
+        "golden state warriors"
+      ],
+      "verified": true,
+      "notes": "Traded to Charlotte in June 2015 and traded on ten days later without appearing."
     },
     {
       "player_id": 202738,
@@ -284,9 +412,22 @@
         "charlotte hornets",
         "phoenix suns"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "sacramento kings",
+        "phoenix suns",
+        "boston celtics",
+        "cleveland cavaliers",
+        "los angeles lakers",
+        "denver nuggets",
+        "washington wizards",
+        "new orleans pelicans",
+        "los angeles lakers",
+        "dallas mavericks",
+        "charlotte hornets",
+        "phoenix suns"
+      ],
+      "verified": true,
+      "notes": "Traded to the Clippers in Feb 2020 and waived the next day without appearing."
     },
     {
       "player_id": 55,
@@ -302,9 +443,18 @@
         "miami heat",
         "los angeles clippers"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "seattle supersonics",
+        "sacramento kings",
+        "charlotte hornets",
+        "washington bullets",
+        "milwaukee bucks",
+        "boston celtics",
+        "miami heat",
+        "los angeles clippers"
+      ],
+      "verified": true,
+      "notes": "Washington 1993-94, when the franchise was the Bullets. The pool records 'washington wizards'."
     },
     {
       "player_id": 203469,
@@ -316,9 +466,15 @@
         "miami heat",
         "new orleans pelicans"
       ],
-      "verified_teams": null,
-      "verified": false,
-      "notes": ""
+      "verified_teams": [
+        "charlotte bobcats",
+        "charlotte hornets",
+        "portland trail blazers",
+        "miami heat",
+        "new orleans pelicans"
+      ],
+      "verified": true,
+      "notes": "Drafted by the Bobcats in 2013; the franchise took the Hornets name in 2014. The pool omits the Bobcats season entirely."
     },
     {
       "player_id": 1626195,
@@ -329,8 +485,12 @@
         "charlotte hornets",
         "new orleans pelicans"
       ],
-      "verified_teams": null,
-      "verified": false,
+      "verified_teams": [
+        "new york knicks",
+        "charlotte hornets",
+        "new orleans pelicans"
+      ],
+      "verified": true,
       "notes": ""
     }
   ]
