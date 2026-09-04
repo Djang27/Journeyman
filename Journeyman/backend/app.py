@@ -66,6 +66,20 @@ config = load_config()
 players_repo = _wire_player_pool(config)
 
 
+def _build_puzzles_repo(config):
+    if not config.use_database:
+        return None
+
+    from puzzles_repo import PuzzlesRepo
+
+    from supabase import create_client
+
+    return PuzzlesRepo(create_client(config.supabase_url, config.supabase_service_key))
+
+
+puzzles_repo = _build_puzzles_repo(config)
+
+
 def _current_user_id():
     """The signed-in player, or None for anonymous play.
 
@@ -138,6 +152,31 @@ def api_health():
 # ---------------------------------------------------------------------------
 
 
+def _todays_puzzle(puzzle_date):
+    """The scheduled puzzle for today, scheduling one only if none exists.
+
+    Reading the row first is the point: once written, a day's puzzle is fixed.
+    The hash fallback below is what the schedule replaced -- it stays so a gap in
+    the calendar degrades to yesterday's behaviour instead of breaking the daily,
+    but a scheduled row always wins.
+    """
+    if puzzles_repo is not None:
+        row = puzzles_repo.get(puzzle_date)
+        if row and row.get("payload"):
+            payload = row["payload"]
+            return payload["player_name"], payload["teams"], payload["player_id"]
+
+    player_name, teams, player_id, _ = daily_player()
+
+    # The session's composite foreign key requires the row to exist.
+    session_store.ensure_puzzle(
+        GAME_SLUG,
+        puzzle_date,
+        {"player_name": player_name, "player_id": player_id, "teams": teams},
+    )
+    return player_name, teams, player_id
+
+
 def _session_error(exc, status):
     return jsonify({"error": str(exc)}), status
 
@@ -203,14 +242,8 @@ def api_game_start():
 
     puzzle_date = None
     if mode == "daily":
-        player_name, teams, player_id, _ = daily_player()
         puzzle_date = today_eastern().isoformat()
-        # The session's composite foreign key requires this row to exist.
-        session_store.ensure_puzzle(
-            GAME_SLUG,
-            puzzle_date,
-            {"player_name": player_name, "player_id": player_id, "teams": teams},
-        )
+        player_name, teams, player_id = _todays_puzzle(puzzle_date)
     else:
         exclude = body.get("exclude") or []
         exclude_ids = {int(x) for x in exclude if str(x).strip().lstrip("-").isdigit()}
