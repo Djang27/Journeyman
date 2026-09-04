@@ -1,7 +1,6 @@
 from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
-from game_logic import guess_check
 from generate_players import daily_player, randomPlayer, today_eastern
 from sessions import (
     GAME_SLUG,
@@ -15,6 +14,7 @@ from sessions import (
     submit_guess,
     use_hint,
 )
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 
@@ -100,67 +100,15 @@ def api_health():
     return jsonify(body), (200 if database_ok else 503)
 
 
-@app.route("/new-game")
-def new_game():
-    exclude_param = request.args.get("exclude", "")
-    exclude_ids = set()
-    if exclude_param:
-        try:
-            exclude_ids = {int(x) for x in exclude_param.split(",") if x.strip()}
-        except ValueError:
-            pass
-
-    player_name, teams, player_id = randomPlayer(exclude_ids=exclude_ids)
-    return jsonify(
-        {
-            "Player": player_name,
-            "PlayerID": player_id,
-            "Teams": teams,
-            "Number of Teams": len(teams),
-        }
-    )
-
-
-@app.route("/daily-game")
-def daily_game():
-    player_name, teams, player_id, day_num = daily_player()
-    return jsonify(
-        {
-            "Player": player_name,
-            "PlayerID": player_id,
-            "Teams": teams,
-            "Number of Teams": len(teams),
-            "DayNumber": day_num,
-        }
-    )
-
-
-@app.route("/check-guess", methods=["POST"])
-def check_guess():
-    player_data = request.json
-    guess = player_data.get("guess")
-    correct_teams = player_data.get("teams")
-    position = player_data.get("position")
-
-    try:
-        result = guess_check(guess, correct_teams, position)
-    except ValueError as exc:
-        # Every field here comes from the request body, so malformed input is a
-        # 400 rather than an unhandled 500.
-        return jsonify({"error": str(exc)}), 400
-
-    return jsonify({"result": result})
-
-
 # ---------------------------------------------------------------------------
-# Session API (Phase 0)
+# Session API
 #
-# These run alongside the legacy endpoints above rather than replacing them, so
-# this branch is safe to ship: the frontend still uses the old ones until
-# feat/session-frontend switches over, and chore/lock-down-writes deletes them.
+# The only way to play. The stateless /new-game, /daily-game and /check-guess
+# endpoints are gone: they shipped the answer to the browser and graded a
+# client-supplied answer against a client-supplied position, which is what made
+# every score forgeable.
 #
-# The difference that matters: no response below ever contains the answer while
-# a game is in progress.
+# No response below contains the answer while a game is in progress.
 # ---------------------------------------------------------------------------
 
 
@@ -177,9 +125,19 @@ def _unhandled(exc):
     generic on purpose -- the detail belongs in the server log, not in a
     response anyone can read.
     """
+    if isinstance(exc, HTTPException):
+        # 404, 405 and the like are already correct answers, not failures. They
+        # are only reshaped into JSON for API callers; re-raising them here
+        # turned every unknown path into a 500.
+        if request.path.startswith("/api/"):
+            return jsonify({"error": exc.description}), exc.code
+        return exc
+
     if request.path.startswith("/api/"):
         app.logger.exception("unhandled error on %s", request.path)
         return jsonify({"error": "The server hit an unexpected problem."}), 500
+
+    app.logger.exception("unhandled error on %s", request.path)
     raise exc
 
 
