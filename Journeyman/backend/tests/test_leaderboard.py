@@ -155,3 +155,25 @@ class TestAgreementWithTheSource:
             assert row["games_played"] == want["games"], row["display_name"]
             assert row["wins"] == want["wins"], row["display_name"]
             assert row["total_score"] == want["score"], row["display_name"]
+
+
+class TestEveryAccountIsCounted:
+    """Production had thirty results and no profiles, so the leaderboard was
+    empty since launch -- an empty list looks like a new game, not a bug.
+
+    The handle_new_user trigger covers accounts created after it existed;
+    migration 0008 backfills the rest.
+    """
+
+    def test_a_player_with_results_appears(self, client):
+        with_results = {
+            row["user_id"] for row in client.table("game_results").select("user_id").execute().data
+        }
+        ranked = {row["id"] for row in leaderboard(client, limit=100)}
+        assert with_results <= ranked, with_results - ranked
+
+    def test_nobody_is_missing_a_profile(self, client):
+        """The join that made the leaderboard empty."""
+        orphaned = client.table("game_results").select("user_id").execute().data
+        profiles = {p["id"] for p in client.table("profiles").select("id").execute().data}
+        assert {row["user_id"] for row in orphaned} <= profiles
