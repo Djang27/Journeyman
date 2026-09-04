@@ -88,7 +88,7 @@ function ScoreBreakdown({ final_time, wrong_guesses, hint_active, hard_mode }) {
     )
 }
 
-function GameScreen({ player, teams, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
+function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
     const hard_mode_locked = results.some(r => r !== null) || game_over
@@ -168,14 +168,14 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
             </div>
 
             <TeamList
-                teams={teams}
+                num_teams={num_teams}
+                hints={hints}
                 guesses={guesses}
                 results={results}
                 on_guess_change={on_guess_change}
                 on_submit={on_submit}
                 on_clear={on_clear}
                 game_over={game_over}
-                hint_active={hint_active}
             />
 
             {/* Re-open bar — shown when modal is dismissed */}
@@ -234,7 +234,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                 </div>
                                 <div className="ct-section-label">Career Path</div>
                                 <CareerTimeline
-                                    teams={teams}
+                                    teams={teams ?? []}
                                     guesses={guesses}
                                     results={results}
                                 />
@@ -264,7 +264,7 @@ function GameScreen({ player, teams, guesses, results, on_guess_change, on_submi
                                     {player}'s Career Path
                                 </div>
                                 <CareerTimeline
-                                    teams={teams}
+                                    teams={teams ?? []}
                                     guesses={guesses}
                                     results={results}
                                 />
