@@ -80,6 +80,15 @@ class SessionStore(ABC):
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None: ...
 
     @abstractmethod
+    def check_reachable(self) -> None:
+        """Raise if the store cannot actually be used right now.
+
+        Distinct from "is a store configured": a process can hold a perfectly
+        good client for a database that is down, or whose migrations were never
+        applied. This is what makes /api/health mean something.
+        """
+
+    @abstractmethod
     def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
         """Make sure the day's puzzle row exists.
 
@@ -131,6 +140,9 @@ class InMemorySessionStore(SessionStore):
     def update(self, session: Session) -> Session:
         self._sessions[session.id] = session
         return session
+
+    def check_reachable(self) -> None:
+        return None
 
     def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
         self.puzzles[(game_slug, puzzle_date)] = payload

@@ -69,19 +69,35 @@ def api_health():
     a missing variable and not notice until sessions start vanishing between
     requests. This is how you notice.
 
-    Deliberately says nothing about which project, which keys, or whether they
-    are valid: this endpoint is public, and "configured or not" is the most it
-    should ever reveal.
+    It also makes one cheap query, because knowing a store was *built* is not
+    the same as knowing it works: this endpoint reported "persistent": true
+    while Postgres was unreachable, and again while the tables were missing
+    because a migration had never been applied.
+
+    Deliberately says nothing about which project, which keys, or why a check
+    failed: this endpoint is public, and "working or not" is the most it should
+    ever reveal. The detail goes to the server log.
     """
     uses_database = type(session_store).__name__ != "InMemorySessionStore"
 
-    return jsonify(
-        {
-            "status": "ok",
-            "session_store": "database" if uses_database else "memory",
-            "persistent": uses_database,
-        }
-    )
+    database_ok = True
+    if uses_database:
+        try:
+            session_store.check_reachable()
+        except Exception:
+            app.logger.exception("health check could not reach the database")
+            database_ok = False
+
+    body = {
+        "status": "ok" if database_ok else "degraded",
+        "session_store": "database" if uses_database else "memory",
+        "persistent": uses_database,
+        "database_reachable": database_ok if uses_database else None,
+    }
+
+    # 503 so an uptime monitor treats this as down. Reporting 200 while the
+    # database is unreachable is how an outage goes unnoticed.
+    return jsonify(body), (200 if database_ok else 503)
 
 
 @app.route("/new-game")

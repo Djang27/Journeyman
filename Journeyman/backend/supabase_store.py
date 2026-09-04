@@ -151,6 +151,16 @@ class SupabaseSessionStore(SessionStore):
             raise SessionError("session vanished while being updated")
         return from_row(response.data[0])
 
+    def check_reachable(self) -> None:
+        """One cheap round trip that proves rather more than it looks like.
+
+        Selecting from game_sessions confirms the network reaches PostgREST,
+        that credentials are accepted, and that migration 0002 was applied --
+        the three ways a deploy has actually failed so far, all of which looked
+        identical from the browser.
+        """
+        self._table().select("id").limit(1).execute()
+
     def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
         self._client.table(PUZZLES_TABLE).upsert(
             {"game_slug": game_slug, "puzzle_date": puzzle_date, "payload": payload},

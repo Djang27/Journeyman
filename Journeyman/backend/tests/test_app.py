@@ -282,6 +282,61 @@ class TestHealth:
         body = client.get("/api/health").get_json()
         assert body["status"] == "ok"
 
+    def test_reports_reachable_when_the_database_answers(self, client):
+        import app as app_module
+
+        class HealthyStore:
+            def check_reachable(self):
+                return None
+
+        original = app_module.session_store
+        app_module.session_store = HealthyStore()
+        try:
+            response = client.get("/api/health")
+            assert response.status_code == 200
+            assert response.get_json() == {
+                "status": "ok",
+                "session_store": "database",
+                "persistent": True,
+                "database_reachable": True,
+            }
+        finally:
+            app_module.session_store = original
+
+    def test_reports_degraded_when_the_database_is_unreachable(self, client):
+        """The bug this exists for: it used to report healthy during an outage."""
+        import app as app_module
+
+        class BrokenStore:
+            def check_reachable(self):
+                raise RuntimeError("connection refused")
+
+        original = app_module.session_store
+        app_module.session_store = BrokenStore()
+        try:
+            response = client.get("/api/health")
+            assert response.status_code == 503
+            assert response.get_json()["status"] == "degraded"
+            assert response.get_json()["database_reachable"] is False
+        finally:
+            app_module.session_store = original
+
+    def test_a_failure_reason_is_never_exposed(self, client):
+        import app as app_module
+
+        class BrokenStore:
+            def check_reachable(self):
+                raise RuntimeError("postgres://user:hunter2@db.internal refused")
+
+        original = app_module.session_store
+        app_module.session_store = BrokenStore()
+        try:
+            body = client.get("/api/health").get_data(as_text=True)
+            assert "hunter2" not in body
+            assert "postgres" not in body
+        finally:
+            app_module.session_store = original
+
     def test_reports_the_memory_store_when_unconfigured(self, client):
         # The test app builds an in-memory store, matching a deployment that is
         # missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.
