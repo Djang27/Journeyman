@@ -22,6 +22,8 @@ from datetime import datetime
 from sessions import Session, SessionError, SessionStore
 
 TABLE = "game_sessions"
+RESULTS_TABLE = "game_results"
+PUZZLES_TABLE = "puzzles"
 
 # Fields the database owns. Everything else the engine tracks lives in `state`,
 # which keeps migration 0002's column list stable as the game gains features.
@@ -148,6 +150,51 @@ class SupabaseSessionStore(SessionStore):
         if not response.data:
             raise SessionError("session vanished while being updated")
         return from_row(response.data[0])
+
+    def check_reachable(self) -> None:
+        """One cheap round trip that proves rather more than it looks like.
+
+        Selecting from game_sessions confirms the network reaches PostgREST,
+        that credentials are accepted, and that migration 0002 was applied --
+        the three ways a deploy has actually failed so far, all of which looked
+        identical from the browser.
+        """
+        self._table().select("id").limit(1).execute()
+
+    def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
+        self._client.table(PUZZLES_TABLE).upsert(
+            {"game_slug": game_slug, "puzzle_date": puzzle_date, "payload": payload},
+            on_conflict="game_slug,puzzle_date",
+        ).execute()
+
+    def record_result(self, session: Session) -> None:
+        """Insert the permanent record the Stats and leaderboard views read.
+
+        Written with the service role, which is the whole point: migration 0002
+        leaves game_results readable by its owner but writable only by the
+        server, so a score cannot be invented by the browser.
+        """
+        elapsed = (
+            int((session.finished_at - session.started_at).total_seconds())
+            if session.finished_at
+            else 0
+        )
+
+        self._client.table(RESULTS_TABLE).insert(
+            {
+                "user_id": session.user_id,
+                "game_slug": session.game_slug,
+                "player_name": session.player_name,
+                "result": "win" if session.status == "won" else "loss",
+                "wrong_guesses": session.wrong_guesses,
+                "num_teams": len(session.answer),
+                "time_seconds": max(0, elapsed),
+                "hint_used": session.hint_used,
+                "hard_mode": session.hard_mode,
+                "score": session.score or 0,
+                "game_mode": session.mode,
+            }
+        ).execute()
 
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None:
         response = (

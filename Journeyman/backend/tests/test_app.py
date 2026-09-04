@@ -282,6 +282,61 @@ class TestHealth:
         body = client.get("/api/health").get_json()
         assert body["status"] == "ok"
 
+    def test_reports_reachable_when_the_database_answers(self, client):
+        import app as app_module
+
+        class HealthyStore:
+            def check_reachable(self):
+                return None
+
+        original = app_module.session_store
+        app_module.session_store = HealthyStore()
+        try:
+            response = client.get("/api/health")
+            assert response.status_code == 200
+            assert response.get_json() == {
+                "status": "ok",
+                "session_store": "database",
+                "persistent": True,
+                "database_reachable": True,
+            }
+        finally:
+            app_module.session_store = original
+
+    def test_reports_degraded_when_the_database_is_unreachable(self, client):
+        """The bug this exists for: it used to report healthy during an outage."""
+        import app as app_module
+
+        class BrokenStore:
+            def check_reachable(self):
+                raise RuntimeError("connection refused")
+
+        original = app_module.session_store
+        app_module.session_store = BrokenStore()
+        try:
+            response = client.get("/api/health")
+            assert response.status_code == 503
+            assert response.get_json()["status"] == "degraded"
+            assert response.get_json()["database_reachable"] is False
+        finally:
+            app_module.session_store = original
+
+    def test_a_failure_reason_is_never_exposed(self, client):
+        import app as app_module
+
+        class BrokenStore:
+            def check_reachable(self):
+                raise RuntimeError("postgres://user:hunter2@db.internal refused")
+
+        original = app_module.session_store
+        app_module.session_store = BrokenStore()
+        try:
+            body = client.get("/api/health").get_data(as_text=True)
+            assert "hunter2" not in body
+            assert "postgres" not in body
+        finally:
+            app_module.session_store = original
+
     def test_reports_the_memory_store_when_unconfigured(self, client):
         # The test app builds an in-memory store, matching a deployment that is
         # missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.
@@ -439,3 +494,91 @@ class TestSessionOwnership:
             f"/api/game/{session_id}/guess", json={"position": 0, "guess": "celtics"}
         )
         assert response.status_code == 200
+
+
+class TestDailyScheduling:
+    """Daily mode depends on a `puzzles` row existing.
+
+    Migration 0002 gives game_sessions a composite foreign key to puzzles, so a
+    daily session cannot be created before the day's puzzle is scheduled. There
+    was no scheduler, so every daily start failed with a foreign key violation
+    and an HTML 500. These pin the fix.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _fresh_store(self, client):
+        import app as app_module
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+
+    def test_starting_a_daily_schedules_the_puzzle(self, client):
+        import app as app_module
+
+        assert client.post("/api/game/start", json={"mode": "daily"}).status_code == 201
+        assert len(app_module.session_store.puzzles) == 1
+
+    def test_the_scheduled_payload_carries_the_puzzle(self, client):
+        import app as app_module
+
+        body = client.post("/api/game/start", json={"mode": "daily"}).get_json()
+        (payload,) = app_module.session_store.puzzles.values()
+
+        assert payload["player_name"] == body["player"]
+        assert len(payload["teams"]) == body["num_teams"]
+
+    def test_scheduling_is_idempotent(self, client):
+        import app as app_module
+
+        for _ in range(3):
+            client.post("/api/game/start", json={"mode": "daily"})
+        assert len(app_module.session_store.puzzles) == 1
+
+    def test_unlimited_schedules_nothing(self, client):
+        import app as app_module
+
+        client.post("/api/game/start", json={"mode": "unlimited"})
+        assert app_module.session_store.puzzles == {}
+
+
+class TestApiErrorsAreJson:
+    """The client parses `error` from the body, so an HTML 500 tells it nothing."""
+
+    def test_an_unexpected_failure_returns_json(self, client):
+        import app as app_module
+
+        class ExplodingStore:
+            def __getattr__(self, name):
+                def boom(*args, **kwargs):
+                    raise RuntimeError("database on fire")
+
+                return boom
+
+        original = app_module.session_store
+        app_module.session_store = ExplodingStore()
+        try:
+            response = client.post("/api/game/start", json={"mode": "unlimited"})
+            assert response.status_code == 500
+            assert response.is_json
+            assert "error" in response.get_json()
+        finally:
+            app_module.session_store = original
+
+    def test_the_message_does_not_leak_internals(self, client):
+        import app as app_module
+
+        class ExplodingStore:
+            def __getattr__(self, name):
+                def boom(*args, **kwargs):
+                    raise RuntimeError("postgres://user:hunter2@db.internal")
+
+                return boom
+
+        original = app_module.session_store
+        app_module.session_store = ExplodingStore()
+        try:
+            body = client.post("/api/game/start", json={"mode": "unlimited"}).get_data(as_text=True)
+            assert "hunter2" not in body
+            assert "postgres://" not in body
+        finally:
+            app_module.session_store = original

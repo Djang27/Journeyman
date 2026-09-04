@@ -4,11 +4,13 @@ from flask import Flask, jsonify, request
 from game_logic import guess_check
 from generate_players import daily_player, randomPlayer, today_eastern
 from sessions import (
+    GAME_SLUG,
     InMemorySessionStore,
     SessionError,
     SessionNotFound,
     abandon,
     public_view,
+    set_hard_mode,
     start_session,
     submit_guess,
     use_hint,
@@ -67,19 +69,35 @@ def api_health():
     a missing variable and not notice until sessions start vanishing between
     requests. This is how you notice.
 
-    Deliberately says nothing about which project, which keys, or whether they
-    are valid: this endpoint is public, and "configured or not" is the most it
-    should ever reveal.
+    It also makes one cheap query, because knowing a store was *built* is not
+    the same as knowing it works: this endpoint reported "persistent": true
+    while Postgres was unreachable, and again while the tables were missing
+    because a migration had never been applied.
+
+    Deliberately says nothing about which project, which keys, or why a check
+    failed: this endpoint is public, and "working or not" is the most it should
+    ever reveal. The detail goes to the server log.
     """
     uses_database = type(session_store).__name__ != "InMemorySessionStore"
 
-    return jsonify(
-        {
-            "status": "ok",
-            "session_store": "database" if uses_database else "memory",
-            "persistent": uses_database,
-        }
-    )
+    database_ok = True
+    if uses_database:
+        try:
+            session_store.check_reachable()
+        except Exception:
+            app.logger.exception("health check could not reach the database")
+            database_ok = False
+
+    body = {
+        "status": "ok" if database_ok else "degraded",
+        "session_store": "database" if uses_database else "memory",
+        "persistent": uses_database,
+        "database_reachable": database_ok if uses_database else None,
+    }
+
+    # 503 so an uptime monitor treats this as down. Reporting 200 while the
+    # database is unreachable is how an outage goes unnoticed.
+    return jsonify(body), (200 if database_ok else 503)
 
 
 @app.route("/new-game")
@@ -150,6 +168,21 @@ def _session_error(exc, status):
     return jsonify({"error": str(exc)}), status
 
 
+@app.errorhandler(Exception)
+def _unhandled(exc):
+    """Return JSON from the API rather than Flask's HTML error page.
+
+    The client parses `error` out of the body; an HTML 500 gave players a bare
+    "Something went wrong" with nothing in it to diagnose. The message stays
+    generic on purpose -- the detail belongs in the server log, not in a
+    response anyone can read.
+    """
+    if request.path.startswith("/api/"):
+        app.logger.exception("unhandled error on %s", request.path)
+        return jsonify({"error": "The server hit an unexpected problem."}), 500
+    raise exc
+
+
 def _authorise(session):
     """Confirm the caller owns this session.
 
@@ -188,6 +221,12 @@ def api_game_start():
     if mode == "daily":
         player_name, teams, player_id, _ = daily_player()
         puzzle_date = today_eastern().isoformat()
+        # The session's composite foreign key requires this row to exist.
+        session_store.ensure_puzzle(
+            GAME_SLUG,
+            puzzle_date,
+            {"player_name": player_name, "player_id": player_id, "teams": teams},
+        )
     else:
         exclude = body.get("exclude") or []
         exclude_ids = {int(x) for x in exclude if str(x).strip().lstrip("-").isdigit()}
@@ -270,6 +309,30 @@ def api_game_hint(session_id):
 
     try:
         session = use_hint(session_store, session_id)
+    except SessionNotFound as exc:
+        return _session_error(exc, 404)
+    except SessionError as exc:
+        return _session_error(exc, 400)
+
+    return jsonify(public_view(session))
+
+
+@app.route("/api/game/<session_id>/hard-mode", methods=["POST"])
+def api_game_hard_mode(session_id):
+    existing = session_store.get(session_id)
+    if existing is None:
+        return jsonify({"error": "no such session"}), 404
+
+    try:
+        denied = _authorise(existing)
+    except AuthError as exc:
+        return _session_error(exc, 401)
+    if denied:
+        return denied
+
+    body = request.get_json(silent=True) or {}
+    try:
+        session = set_hard_mode(session_store, session_id, body.get("enabled", False))
     except SessionNotFound as exc:
         return _session_error(exc, 404)
     except SessionError as exc:

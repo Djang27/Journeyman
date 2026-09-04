@@ -13,45 +13,6 @@ const NBA_TEAMS = [
     "washington wizards"
 ].sort()
 
-const CONFERENCE = {
-    "atlanta hawks":                    "East",
-    "boston celtics":                   "East",
-    "brooklyn nets":                    "East",
-    "charlotte bobcats":                "East",
-    "charlotte hornets":                "East",
-    "chicago bulls":                    "East",
-    "cleveland cavaliers":              "East",
-    "dallas mavericks":                 "West",
-    "denver nuggets":                   "West",
-    "detroit pistons":                  "East",
-    "golden state warriors":            "West",
-    "houston rockets":                  "West",
-    "indiana pacers":                   "East",
-    "los angeles clippers":             "West",
-    "los angeles lakers":               "West",
-    "memphis grizzlies":                "West",
-    "miami heat":                       "East",
-    "milwaukee bucks":                  "East",
-    "minnesota timberwolves":           "West",
-    "new jersey nets":                  "East",
-    "new orleans hornets":              "West",
-    "new orleans pelicans":             "West",
-    "new york knicks":                  "East",
-    "oklahoma city thunder":            "West",
-    "orlando magic":                    "East",
-    "philadelphia 76ers":               "East",
-    "phoenix suns":                     "West",
-    "portland trail blazers":           "West",
-    "sacramento kings":                 "West",
-    "san antonio spurs":                "West",
-    "seattle supersonics":              "West",
-    "toronto raptors":                  "East",
-    "utah jazz":                        "West",
-    "vancouver grizzlies":              "West",
-    "washington bullets":               "East",
-    "washington wizards":               "East",
-}
-
 const RESULT_COLORS = {
     green: "correct",
     yellow: "close",
@@ -154,18 +115,20 @@ function TeamSearch({ value, onChange, disabled }) {
     )
 }
 
-function TeamList({ teams, guesses, results, on_guess_change, on_submit, on_clear, game_over, hint_active }) {
+function TeamList({ num_teams, hints, guesses, results, on_guess_change, on_submit, on_clear, game_over }) {
     return (
         <div className="roadmap">
             <div className="road-spine"></div>
             <div className="road-dashes"></div>
 
-            {teams.map((team, index) => {
+            {Array.from({ length: num_teams }, (_, index) => {
                 const result     = results[index]
                 const cardClass  = result ? RESULT_COLORS[result] : ""
                 const isLocked   = result === "green"
-                const showHint   = hint_active && !isLocked
-                const conf       = showHint ? CONFERENCE[team] : null
+                // The conference comes from the server, which is the only
+                // side that knows the answer. Deriving it here would mean
+                // holding the teams in the browser again.
+                const conf       = isLocked ? null : (hints?.[index] ?? null)
                 const showClear  = !isLocked && !game_over && !!(guesses[index] ?? "")
 
                 return (

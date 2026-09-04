@@ -14,6 +14,7 @@ from sessions import (
     SessionNotFound,
     abandon,
     public_view,
+    set_hard_mode,
     start_session,
     submit_guess,
     use_hint,
@@ -245,3 +246,122 @@ class TestPublicView:
         blob = repr(public_view(store.get(sid)))
         assert "miami heat" not in blob
         assert "utah jazz" not in blob
+
+
+class TestHints:
+    """The hint must not require the client to hold the answer."""
+
+    def test_no_hints_before_one_is_used(self, store):
+        assert "hints" not in public_view(new_game(store))
+
+    def test_hints_give_the_conference_of_unsolved_slots(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers")
+        submit_guess(store, sid, 1, "lakers")
+        use_hint(store, sid)
+
+        view = public_view(store.get(sid))
+        # CAREER is celtics / heat / jazz -> East, East, West.
+        assert view["hints"] == ["East", "East", "West"]
+
+    def test_a_solved_slot_gets_no_hint(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "celtics")
+        submit_guess(store, sid, 1, "lakers")
+        submit_guess(store, sid, 2, "lakers")
+        use_hint(store, sid)
+
+        assert public_view(store.get(sid))["hints"][0] is None
+
+    def test_hints_never_name_a_team(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers")
+        submit_guess(store, sid, 1, "lakers")
+        use_hint(store, sid)
+
+        blob = repr(public_view(store.get(sid))["hints"])
+        for team in CAREER:
+            assert team not in blob
+
+
+class TestHardModeToggle:
+    def test_can_be_turned_on_before_the_first_guess(self, store):
+        sid = new_game(store).id
+        assert set_hard_mode(store, sid, True).hard_mode is True
+
+    def test_can_be_turned_off_again(self, store):
+        sid = new_game(store, hard_mode=True).id
+        assert set_hard_mode(store, sid, False).hard_mode is False
+
+    def test_is_locked_once_a_guess_is_recorded(self, store):
+        """Otherwise it could be switched on for the multiplier once winning."""
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "celtics")
+        with pytest.raises(SessionError, match="locked"):
+            set_hard_mode(store, sid, True)
+
+    def test_is_locked_after_a_wrong_guess_too(self, store):
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers")
+        with pytest.raises(SessionError, match="locked"):
+            set_hard_mode(store, sid, True)
+
+    def test_cannot_be_changed_on_a_finished_game(self, store):
+        sid = new_game(store).id
+        abandon(store, sid)
+        with pytest.raises(SessionError, match="already over"):
+            set_hard_mode(store, sid, True)
+
+
+class TestResultRecording:
+    """Finished games become the permanent record Stats and the leaderboard read.
+
+    Until Phase 0 the browser wrote this row, which is why a score could be
+    invented. The server writes it now, from its own state.
+    """
+
+    def test_a_win_is_recorded(self, store):
+        sid = new_game(store, user_id="u1").id
+        for position, team in enumerate(CAREER):
+            submit_guess(store, sid, position, team)
+
+        assert len(store.recorded) == 1
+        assert store.recorded[0].status == "won"
+
+    def test_a_loss_is_recorded(self, store):
+        sid = new_game(store, user_id="u1").id
+        for position in range(MAX_WRONG_GUESSES):
+            submit_guess(store, sid, position, "lakers")
+
+        assert len(store.recorded) == 1
+        assert store.recorded[0].status == "lost"
+
+    def test_nothing_is_recorded_while_the_game_is_running(self, store):
+        sid = new_game(store, user_id="u1").id
+        submit_guess(store, sid, 0, "celtics")
+        assert store.recorded == []
+
+    def test_recorded_exactly_once(self, store):
+        """A second write would double-count the game in every stat."""
+        sid = new_game(store, user_id="u1").id
+        for position, team in enumerate(CAREER):
+            submit_guess(store, sid, position, team)
+
+        with pytest.raises(SessionError):
+            submit_guess(store, sid, 0, "celtics")
+
+        assert len(store.recorded) == 1
+
+    def test_anonymous_games_are_not_recorded(self, store):
+        """game_results.user_id is not nullable and there is nobody to credit."""
+        sid = new_game(store).id
+        for position, team in enumerate(CAREER):
+            submit_guess(store, sid, position, team)
+
+        assert store.recorded == []
+
+    def test_abandoning_records_nothing(self, store):
+        """Walking away is not a loss; counting it would punish closing a tab."""
+        sid = new_game(store, user_id="u1").id
+        abandon(store, sid)
+        assert store.recorded == []

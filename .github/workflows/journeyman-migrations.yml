@@ -1,0 +1,109 @@
+name: Journeyman Migrations
+
+# Split from the main CI workflow because it is slow -- verifying migrations
+# means starting the whole Supabase stack -- and because it only matters when
+# the schema changes. Path-filtered so ordinary PRs never wait for it.
+#
+# This exists because migrations were applied entirely by hand until now, and
+# forgetting looked exactly like a working deploy that failed at runtime on a
+# missing table.
+
+on:
+  pull_request:
+    paths:
+      - "Journeyman/supabase/**"
+      - ".github/workflows/journeyman-migrations.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Journeyman/supabase/**"
+      - ".github/workflows/journeyman-migrations.yml"
+
+concurrency:
+  # Never let two deploys race to apply migrations to the same database.
+  group: journeyman-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Apply from empty
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start a clean local stack
+        run: supabase start
+
+      - name: Apply every migration to an empty database
+        # `db reset` drops and rebuilds from migrations plus seed.sql, so this
+        # proves the whole stack applies from nothing -- not merely that the
+        # newest file applies on top of whatever happens to be there.
+        run: supabase db reset
+
+      - name: Check for schema drift
+        # A migration that does not reproduce the schema it claims to create
+        # would otherwise be found much later, on a database nobody can reset.
+        run: supabase db diff --schema public
+
+  deploy:
+    name: Apply to production
+    # Only after `verify` proves they apply, and only on main.
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check the deploy is configured
+        id: configured
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ secrets.SUPABASE_PRODUCTION_REF }}
+          PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$REF" ] || [ -z "$PASSWORD" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Migration deploy skipped. Set SUPABASE_ACCESS_TOKEN, \
+            SUPABASE_PRODUCTION_REF and SUPABASE_DB_PASSWORD to enable it; until \
+            then migrations must be applied by hand."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Link to production
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PRODUCTION_REF }}"
+
+      - name: Show what would be applied
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        # Printed before the real push so the log always records what changed,
+        # which is the first thing anyone wants after a bad deploy.
+        run: supabase db push --dry-run
+
+      - name: Apply
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push
