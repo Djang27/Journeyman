@@ -1,0 +1,337 @@
+{
+  "_readme": [
+    "Ground truth for scoring candidate NBA data sources.",
+    "",
+    "`current_pool_teams` is what backend/nba_players.json claims today, which is",
+    "the thing under suspicion -- it is here to be checked, not trusted.",
+    "",
+    "To verify one entry: look the player up on Basketball-Reference, read the",
+    "season-by-season team column, collapse consecutive seasons at the same",
+    "franchise into one entry, keep a later return as a separate entry, and use",
+    "the franchise name as it was AT THE TIME (Seattle SuperSonics, not Oklahoma",
+    "City). Put the result in `verified_teams` and set `verified` to true.",
+    "",
+    "Entries with verified=false are ignored when scoring a source, so this file",
+    "is useful from the first entry filled in rather than only when complete."
+  ],
+  "players": [
+    {
+      "player_id": 104,
+      "name": "Benoit Benjamin",
+      "chosen_because": "three separate franchise relocations in one career: SEA, NJ, VAN",
+      "current_pool_teams": [
+        "los angeles clippers",
+        "seattle supersonics",
+        "los angeles lakers",
+        "new jersey nets",
+        "vancouver grizzlies",
+        "milwaukee bucks",
+        "toronto raptors",
+        "philadelphia 76ers",
+        "cleveland cavaliers"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1365,
+      "name": "Xavier McDaniel",
+      "chosen_because": "Seattle and New Jersey, both since relocated",
+      "current_pool_teams": [
+        "seattle supersonics",
+        "phoenix suns",
+        "new york knicks",
+        "boston celtics",
+        "new jersey nets"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1863,
+      "name": "Earl Boykins",
+      "chosen_because": "long career crossing NJ and the Bobcats era, with a return",
+      "current_pool_teams": [
+        "new jersey nets",
+        "cleveland cavaliers",
+        "orlando magic",
+        "cleveland cavaliers",
+        "los angeles clippers",
+        "golden state warriors",
+        "denver nuggets",
+        "milwaukee bucks",
+        "charlotte bobcats",
+        "washington wizards",
+        "milwaukee bucks",
+        "houston rockets"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 976,
+      "name": "Jeff McInnis",
+      "chosen_because": "Bobcats era plus New Jersey",
+      "current_pool_teams": [
+        "denver nuggets",
+        "washington wizards",
+        "los angeles clippers",
+        "portland trail blazers",
+        "cleveland cavaliers",
+        "new jersey nets",
+        "charlotte bobcats"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1742,
+      "name": "Shammond Williams",
+      "chosen_because": "Seattle plus the New Orleans Hornets, before the Pelicans rename",
+      "current_pool_teams": [
+        "atlanta hawks",
+        "seattle supersonics",
+        "boston celtics",
+        "denver nuggets",
+        "orlando magic",
+        "new orleans hornets",
+        "los angeles lakers"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 201604,
+      "name": "Chris Douglas-Roberts",
+      "chosen_because": "New Jersey plus the Bobcats era",
+      "current_pool_teams": [
+        "new jersey nets",
+        "milwaukee bucks",
+        "dallas mavericks",
+        "charlotte bobcats",
+        "los angeles clippers"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 76972,
+      "name": "Connie Hawkins",
+      "chosen_because": "1970s. Recorded as PHX/LAL/PHX/LAL/ATL, which looks like a mid-season trade mis-ordered",
+      "current_pool_teams": [
+        "phoenix suns",
+        "los angeles lakers",
+        "phoenix suns",
+        "los angeles lakers",
+        "atlanta hawks"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1737,
+      "name": "Nazr Mohammed",
+      "chosen_because": "returns to Oklahoma City after leaving; nine stints",
+      "current_pool_teams": [
+        "philadelphia 76ers",
+        "atlanta hawks",
+        "new york knicks",
+        "san antonio spurs",
+        "detroit pistons",
+        "charlotte bobcats",
+        "oklahoma city thunder",
+        "chicago bulls",
+        "oklahoma city thunder"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 2571,
+      "name": "Leandro Barbosa",
+      "chosen_because": "returns to Phoenix twice",
+      "current_pool_teams": [
+        "phoenix suns",
+        "toronto raptors",
+        "indiana pacers",
+        "boston celtics",
+        "phoenix suns",
+        "golden state warriors",
+        "phoenix suns"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 202362,
+      "name": "Lance Stephenson",
+      "chosen_because": "returns to Indiana twice",
+      "current_pool_teams": [
+        "indiana pacers",
+        "charlotte hornets",
+        "los angeles clippers",
+        "memphis grizzlies",
+        "new orleans pelicans",
+        "minnesota timberwolves",
+        "indiana pacers",
+        "los angeles lakers",
+        "atlanta hawks",
+        "indiana pacers"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1761,
+      "name": "Greg Buckner",
+      "chosen_because": "returns to Dallas",
+      "current_pool_teams": [
+        "dallas mavericks",
+        "philadelphia 76ers",
+        "denver nuggets",
+        "dallas mavericks",
+        "minnesota timberwolves",
+        "memphis grizzlies"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 77946,
+      "name": "Jerry Reynolds",
+      "chosen_because": "returns to Milwaukee, and a Seattle stint",
+      "current_pool_teams": [
+        "milwaukee bucks",
+        "seattle supersonics",
+        "orlando magic",
+        "milwaukee bucks"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 202066,
+      "name": "Garrett Temple",
+      "chosen_because": "longest in the pool at 13 stops; most chances to be wrong",
+      "current_pool_teams": [
+        "houston rockets",
+        "sacramento kings",
+        "san antonio spurs",
+        "milwaukee bucks",
+        "charlotte bobcats",
+        "washington wizards",
+        "sacramento kings",
+        "memphis grizzlies",
+        "los angeles clippers",
+        "brooklyn nets",
+        "chicago bulls",
+        "new orleans pelicans",
+        "toronto raptors"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 2440,
+      "name": "Matt Barnes",
+      "chosen_because": "12 stops with two separate returns",
+      "current_pool_teams": [
+        "los angeles clippers",
+        "sacramento kings",
+        "new york knicks",
+        "philadelphia 76ers",
+        "golden state warriors",
+        "phoenix suns",
+        "orlando magic",
+        "los angeles lakers",
+        "los angeles clippers",
+        "memphis grizzlies",
+        "sacramento kings",
+        "golden state warriors"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 202738,
+      "name": "Isaiah Thomas",
+      "chosen_because": "12 stops, recent, heavily traded",
+      "current_pool_teams": [
+        "sacramento kings",
+        "phoenix suns",
+        "boston celtics",
+        "cleveland cavaliers",
+        "los angeles lakers",
+        "denver nuggets",
+        "washington wizards",
+        "new orleans pelicans",
+        "los angeles lakers",
+        "dallas mavericks",
+        "charlotte hornets",
+        "phoenix suns"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 55,
+      "name": "Marty Conlon",
+      "chosen_because": "Seattle plus a Hornets/Wizards pair from the rename era",
+      "current_pool_teams": [
+        "seattle supersonics",
+        "sacramento kings",
+        "charlotte hornets",
+        "washington wizards",
+        "milwaukee bucks",
+        "boston celtics",
+        "miami heat",
+        "los angeles clippers"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 203469,
+      "name": "Cody Zeller",
+      "chosen_because": "modern, Charlotte after the Hornets name returned",
+      "current_pool_teams": [
+        "charlotte hornets",
+        "portland trail blazers",
+        "miami heat",
+        "new orleans pelicans"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    },
+    {
+      "player_id": 1626195,
+      "name": "Willy Hernangomez",
+      "chosen_because": "modern and short: three stops, no relocations",
+      "current_pool_teams": [
+        "new york knicks",
+        "charlotte hornets",
+        "new orleans pelicans"
+      ],
+      "verified_teams": null,
+      "verified": false,
+      "notes": ""
+    }
+  ]
+}
