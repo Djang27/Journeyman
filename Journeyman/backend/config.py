@@ -49,6 +49,14 @@ class Config:
         # this alongside a hosted URL: see the note in auth.py about downgrade.
         self.supabase_jwt_secret = env.get("SUPABASE_JWT_SECRET", "")
 
+        # Error reporting activates only when a DSN is present, so nothing here
+        # requires a Sentry account to run.
+        self.sentry_dsn = env.get("SENTRY_DSN", "")
+        self.environment = env.get("VERCEL_ENV") or env.get("ENVIRONMENT") or "development"
+        # Vercel exposes the deploy's commit, which is what makes an error report
+        # answerable: "which version was this?"
+        self.release = env.get("VERCEL_GIT_COMMIT_SHA") or env.get("RELEASE") or None
+
         # Falls back to the in-memory store when Supabase is not configured, so
         # `python app.py` works out of the box for someone cloning the repo.
         self.use_database = bool(self.supabase_url and self.supabase_service_key)
