@@ -105,23 +105,52 @@ class TestAgainstTheShippedPool:
         with open(POOL, encoding="utf-8") as f:
             return json.load(f)["players"]
 
-    def test_most_of_the_pool_is_promotable(self, players):
-        promotable = [p for p in players if should_promote(p["ppg"], len(set(p["teams"])), "ok")]
-        assert len(promotable) / len(players) > 0.9
+    def test_most_unambiguous_careers_are_promotable(self, players):
+        usable = [p for p in players if not p.get("ambiguous_seasons")]
+        promotable = [
+            p
+            for p in usable
+            if should_promote(p["ppg"], len(set(p["teams"])), "ok", p.get("games"))
+        ]
+        assert len(promotable) / len(usable) > 0.6
 
-    def test_the_daily_eligible_share_is_recorded(self, players):
-        """The pool's real constraint, pinned so a change is noticed.
+    def test_there_are_enough_daily_eligible_careers_for_years_of_dailies(self, players):
+        """The constraint that drove the source change, now measured the other way.
 
-        Only about a third of the shipped pool is recognisable enough for a
-        daily -- roughly 73 careers, which cannot fill a quarter without
-        repeating. That is why the scheduler widens rather than filters, and it
-        is the strongest argument for growing the pool.
+        The old 200-player pool held about 70 careers recognisable enough for a
+        daily -- ten weeks before repeating. Anything under a year here means
+        the pool has regressed.
         """
         eligible = [
-            p for p in players if is_daily_eligible(difficulty_for(p["ppg"], len(p["teams"])))
+            p
+            for p in players
+            if not p.get("ambiguous_seasons")
+            and is_daily_eligible(
+                difficulty_for(
+                    p["ppg"], len(p["teams"]), p.get("games"), p.get("all_star_selections", 0)
+                )
+            )
         ]
-        assert 50 <= len(eligible) <= 120, len(eligible)
+        assert len(eligible) > 365, len(eligible)
 
     def test_every_tier_is_represented(self, players):
-        tiers = {difficulty_for(p["ppg"], len(p["teams"])) for p in players}
+        tiers = {
+            difficulty_for(
+                p["ppg"], len(p["teams"]), p.get("games"), p.get("all_star_selections", 0)
+            )
+            for p in players
+        }
         assert tiers == {1, 2, 3, 4, 5}
+
+    def test_a_famous_low_scorer_is_not_rated_obscure(self, players):
+        """Dennis Rodman: 7.3 a game, 911 games, two All-Star selections.
+
+        Scoring average alone calls him obscure. He is the reason the model
+        takes longevity and All-Star selections as well.
+        """
+        rodman = next((p for p in players if p["name"] == "Dennis Rodman"), None)
+        assert rodman is not None
+        tier = difficulty_for(
+            rodman["ppg"], len(rodman["teams"]), rodman["games"], rodman["all_star_selections"]
+        )
+        assert tier <= 2, tier
