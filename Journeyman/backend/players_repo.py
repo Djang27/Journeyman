@@ -30,6 +30,9 @@ COLUMNS = (
     "validation_status",
     "validation_notes",
     "source",
+    "source_id",
+    "all_star_selections",
+    "seasons_played",
 )
 
 
@@ -64,20 +67,36 @@ def to_row(player, source):
     result = validate(teams)
     problems = result["impossible"] + result["implausible"]
 
+    # A season whose trade order could not be resolved is a career we cannot
+    # state correctly, so it joins the review queue rather than the rotation.
+    if player.get("ambiguous_seasons"):
+        seasons = ", ".join(str(s) for s in player["ambiguous_seasons"])
+        problems = [*problems, f"unresolvable trade order in season(s): {seasons}"]
+        result = {**result, "verdict": "review"}
+
     stints = player.get("stints") or stints_from_teams(teams)
     seasons = [s.get("from_season") for s in stints if s.get("from_season")]
 
     return {
-        "id": player["id"],
+        "id": str(player["id"]),
         "name": player["name"],
         "stints": stints,
         "career_ppg": player.get("ppg"),
         "career_games": player.get("games"),
+        "seasons_played": player.get("seasons_played"),
+        "all_star_selections": player.get("all_star_selections") or 0,
+        "source_id": str(player["id"]),
         "first_season": min(seasons) if seasons else None,
         "last_season": max(seasons) if seasons else None,
         # Rated at import so the scheduler can prefer recognisable careers
         # without recomputing, and so a rating can be overridden by hand later.
-        "difficulty": player.get("difficulty") or difficulty_for(player.get("ppg"), len(teams)),
+        "difficulty": player.get("difficulty")
+        or difficulty_for(
+            player.get("ppg"),
+            len(teams),
+            player.get("games"),
+            player.get("all_star_selections") or 0,
+        ),
         "validation_status": result["verdict"],
         "validation_notes": "; ".join(problems) or None,
         "source": source,
@@ -107,12 +126,29 @@ class PlayersRepo:
             written += len(batch)
         return written
 
+    # PostgREST caps a response at 1000 rows and says nothing about it. Without
+    # paging, a pool larger than that is silently truncated -- the scheduler and
+    # the game simply never see the rest.
+    PAGE_SIZE = 1000
+
     def active_pool(self):
-        """Every player eligible for puzzles."""
-        response = (
-            self._table().select(",".join(COLUMNS)).eq("is_active_for_puzzles", True).execute()
-        )
-        return response.data or []
+        """Every player eligible for puzzles, paged."""
+        players = []
+        start = 0
+        while True:
+            response = (
+                self._table()
+                .select(",".join(COLUMNS))
+                .eq("is_active_for_puzzles", True)
+                .order("id")
+                .range(start, start + self.PAGE_SIZE - 1)
+                .execute()
+            )
+            page = response.data or []
+            players.extend(page)
+            if len(page) < self.PAGE_SIZE:
+                return players
+            start += self.PAGE_SIZE
 
     def get(self, player_id):
         response = self._table().select(",".join(COLUMNS)).eq("id", player_id).limit(1).execute()

@@ -68,10 +68,21 @@ class TestRowMapping:
 
     def test_the_whole_shipped_pool_maps_without_error(self):
         with open(POOL, encoding="utf-8") as f:
-            rows = [to_row(p, "nba_players.json") for p in json.load(f)["players"]]
-        assert len(rows) == 200
+            players = json.load(f)["players"]
+        rows = [to_row(p, "basketball-reference") for p in players]
+
+        assert len(rows) == len(players) > 1000
         assert all(r["stints"] for r in rows)
         assert {r["validation_status"] for r in rows} <= {"ok", "review", "reject"}
+
+    def test_an_unresolvable_trade_order_lands_in_the_review_queue(self):
+        """The source cannot order a mid-season trade, so those must not ship."""
+        row = to_row(player(ambiguous_seasons=[1995]), "test")
+        assert row["validation_status"] == "review"
+        assert "trade order" in row["validation_notes"]
+
+    def test_the_source_id_is_kept_for_traceability(self):
+        assert to_row(player(id="lanieblo01"), "test")["source_id"] == "lanieblo01"
 
 
 LOCAL_URL = "http://127.0.0.1:54321"
@@ -133,18 +144,49 @@ class TestAgainstLocalSupabase:
         assert stored["name"] == "Renamed"
         assert stored["is_active_for_puzzles"] is True
 
-    def test_the_review_queue_is_a_query(self, repo):
+    def test_validation_status_is_stored_not_recomputed(self, repo):
+        """The review queue is a column, so finding it is a query.
+
+        Checked per-player rather than by scanning needing_review(), which is
+        capped and would not contain a test row once the real pool is loaded.
+        """
         bad = player(id=900002, teams=["brooklyn nets", "new jersey nets"])
         repo.upsert_many([player(id=900001), bad], source="test")
 
-        flagged = {p["id"] for p in repo.needing_review()}
-        assert 900002 in flagged
-        assert 900001 not in flagged
+        assert repo.get("900002")["validation_status"] == "reject"
+        assert repo.get("900001")["validation_status"] == "ok"
+
+    def test_the_review_queue_returns_only_flagged_players(self, repo):
+        repo.upsert_many([player(id=900002, teams=["brooklyn nets", "new jersey nets"])], "test")
+        statuses = {p["validation_status"] for p in repo.needing_review()}
+        assert statuses <= {"review", "reject"}
+        assert statuses
 
     def test_the_active_pool_holds_only_promoted_players(self, repo):
         repo.upsert_many([player(id=900001), player(id=900003)], source="test")
         repo.set_active(900001, True)
 
         pool = {p["id"] for p in repo.active_pool()}
-        assert 900001 in pool
-        assert 900003 not in pool
+        assert "900001" in pool
+        assert "900003" not in pool
+
+    def test_the_active_pool_pages_past_the_postgrest_limit(self, repo):
+        """PostgREST caps a response at 1000 rows without saying so.
+
+        The pool is larger than that, so an unpaged query silently hid several
+        hundred players from both the scheduler and the game.
+        """
+        assert repo.PAGE_SIZE == 1000
+
+        many = [player(id=950000 + i) for i in range(repo.PAGE_SIZE + 50)]
+        repo.upsert_many(many, source="test")
+        for entry in many:
+            repo._table().update({"is_active_for_puzzles": True}).eq(
+                "id", str(entry["id"])
+            ).execute()
+        try:
+            pool = repo.active_pool()
+            assert len(pool) >= len(many), f"{len(pool)} returned, expected {len(many)}"
+        finally:
+            for entry in many:
+                repo._table().delete().eq("id", str(entry["id"])).execute()

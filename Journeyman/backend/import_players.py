@@ -23,7 +23,7 @@ from difficulty import describe, difficulty_for, is_daily_eligible, should_promo
 from players_repo import PlayersRepo  # noqa: E402
 from validation import format_report, validate_pool  # noqa: E402
 
-SOURCE = "nba_players.json"
+SOURCE = "basketball-reference"
 POOL_PATH = Path(__file__).with_name("nba_players.json")
 
 
@@ -71,10 +71,12 @@ def main(argv=None):
         promoted = [
             p
             for p in players
-            if should_promote(
+            if not p.get("ambiguous_seasons")
+            and should_promote(
                 p.get("ppg"),
                 len(set(p["teams"])),
                 "ok" if validate_pool([p])["ok"] else "review",
+                p.get("games"),
             )
         ]
         for player in promoted:
@@ -82,7 +84,12 @@ def main(argv=None):
 
         tiers = {}
         for player in promoted:
-            tier = difficulty_for(player.get("ppg"), len(player["teams"]))
+            tier = difficulty_for(
+                player.get("ppg"),
+                len(player["teams"]),
+                player.get("games"),
+                player.get("all_star_selections") or 0,
+            )
             tiers[tier] = tiers.get(tier, 0) + 1
 
         print(f"promoted {len(promoted)}; the rest await review")

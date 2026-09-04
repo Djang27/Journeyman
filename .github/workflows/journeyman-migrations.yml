@@ -36,7 +36,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned rather than "latest": resolving latest calls the GitHub API,
+          # which is rate limited on shared runners and failed a run outright.
+          # It also means a Supabase release can break CI without a commit.
+          version: 2.116.0
 
       - name: Start a clean local stack
         run: supabase start
@@ -67,7 +70,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned rather than "latest": resolving latest calls the GitHub API,
+          # which is rate limited on shared runners and failed a run outright.
+          # It also means a Supabase release can break CI without a commit.
+          version: 2.116.0
 
       - name: Check the deploy is configured
         id: configured

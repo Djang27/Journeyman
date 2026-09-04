@@ -129,14 +129,36 @@ class TestAgainstTheRealPool:
         """The whole approach fails if it flags everything."""
         assert len(summary["review"]) / summary["total"] < 0.10, format_report(summary)
 
-    def test_it_still_catches_the_known_pre_1985_ordering_bug(self, summary):
-        """Bob Lanier, Connie Hawkins and Dwight Jones, found with no source.
+    def test_the_pre_1985_ordering_bug_is_gone(self, summary):
+        """The bug this suite was written to catch, now fixed at source.
 
-        If this stops failing, either the pool was fixed -- in which case delete
-        this test -- or the check stopped working.
+        Bob Lanier, Connie Hawkins and Dwight Jones were all flagged for A/B/A/B
+        alternation while the pool came from stats.nba.com, whose rows were
+        walked in arrival order. The Basketball-Reference source plus ordering by
+        season removed it. The alternation check itself is still exercised by the
+        unit tests above.
         """
         flagged = {entry["name"] for entry in summary["review"]}
-        assert {"Bob Lanier", "Connie Hawkins", "Dwight Jones"} <= flagged
+        assert not ({"Bob Lanier", "Connie Hawkins", "Dwight Jones"} & flagged)
+
+    def test_the_careers_that_were_wrong_are_now_right(self):
+        """Spot-checks against the verified ground truth, at source."""
+        import json
+
+        with open(POOL, encoding="utf-8") as f:
+            pool = {p["name"]: p["teams"] for p in json.load(f)["players"]}
+
+        assert pool["Bob Lanier"] == ["detroit pistons", "milwaukee bucks"]
+        assert pool["Connie Hawkins"] == [
+            "phoenix suns",
+            "los angeles lakers",
+            "atlanta hawks",
+        ]
+        # Washington was the Bullets until 1997; the old ingestion said Wizards
+        # for every player, and the pool contained no Bullets at all.
+        assert "washington bullets" in pool["Marty Conlon"]
+        # Charlotte drafted Zeller as the Bobcats, a year before the rename.
+        assert pool["Cody Zeller"][0] == "charlotte bobcats"
 
 
 class TestReport:
