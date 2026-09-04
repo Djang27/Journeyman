@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request
 from game_logic import guess_check
 from generate_players import daily_player, randomPlayer, today_eastern
 from sessions import (
+    GAME_SLUG,
     InMemorySessionStore,
     SessionError,
     SessionNotFound,
@@ -151,6 +152,21 @@ def _session_error(exc, status):
     return jsonify({"error": str(exc)}), status
 
 
+@app.errorhandler(Exception)
+def _unhandled(exc):
+    """Return JSON from the API rather than Flask's HTML error page.
+
+    The client parses `error` out of the body; an HTML 500 gave players a bare
+    "Something went wrong" with nothing in it to diagnose. The message stays
+    generic on purpose -- the detail belongs in the server log, not in a
+    response anyone can read.
+    """
+    if request.path.startswith("/api/"):
+        app.logger.exception("unhandled error on %s", request.path)
+        return jsonify({"error": "The server hit an unexpected problem."}), 500
+    raise exc
+
+
 def _authorise(session):
     """Confirm the caller owns this session.
 
@@ -189,6 +205,12 @@ def api_game_start():
     if mode == "daily":
         player_name, teams, player_id, _ = daily_player()
         puzzle_date = today_eastern().isoformat()
+        # The session's composite foreign key requires this row to exist.
+        session_store.ensure_puzzle(
+            GAME_SLUG,
+            puzzle_date,
+            {"player_name": player_name, "player_id": player_id, "teams": teams},
+        )
     else:
         exclude = body.get("exclude") or []
         exclude_ids = {int(x) for x in exclude if str(x).strip().lstrip("-").isdigit()}

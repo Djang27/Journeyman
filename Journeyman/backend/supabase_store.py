@@ -23,6 +23,7 @@ from sessions import Session, SessionError, SessionStore
 
 TABLE = "game_sessions"
 RESULTS_TABLE = "game_results"
+PUZZLES_TABLE = "puzzles"
 
 # Fields the database owns. Everything else the engine tracks lives in `state`,
 # which keeps migration 0002's column list stable as the game gains features.
@@ -149,6 +150,12 @@ class SupabaseSessionStore(SessionStore):
         if not response.data:
             raise SessionError("session vanished while being updated")
         return from_row(response.data[0])
+
+    def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
+        self._client.table(PUZZLES_TABLE).upsert(
+            {"game_slug": game_slug, "puzzle_date": puzzle_date, "payload": payload},
+            on_conflict="game_slug,puzzle_date",
+        ).execute()
 
     def record_result(self, session: Session) -> None:
         """Insert the permanent record the Stats and leaderboard views read.

@@ -80,6 +80,19 @@ class SessionStore(ABC):
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None: ...
 
     @abstractmethod
+    def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
+        """Make sure the day's puzzle row exists.
+
+        A daily session carries a composite foreign key to `puzzles`, so the
+        scheduled puzzle must exist before the session can. Today's puzzle is
+        deterministic, so the server can write it on first use.
+
+        This is a lazy scheduler standing in for a real one. Phase 1 seeds
+        `puzzles` weeks ahead, which is what gives no repeats, a hand-picked
+        launch day, and an archive; then this becomes a no-op safety net.
+        """
+
+    @abstractmethod
     def record_result(self, session: Session) -> None:
         """Write the finished game to game_results.
 
@@ -100,6 +113,7 @@ class InMemorySessionStore(SessionStore):
     def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
         self.recorded: list[Session] = []
+        self.puzzles: dict[tuple[str, str], dict] = {}
 
     def create(self, session: Session) -> Session:
         if session.mode == "daily" and session.user_id:
@@ -117,6 +131,9 @@ class InMemorySessionStore(SessionStore):
     def update(self, session: Session) -> Session:
         self._sessions[session.id] = session
         return session
+
+    def ensure_puzzle(self, game_slug: str, puzzle_date: str, payload: dict) -> None:
+        self.puzzles[(game_slug, puzzle_date)] = payload
 
     def record_result(self, session: Session) -> None:
         self.recorded.append(session)
