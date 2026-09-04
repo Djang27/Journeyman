@@ -6,6 +6,8 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from career_builder import build_stints, teams_of
+
 NBA_STATS_BASE_URL = "https://stats.nba.com/stats"
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 TARGET_PLAYER_COUNT = 200
@@ -102,8 +104,29 @@ def all_nba_players():
     return result_set(data, "CommonAllPlayers")
 
 
+def team_name_for(row):
+    """The franchise as it was called that season, or None if unrecognised."""
+    abbr = row.get("TEAM_ABBREVIATION")
+
+    if abbr == "CHA":
+        # Charlotte is the awkward one: Bobcats until they took the Hornets name
+        # back in 2014, and the same abbreviation throughout.
+        try:
+            start_year = int(str(row.get("SEASON_ID", ""))[:4])
+            return "charlotte bobcats" if start_year < 2014 else "charlotte hornets"
+        except (ValueError, TypeError):
+            return "charlotte hornets"
+
+    return TEAM_NAMES_BY_ABBR.get(abbr)
+
+
 def career_stats_for_player(player_id):
-    """Returns (teams, career_ppg). teams is empty list if player is invalid."""
+    """Returns (stints, career_ppg, ambiguous_seasons).
+
+    Stints carry seasons, and ordering is handled by career_builder rather than
+    by walking the API's row order -- which is what produced Bob Lanier as
+    DET / MIL / DET / MIL.
+    """
     data = nba_get(
         "playercareerstats",
         {
@@ -113,28 +136,16 @@ def career_stats_for_player(player_id):
         },
     )
 
-    teams = []
+    rows = result_set(data, "SeasonTotalsRegularSeason")
 
-    for row in result_set(data, "SeasonTotalsRegularSeason"):
-        abbr = row.get("TEAM_ABBREVIATION")
+    # A team we cannot name means a career we cannot state correctly -- an ABA
+    # or international row, say. Better to skip the player than to serve a puzzle
+    # with a hole in it.
+    for row in rows:
+        if row.get("TEAM_ABBREVIATION") != "TOT" and not team_name_for(row):
+            return [], 0.0, []
 
-        if abbr == "TOT":
-            continue
-
-        if abbr == "CHA":
-            try:
-                start_year = int(str(row.get("SEASON_ID", ""))[:4])
-                team_name = "charlotte bobcats" if start_year < 2014 else "charlotte hornets"
-            except (ValueError, TypeError):
-                team_name = "charlotte hornets"
-        else:
-            team_name = TEAM_NAMES_BY_ABBR.get(abbr)
-
-        if not team_name:
-            return [], 0.0
-
-        if not teams or teams[-1] != team_name:
-            teams.append(team_name)
+    stints, ambiguous = build_stints(rows, team_name_for)
 
     career_rows = result_set(data, "CareerTotalsRegularSeason")
     if career_rows:
@@ -144,7 +155,7 @@ def career_stats_for_player(player_id):
     else:
         career_ppg = 0.0
 
-    return teams, career_ppg
+    return stints, career_ppg, ambiguous
 
 
 def build_player_database():
@@ -157,7 +168,8 @@ def build_player_database():
         if len(players) >= TARGET_PLAYER_COUNT:
             break
 
-        teams, ppg = career_stats_for_player(candidate["PERSON_ID"])
+        stints, ppg, ambiguous = career_stats_for_player(candidate["PERSON_ID"])
+        teams = teams_of(stints)
 
         if len(teams) >= 2 and len(set(teams)) >= 2 and ppg >= MIN_CAREER_PPG:
             players.append(
@@ -166,6 +178,10 @@ def build_player_database():
                     "name": candidate["DISPLAY_FIRST_LAST"],
                     "ppg": ppg,
                     "teams": teams,
+                    "stints": stints,
+                    # Recorded rather than hidden: a season the neighbours could
+                    # not order is exactly what a reviewer should look at.
+                    "ambiguous_seasons": ambiguous or None,
                 }
             )
 
@@ -193,7 +209,7 @@ def filter_existing_database():
 
     kept = []
     for player in existing:
-        _, ppg = career_stats_for_player(player["id"])
+        _, ppg, _ = career_stats_for_player(player["id"])
         status = "KEEP" if ppg >= MIN_CAREER_PPG else "DROP"
         safe_name = player["name"].encode("ascii", errors="replace").decode()
         print(f"  [{status}] {safe_name}: {ppg} PPG")
