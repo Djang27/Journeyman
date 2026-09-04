@@ -1,7 +1,7 @@
 from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
-from generate_players import daily_player, randomPlayer, today_eastern
+from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
 from sessions import (
     GAME_SLUG,
     InMemorySessionStore,
@@ -36,8 +36,34 @@ def _build_session_store():
     return SupabaseSessionStore.from_config(config)
 
 
+def _wire_player_pool(config):
+    """Point player selection at the players table when there is one.
+
+    Without this the game reads nba_players.json, which has no curation gate --
+    a career flagged for review would still be served as a puzzle.
+    """
+    if not config.use_database:
+        return None
+
+    from players_repo import PlayersRepo, teams_of
+
+    from supabase import create_client
+
+    repo = PlayersRepo(create_client(config.supabase_url, config.supabase_service_key))
+
+    def fetch():
+        return [
+            {"id": row["id"], "name": row["name"], "teams": teams_of(row)}
+            for row in repo.active_pool()
+        ]
+
+    use_pool_source(fetch)
+    return repo
+
+
 session_store = _build_session_store()
 config = load_config()
+players_repo = _wire_player_pool(config)
 
 
 def _current_user_id():

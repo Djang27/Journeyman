@@ -105,3 +105,56 @@ class TestLoadPlayers:
 
         with pytest.raises(RuntimeError, match="empty"):
             player_db.randomPlayer()
+
+
+class TestPoolSource:
+    """Selection reads the curated pool when there is one, the file otherwise."""
+
+    @pytest.fixture(autouse=True)
+    def _reset(self, player_db):
+        yield
+        player_db.use_pool_source(None)
+
+    def test_the_file_is_used_when_no_source_is_wired(self, player_db, sample_players):
+        assert len(player_db._load_players()) == len(sample_players)
+
+    def test_a_wired_source_replaces_the_file(self, player_db):
+        pool = [{"id": 77, "name": "From The Database", "teams": ["miami heat", "utah jazz"]}]
+        player_db.use_pool_source(lambda: pool)
+        assert player_db.randomPlayer()[2] == 77
+
+    def test_the_pool_is_cached_rather_than_refetched_per_call(self, player_db):
+        calls = []
+
+        def fetch():
+            calls.append(1)
+            return [{"id": 77, "name": "X", "teams": ["miami heat", "utah jazz"]}]
+
+        player_db.use_pool_source(fetch)
+        for _ in range(5):
+            player_db.randomPlayer()
+        assert len(calls) == 1
+
+    def test_a_failing_source_falls_back_to_the_file(self, player_db, sample_players):
+        """An unreachable database degrades the pool, not the game."""
+
+        def explodes():
+            raise RuntimeError("connection refused")
+
+        player_db.use_pool_source(explodes)
+        assert player_db.randomPlayer()[2] in {p["id"] for p in sample_players}
+
+    def test_an_empty_pool_falls_back_rather_than_failing(self, player_db, sample_players):
+        """Nobody promoted yet must not mean nobody can play."""
+        player_db.use_pool_source(list)
+        assert player_db.randomPlayer()[2] in {p["id"] for p in sample_players}
+
+    def test_switching_sources_clears_the_cache(self, player_db):
+        player_db.use_pool_source(
+            lambda: [{"id": 1, "name": "A", "teams": ["miami heat", "utah jazz"]}]
+        )
+        player_db.randomPlayer()
+        player_db.use_pool_source(
+            lambda: [{"id": 2, "name": "B", "teams": ["miami heat", "utah jazz"]}]
+        )
+        assert player_db.randomPlayer()[2] == 2
