@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import load_config  # noqa: E402
+from difficulty import describe, is_daily_eligible  # noqa: E402
 from generate_players import today_eastern  # noqa: E402
 from players_repo import PlayersRepo, teams_of  # noqa: E402
 from puzzles_repo import NotEnoughPlayers, PuzzlesRepo, plan  # noqa: E402
@@ -48,9 +49,24 @@ def main(argv=None):
         return 0
 
     pool = [
-        {"id": row["id"], "name": row["name"], "teams": teams_of(row)}
+        {
+            "id": row["id"],
+            "name": row["name"],
+            "teams": teams_of(row),
+            "difficulty": row.get("difficulty"),
+        }
         for row in PlayersRepo(client).active_pool()
     ]
+
+    eligible = sum(1 for p in pool if is_daily_eligible(p["difficulty"]))
+    print(f"{len(pool)} promoted players, {eligible} of them daily-eligible")
+    if eligible < args.days:
+        # Said plainly rather than buried: the calendar will reach past the
+        # recognisable players and start using harder ones.
+        print(
+            f"  note: fewer daily-eligible players ({eligible}) than days to fill "
+            f"({args.days}), so harder careers will be used once they run out"
+        )
 
     try:
         chosen = plan(
@@ -59,14 +75,16 @@ def main(argv=None):
             args.days,
             already_scheduled=puzzles.scheduled_between(start, end),
             last_used=puzzles.last_used(start),
+            prefer=lambda p: is_daily_eligible(p["difficulty"]),
         )
     except NotEnoughPlayers as exc:
         print(f"cannot schedule: {exc}")
         return 1
 
-    print(f"{len(pool)} promoted players; {len(chosen)} dates to fill")
+    print(f"{len(chosen)} dates to fill")
     for date, player in chosen[:5]:
-        print(f"  {date}  {player['name']}")
+        tier = player.get("difficulty")
+        print(f"  {date}  {player['name']:24} tier {tier or '?'} ({describe(tier)})")
     if len(chosen) > 5:
         print(f"  ... and {len(chosen) - 5} more")
 

@@ -113,7 +113,7 @@ class PuzzlesRepo:
         return seen
 
 
-def plan(pool, start, days, already_scheduled=None, last_used=None, rng=None):
+def plan(pool, start, days, already_scheduled=None, last_used=None, rng=None, prefer=None):
     """Choose a player for each unscheduled date in the window.
 
     Pure, so the rules are testable without a database.
@@ -122,6 +122,12 @@ def plan(pool, start, days, already_scheduled=None, last_used=None, rng=None):
     and the least recently used fill the calendar. That always succeeds while the
     pool can cover the horizon, and spaces repeats as widely as the pool allows
     -- which hard exclusion cannot do once the calendar is deeper than the pool.
+
+    `prefer` marks players better suited to the slot -- for the daily, the ones
+    recognisable enough to be enjoyable. Preferred players fill the calendar
+    first, and the rest are used only once they run out. Widening beats failing:
+    the shipped pool holds just 73 daily-eligible careers, so a hard filter could
+    not fill even a single quarter without repeating.
 
     Existing rows are never overwritten: a puzzle already scheduled is a promise,
     and quietly changing it is the behaviour this replaces.
@@ -153,5 +159,10 @@ def plan(pool, start, days, already_scheduled=None, last_used=None, rng=None):
     candidates = list(pool)
     rng.shuffle(candidates)
     candidates.sort(key=lambda p: last_used.get(p["id"], ""))
+
+    if prefer is not None:
+        preferred = [p for p in candidates if prefer(p)]
+        rest = [p for p in candidates if not prefer(p)]
+        candidates = preferred + rest
 
     return list(zip(open_dates, candidates[: len(open_dates)], strict=False))

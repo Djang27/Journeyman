@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import load_config  # noqa: E402
+from difficulty import describe, difficulty_for, is_daily_eligible, should_promote  # noqa: E402
 from players_repo import PlayersRepo  # noqa: E402
 from validation import format_report, validate_pool  # noqa: E402
 
@@ -37,9 +38,9 @@ def _repo():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--activate-ok",
+        "--promote",
         action="store_true",
-        help="promote careers validation cleared into the puzzle rotation",
+        help="promote careers that meet the promotion rule into the puzzle rotation",
     )
     parser.add_argument("--review", action="store_true", help="print the review queue and exit")
     parser.add_argument("--dry-run", action="store_true", help="validate but write nothing")
@@ -64,11 +65,30 @@ def main(argv=None):
     written = repo.upsert_many(players, source=SOURCE)
     print(f"wrote {written} players")
 
-    if args.activate_ok:
-        cleared = [p for p in players if validate_pool([p])["ok"]]
-        for player in cleared:
+    if args.promote:
+        # A rule rather than a person: hand-review works at 200 players and not
+        # at several thousand. What stays hand-reviewed is the schedule.
+        promoted = [
+            p
+            for p in players
+            if should_promote(
+                p.get("ppg"),
+                len(set(p["teams"])),
+                "ok" if validate_pool([p])["ok"] else "review",
+            )
+        ]
+        for player in promoted:
             repo.set_active(player["id"], True)
-        print(f"promoted {len(cleared)} that validation cleared; the rest await review")
+
+        tiers = {}
+        for player in promoted:
+            tier = difficulty_for(player.get("ppg"), len(player["teams"]))
+            tiers[tier] = tiers.get(tier, 0) + 1
+
+        print(f"promoted {len(promoted)}; the rest await review")
+        for tier in sorted(tiers):
+            marker = "daily" if is_daily_eligible(tier) else "     "
+            print(f"  tier {tier} [{marker}] {tiers[tier]:4}  {describe(tier)}")
 
     print(f"pool: {repo.counts()}")
     return 0
