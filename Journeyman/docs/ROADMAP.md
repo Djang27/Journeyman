@@ -26,8 +26,9 @@ Three environments, each with one job:
 - [x] `chore/environments` — throw on missing Supabase env vars instead of
       logging; `.env.example` per package; **pin Python and
       Node versions** across local/CI/Vercel; env var reference doc
-- [~] `ci/github-actions` — lint, tests and build run on every PR (#1). Still to
-      do: verify migrations apply from empty; apply to prod on merge to `main`
+- [x] `ci/github-actions` — lint, tests and build on every PR (#1); migrations
+      verified from empty and applied to production on merge (#15); the puzzle
+      calendar topped up weekly
 - [ ] `chore/extract-repo` *(optional)* — `git filter-repo` Journeyman into its
       own repo, repoint Vercel root. Removes the need for CI path filters.
 
@@ -83,15 +84,15 @@ The fix — a session lifecycle:
       - [x] Supabase-backed store over PostgREST (#10)
       - [x] identity from a verified token, session ownership (#12), corrected to
             JWKS after discovering the project had rotated to ES256 (#13)
-- [ ] `feat/session-frontend` — API client module; drive the game from the session
-      API; drop `teams` from App state; remove the client-side result insert
-- [ ] `chore/lock-down-writes` — revoke insert; unique index on daily results;
-      delete legacy endpoints; remove `calculate_score` (keep `calculate_streaks`)
+- [x] `feat/session-frontend` — the browser stops holding the answer; the server
+      writes results; the hint is served rather than derived client-side (#15)
+- [x] `chore/lock-down-writes` — client writes to `game_results` revoked, legacy
+      endpoints deleted, `calculate_score` removed from the browser (#16)
 
-**Gate before `chore/lock-down-writes`:** play the preview deploy for a full day —
-daily and unlimited, win and loss, signed in and out. A bug here loses real games.
+**Phase 0 is complete.** The leaderboard is trustworthy: a score can only be
+written by the server, from its own clock, about a game it refereed.
 
-**Two things this phase taught, worth not relearning:**
+**Four things this phase taught, worth not relearning:**
 
 * A new Flask route needs a matching rewrite in `vercel.json`. Without one it
   falls through to the SPA catch-all and returns `index.html`. Nothing in the
@@ -101,6 +102,13 @@ daily and unlimited, win and loss, signed in and out. A bug here loses real game
   keys, and the old secret stays visible in the dashboard afterwards. Verify
   against JWKS only, and refuse HS256 whenever a JWKS URL exists — accepting both
   would let anyone holding that legacy secret forge a token for any user.
+* Migrations reach a hosted database only if something applies them. Both preview
+  and production ran for a while without `0002`, which looks exactly like a
+  working deploy that fails at runtime on a missing table. CI applies them now.
+* An in-memory fake has no foreign keys, so the daily path passed every test and
+  still 500'd in production. Integration tests that skip when Docker is absent
+  skip in CI too — which means a code path exercised only against a fake is not
+  really tested.
 
 Schema is multi-game from the start (see *Anthology* below):
 
@@ -146,12 +154,22 @@ nullable because anonymous play works today and should keep working.
 Kills the rate-limit problem permanently. **See `docs/nba-data.md` for the
 sourcing investigation** — that document drives this phase.
 
-- [ ] `feat/players-table` — `players` table with curation columns; seed from the
-      existing JSON first; read pool from DB with JSON as fallback; bulk
-      historical backfill; puzzle scheduler; **replace `md5(date) % len(players)`
-      with scheduled `daily_puzzles` rows**
-- [ ] `feat/ingest-delta` — weekly in-season roster delta job; scheduling and
-      failure alerting; pipeline runbook
+- [x] `feat/player-ground-truth` — validation that scales without a source to
+      check against, plus the eighteen-career calibration set (#17)
+- [x] `feat/players-table` — `players` table with seasons and a curation gate;
+      imported and promoted in production; selection reads the curated pool (#18)
+- [x] `feat/puzzle-scheduler` — scheduled rows replace `md5(date) % len(players)`;
+      90 days seeded in production (#19)
+- [x] `fix/career-ordering` — the pre-1985 alternation bug fixed at source;
+      ingestion now emits seasons
+- [ ] `feat/ingest-delta` — a source with seasons, so the pool can grow beyond
+      the frozen 200. **Blocked**: `stats.nba.com` times out, and choosing a
+      replacement needs the ground truth verified.
+
+**The pool has not changed size since 2026-06-02.** Everything above is plumbing
+and quality control over the same 200 players. Growing it is what
+`feat/ingest-delta` is for, and it is the last thing standing between Phase 1 and
+a game whose daily does not repeat within a year.
 
 ---
 
@@ -168,8 +186,8 @@ throughput.
       `get_leaderboard` currently aggregates the whole table on every sidebar open
 - [ ] `feat/rate-limits` — token bucket on `user_id`, hashed-IP fallback.
       ~30/hour on start, ~120/min on guess
-- [~] `ops/observability` — `/api/health` reports which session store the
-      process built (#11), which is how a missing env var gets noticed. Still to
+- [~] `ops/observability` — `/api/health` checks the database rather than just
+      the config, returning 503 when it cannot be reached (#11, #15). Still to
       do: Sentry on frontend and API; uptime monitor; Cloudflare
 - [ ] `ops/degraded-mode` — read-only flag; client-side pending-result buffer that
       flushes on reconnect; admin endpoints to swap a puzzle and void a day
