@@ -1,0 +1,74 @@
+name: Journeyman Smoke Test
+
+# Plays a real game against production and checks it behaved.
+#
+# The two worst bugs in this project raised no exception: the leaderboard
+# returned an empty list for months, and the daily 500'd on a foreign key it had
+# never been given. An error tracker sees neither -- nothing threw, or nothing
+# was running when it did.
+#
+# What catches "works, but wrong" is asserting from outside, on a schedule,
+# against the real thing.
+
+on:
+  schedule:
+    # Every 30 minutes. Frequent enough that a broken deploy is caught before
+    # many players meet it, rare enough to be free.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Deployment to check (defaults to the production secret)"
+        required: false
+  # Also on merges that touch the API, so a bad deploy is caught immediately
+  # rather than up to half an hour later.
+  push:
+    branches: [main]
+    paths:
+      - "Journeyman/backend/**"
+      - "Journeyman/vercel.json"
+
+concurrency:
+  group: journeyman-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Play a game against production
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the target is configured
+        id: configured
+        env:
+          URL: ${{ inputs.url || secrets.PRODUCTION_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Smoke test skipped. Set the PRODUCTION_URL secret \
+            to the public URL of the deployment to enable it."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for the deploy to settle
+        # Only on push: Vercel builds in parallel with this workflow, so testing
+        # immediately would check the previous deployment.
+        if: steps.configured.outputs.ready == 'true' && github.event_name == 'push'
+        run: sleep 90
+
+      - name: Play a game
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          URL: ${{ inputs.url || secrets.PRODUCTION_URL }}
+        # No dependencies: the script uses only the standard library, so a
+        # broken lockfile cannot stop the check that would tell you about it.
+        run: python backend/smoke_test.py --url "$URL"
