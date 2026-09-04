@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from career_builder import build_stints, teams_of
+from career_builder import build_stints, season_start_year, teams_of
 
 NBA_STATS_BASE_URL = "https://stats.nba.com/stats"
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
@@ -104,18 +104,38 @@ def all_nba_players():
     return result_set(data, "CommonAllPlayers")
 
 
+# Franchises that kept an abbreviation through a rename, so the era has to be
+# read from the season rather than the code. Each entry is the season from which
+# the newer name applies.
+#
+# Getting this wrong is invisible until someone checks: the shipped pool contains
+# no "washington bullets" at all, across players going back to the 1970s, because
+# WAS mapped to Wizards regardless of year.
+# Each entry is (season the name took effect, name), newest first. Charlotte
+# needs three because the name came back: the original Hornets left for New
+# Orleans in 2002, the Bobcats arrived in 2004, and they took the Hornets name
+# in 2014. A two-way split would call a 1990s Charlotte season "Bobcats".
+ERA_NAMES = {
+    "CHA": ((2014, "charlotte hornets"), (2004, "charlotte bobcats"), (0, "charlotte hornets")),
+    "WAS": ((1997, "washington wizards"), (0, "washington bullets")),
+}
+
+
 def team_name_for(row):
     """The franchise as it was called that season, or None if unrecognised."""
     abbr = row.get("TEAM_ABBREVIATION")
+    era = ERA_NAMES.get(abbr)
 
-    if abbr == "CHA":
-        # Charlotte is the awkward one: Bobcats until they took the Hornets name
-        # back in 2014, and the same abbreviation throughout.
-        try:
-            start_year = int(str(row.get("SEASON_ID", ""))[:4])
-            return "charlotte bobcats" if start_year < 2014 else "charlotte hornets"
-        except (ValueError, TypeError):
-            return "charlotte hornets"
+    if era:
+        # season_start_year rather than SEASON_ID[:4]: the endpoint sometimes
+        # prefixes a league digit, so "22013" sliced naively reads as year 2201
+        # and every era test silently takes the wrong branch.
+        year = season_start_year(row.get("SEASON_ID"))
+        if year is None:
+            return era[0][1]  # unreadable season: assume the current name
+        for from_season, name in era:
+            if year >= from_season:
+                return name
 
     return TEAM_NAMES_BY_ABBR.get(abbr)
 
