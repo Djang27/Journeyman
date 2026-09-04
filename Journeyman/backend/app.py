@@ -1,7 +1,18 @@
+import logging
+
 from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
 from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
+from observability import (
+    RequestTimer,
+    configure_logging,
+    configure_sentry,
+    get_request_id,
+    new_request_id,
+    safe_headers,
+    set_request_id,
+)
 from rate_limit import (
     GUESS_LIMIT,
     START_LIMIT,
@@ -23,6 +34,35 @@ from sessions import (
 from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
+
+_boot_config = load_config()
+configure_logging()
+SENTRY_ENABLED = configure_sentry(
+    _boot_config.sentry_dsn,
+    environment=_boot_config.environment,
+    release=_boot_config.release,
+)
+logger = logging.getLogger("journeyman")
+
+
+@app.before_request
+def _start_request():
+    """Tag the request so every line it produces can be found together."""
+    request_id = set_request_id(new_request_id(request.headers))
+    request.environ["journeyman.timer"] = RequestTimer(
+        logger, request.method, request.path, request_id
+    )
+
+
+@app.after_request
+def _finish_request(response):
+    timer = request.environ.get("journeyman.timer")
+    if timer:
+        timer.finish(response.status_code)
+    # Echoed so a player reporting a problem can quote an id that finds the
+    # exact request in the log.
+    response.headers["X-Request-Id"] = get_request_id()
+    return response
 
 
 def _build_session_store():
@@ -116,7 +156,7 @@ def _rate_limited(action, limit, user_id=None):
     try:
         decision = check(rate_limiter, action, limit, user_id, request.headers)
     except Exception:
-        app.logger.exception("rate limiter unavailable on %s", request.path)
+        logger.exception("rate limiter unavailable", extra={"http_path": request.path})
         return None
 
     if decision.allowed:
@@ -174,7 +214,7 @@ def api_health():
         try:
             session_store.check_reachable()
         except Exception:
-            app.logger.exception("health check could not reach the database")
+            logger.exception("health check could not reach the database")
             database_ok = False
 
     body = {
@@ -182,6 +222,9 @@ def api_health():
         "session_store": "database" if uses_database else "memory",
         "persistent": uses_database,
         "database_reachable": database_ok if uses_database else None,
+        # Whether errors are actually being captured, rather than leaving anyone
+        # to assume they are.
+        "error_reporting": SENTRY_ENABLED,
     }
 
     # 503 so an uptime monitor treats this as down. Reporting 200 while the
@@ -248,10 +291,13 @@ def _unhandled(exc):
         return exc
 
     if request.path.startswith("/api/"):
-        app.logger.exception("unhandled error on %s", request.path)
+        logger.exception(
+            "unhandled error",
+            extra={"http_path": request.path, "headers": safe_headers(request.headers)},
+        )
         return jsonify({"error": "The server hit an unexpected problem."}), 500
 
-    app.logger.exception("unhandled error on %s", request.path)
+    logger.exception("unhandled error", extra={"http_path": request.path})
     raise exc
 
 

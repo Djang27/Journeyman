@@ -211,6 +211,9 @@ class TestHealth:
                 "session_store": "database",
                 "persistent": True,
                 "database_reachable": True,
+                # Says whether errors are actually being captured, rather than
+                # leaving anyone to assume they are.
+                "error_reporting": False,
             }
         finally:
             app_module.session_store = original
