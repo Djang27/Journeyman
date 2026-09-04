@@ -120,22 +120,86 @@ Use published dataset dumps rather than crawling them.
 
 ---
 
-## Investigation plan
+## How correctness scales
 
-Time-boxed. The goal is a decision, not a perfect answer.
+The obvious plan -- check the data by hand -- does not survive contact with the
+numbers. A few thousand careers cannot be read by a person, and a source that is
+95% right still leaves a hundred broken puzzles. So the question is not "how do
+we verify the data" but "how do we make the amount needing human eyes small".
 
-1. **Establish ground truth.** Hand-pick 20 players spanning eras and edge cases —
-   a 1970s journeyman, someone who played for a relocated franchise, someone with
-   a mid-season trade, someone who returned to a former team, a current player.
-   Write their correct team sequences by hand from Basketball-Reference. This
-   becomes a test fixture and the scoring rubric for every candidate source.
-2. **Pull a sample from each candidate** and diff against the 20. Record: how many
-   exactly correct, what kind of errors, whether relocations are handled.
-3. **Check licensing** for whichever source wins, and confirm it permits this use.
-4. **Measure the full backfill** — how many players clear "≥2 distinct
-   franchises", and what the difficulty distribution looks like.
-5. **Write it up here** as a decision with the reasoning, so it does not need
-   re-litigating.
+Four layers, implemented in `backend/validation.py`:
+
+**1. Impossible (automatic reject).** Franchise renames impose a strict order:
+Seattle must precede Oklahoma City, Vancouver must precede Memphis, New Jersey
+before Brooklyn. A career violating that is wrong, provably, with no source to
+compare against. Consecutive duplicate stints mean the collapse failed. These
+have no false positives, so they can be rejected outright.
+
+**2. Implausible (review queue).** Patterns rare in reality rather than
+impossible. The important one is A/B/A/B alternation, which is the fingerprint
+of a mid-season trade whose rows were interleaved rather than sequenced.
+
+This layer earns its place. Run over the shipped 200-player pool it flagged
+**seven careers, 3.5%** -- and among them Bob Lanier, Connie Hawkins and Dwight
+Jones, all pre-1985, all with the same alternation:
+
+    Bob Lanier      DET / MIL / DET / MIL          should be DET / MIL
+    Connie Hawkins  PHX / LAL / PHX / LAL / ATL    should be PHX / LAL / ATL
+    Dwight Jones    ATL / HOU / CHI / HOU / CHI / LAL
+
+Not three unrelated mistakes: one systematic bug in how pre-1985 seasons are
+ordered, surfacing three times. Found with no external source at all.
+
+**3. Cross-source agreement (the ingestion job).** Pull each career from two
+independent sources. Where they agree, accept. Where they disagree, queue for
+review. This is what turns "is the source right?" into a question that answers
+itself for the overwhelming majority of players.
+
+**4. The curation gate.** Ingested players land `is_active_for_puzzles = false`.
+Nothing reaches a player until it is promoted, so an error that survives every
+layer above still cannot become a puzzle by accident.
+
+Behind all of it, players themselves are the last check -- a "this looks wrong"
+report on the results screen costs little and reaches exactly the puzzles that
+are wrong. Worth building once there are players to report.
+
+### What this needs from the data
+
+**Seasons, not just team names.** The current `nba_players.json` records
+`["seattle supersonics", "phoenix suns"]` with no years, which makes era
+validation impossible: there is no way to check that a Seattle stint falls
+before 2008. The `players` table must store a season range per stint. This is a
+hard requirement on whichever source wins, and the current format cannot express
+it.
+
+---
+
+## Choosing a source
+
+Validation says whether data is self-consistent. It cannot say whether it is
+*true* -- all three pre-1985 careers above are self-consistent under layer 1.
+That is what the ground truth in `backend/tests/fixtures/ground_truth.json` is
+for.
+
+Eighteen careers, chosen for the failure modes a source actually has rather than
+for fame: three separate relocations in one career, the Bobcats and New Orleans
+Hornets eras, players who returned to a former team, and the longest careers in
+the pool. `backend/ground_truth.py` scores any candidate against them and reports
+*how* it failed -- reordered stints, a dropped return, a missing franchise --
+because that is what separates an unusable source from one needing a small fix.
+
+These eighteen are a **calibration set, not a verification method**. They are
+checked by hand once, to prove the automated layers agree with reality. After
+that the layers carry the thousands.
+
+1. **Verify the eighteen** against Basketball-Reference and fill in
+   `verified_teams`. Unverified entries are skipped, so this pays off from the
+   first one.
+2. **Score each candidate** with `score_source` and record the results here.
+3. **Check licensing** for whichever wins.
+4. **Measure the backfill**: how many players clear "two distinct franchises",
+   and what the difficulty distribution looks like.
+5. **Write the decision down here**, so it is not re-litigated.
 
 ---
 
