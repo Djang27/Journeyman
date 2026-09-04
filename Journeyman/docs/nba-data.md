@@ -203,6 +203,65 @@ that the layers carry the thousands.
 
 ---
 
+## Source evaluation, 2026-09-04
+
+Scored against the eighteen verified careers in
+`backend/tests/fixtures/ground_truth.json`.
+
+| Source | Score | Coverage | Verdict |
+|---|---|---|---|
+| `stats.nba.com` (what ships today) | **15/18** | 1946–present | Most accurate, and **unreachable** |
+| FiveThirtyEight historical CSV | **8/18** | 1977–2020 | Free and era-correct, too narrow |
+| balldontlie.io | not tested | 1996+ for player-season data | Needs an API key |
+| Kaggle `nbadb` | not tested | 1946–present | Needs a Kaggle account |
+
+### stats.nba.com is dead, not slow
+
+Three attempts with 60-second timeouts and backoff, from a residential machine:
+two timeouts and one `RemoteDisconnected`. "Run it from a laptop" is not a
+workaround — it does not answer at all. Its 15/18 is the best score of anything
+tested and is irrelevant while it cannot be reached.
+
+### What the FiveThirtyEight failures showed
+
+Only 8/18, but the breakdown matters more than the number:
+
+* **6 were coverage**, not accuracy — Connie Hawkins predates 1977, and five
+  modern careers are truncated at 2020.
+* **3 were mid-season trades ordered wrongly** (Benjamin, Williams, Barnes).
+* **1 lost a return stint** (Boykins).
+
+Its team codes are genuinely era-correct — `WSB` distinct from `WAS`, `CHH` from
+`CHA` — which is more than the shipped ingestion managed.
+
+### The finding that constrains every source
+
+**Season-granularity data cannot order a mid-season trade.** Both teams appear
+against the same season with nothing recording which came first. Only game-level
+data with dates resolves it.
+
+`stats.nba.com` scored well because its rows *happen* to arrive chronologically,
+not because it states the order — which is exactly why the shipped pool has Bob
+Lanier as DET/MIL/DET/MIL when that assumption failed.
+
+So every season-level source carries a floor of ordering errors on traded
+seasons. `career_builder` narrows it by reading the neighbouring seasons, and
+reports what it cannot resolve; the review queue is where the remainder goes.
+A source that claims zero errors here is not being honest.
+
+### Where this leaves it
+
+No free, unauthenticated source is better than what already ships. The two
+untested candidates both need an account, and **Kaggle `nbadb` is the strongest
+of them**: MIT licensed, 1946–present, updated daily, and built *from*
+`stats.nba.com` — so it should reproduce that 15/18 without the availability
+problem. Its `nbadb init` path rebuilds from the live API and is therefore no use
+here; only the Kaggle download avoids that.
+
+Next step is an account and a scored run, not more searching.
+
+---
+
 ## Target design
 
 Independent of which source wins:
