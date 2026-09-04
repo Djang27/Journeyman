@@ -1,0 +1,77 @@
+name: Journeyman Schedule Top-up
+
+# The puzzle calendar drains. Ninety days seeded by hand is three months, after
+# which the daily silently falls back to hashing the date -- the behaviour the
+# scheduler exists to replace, returning without anyone noticing.
+#
+# This tops it back up weekly, so the calendar is always roughly a quarter ahead.
+
+on:
+  schedule:
+    # 09:00 UTC on Mondays: well clear of the midnight-Eastern daily rollover,
+    # so a run can never race the puzzle it is scheduling.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "How far ahead to fill"
+        required: false
+        default: "90"
+
+concurrency:
+  # Two runs filling the same dates would race for the same players.
+  group: journeyman-schedule
+  cancel-in-progress: false
+
+jobs:
+  top-up:
+    name: Fill the puzzle calendar
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Journeyman/backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check the job is configured
+        id: configured
+        env:
+          URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Schedule top-up skipped. Set \
+            SUPABASE_PRODUCTION_URL and SUPABASE_PRODUCTION_SERVICE_ROLE_KEY \
+            to enable it; until then the calendar must be topped up by hand."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Show what would be scheduled
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
+        # Logged before writing, so the run always records what it decided --
+        # which matters when someone asks why a particular day got that player.
+        run: python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }} --dry-run
+
+      - name: Fill the calendar
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
+        # Existing dates are never overwritten, so this is safe to re-run and a
+        # missed week self-heals on the next one.
+        run: python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }}
