@@ -522,3 +522,82 @@ class TestNotFound:
         # Not /api/game/start -- a GET there matches /api/game/<session_id>
         # with the id "start", so it is legitimately a 404.
         assert client.get("/api/game/abc/guess").status_code == 405
+
+
+class TestRateLimiting:
+    """The endpoints under a limiter, including when the limiter itself fails."""
+
+    @pytest.fixture(autouse=True)
+    def _fresh(self, client):
+        import app as app_module
+        from rate_limit import InMemoryRateLimiter
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+        original = app_module.rate_limiter
+        app_module.rate_limiter = InMemoryRateLimiter()
+        yield
+        app_module.rate_limiter = original
+
+    def start(self, client, **headers):
+        return client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers)
+
+    def test_ordinary_play_is_not_limited(self, client):
+        for _ in range(10):
+            assert self.start(client).status_code == 201
+
+    def test_a_flood_of_starts_is_refused(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "START_LIMIT", (60, 3))
+        for _ in range(3):
+            assert self.start(client).status_code == 201
+
+        response = self.start(client)
+        assert response.status_code == 429
+        assert "error" in response.get_json()
+
+    def test_a_refusal_says_when_to_retry(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "START_LIMIT", (60, 1))
+        self.start(client)
+        response = self.start(client)
+
+        assert response.status_code == 429
+        assert int(response.headers["Retry-After"]) >= 1
+
+    def test_guessing_is_limited_separately_from_starting(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "GUESS_LIMIT", (60, 2))
+        session_id = self.start(client).get_json()["session_id"]
+
+        for _ in range(2):
+            client.post(f"/api/game/{session_id}/guess", json={"position": 0, "guess": "x"})
+        over = client.post(f"/api/game/{session_id}/guess", json={"position": 0, "guess": "x"})
+
+        assert over.status_code == 429
+        # Starting is a different budget and is untouched.
+        assert self.start(client).status_code == 201
+
+    def test_separate_addresses_have_separate_budgets(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "START_LIMIT", (60, 2))
+        for _ in range(2):
+            self.start(client, **{"X-Forwarded-For": "1.1.1.1"})
+
+        assert self.start(client, **{"X-Forwarded-For": "1.1.1.1"}).status_code == 429
+        assert self.start(client, **{"X-Forwarded-For": "2.2.2.2"}).status_code == 201
+
+    def test_a_broken_limiter_does_not_break_the_game(self, client):
+        """Fails open: the limiter is not the security boundary."""
+        import app as app_module
+
+        class Broken:
+            def consume(self, *args, **kwargs):
+                raise RuntimeError("counter store unreachable")
+
+        app_module.rate_limiter = Broken()
+        assert self.start(client).status_code == 201

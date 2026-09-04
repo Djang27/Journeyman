@@ -2,6 +2,12 @@ from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
 from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
+from rate_limit import (
+    GUESS_LIMIT,
+    START_LIMIT,
+    InMemoryRateLimiter,
+    check,
+)
 from sessions import (
     GAME_SLUG,
     InMemorySessionStore,
@@ -78,6 +84,49 @@ def _build_puzzles_repo(config):
 
 
 puzzles_repo = _build_puzzles_repo(config)
+
+
+def _build_rate_limiter(config):
+    """Postgres when configured, in-memory otherwise.
+
+    The in-memory one is for tests and single-process local runs. On serverless
+    each invocation has its own dict, so the effective limit would multiply by
+    however many instances are warm.
+    """
+    if not config.use_database:
+        return InMemoryRateLimiter()
+
+    from rate_limit import PostgresRateLimiter
+
+    from supabase import create_client
+
+    return PostgresRateLimiter(create_client(config.supabase_url, config.supabase_service_key))
+
+
+rate_limiter = _build_rate_limiter(config)
+
+
+def _rate_limited(action, limit, user_id=None):
+    """Returns a 429 response when the caller is over their limit, else None.
+
+    Fails open: a limiter that is itself unavailable must not take the game
+    down. It is not the security boundary -- identity and the curation gate are
+    -- so trading a real outage for a hypothetical abuse is the wrong way round.
+    """
+    try:
+        decision = check(rate_limiter, action, limit, user_id, request.headers)
+    except Exception:
+        app.logger.exception("rate limiter unavailable on %s", request.path)
+        return None
+
+    if decision.allowed:
+        return None
+
+    response = jsonify({"error": "You are going a little fast. Try again in a moment."})
+    retry_after = decision.retry_after_seconds
+    if retry_after:
+        response.headers["Retry-After"] = str(retry_after)
+    return response, 429
 
 
 def _current_user_id():
@@ -240,6 +289,10 @@ def api_game_start():
     except AuthError as exc:
         return _session_error(exc, 401)
 
+    limited = _rate_limited("game_start", START_LIMIT, user_id)
+    if limited:
+        return limited
+
     puzzle_date = None
     if mode == "daily":
         puzzle_date = today_eastern().isoformat()
@@ -294,6 +347,10 @@ def api_game_guess(session_id):
         return _session_error(exc, 401)
     if denied:
         return denied
+
+    limited = _rate_limited("game_guess", GUESS_LIMIT, existing.user_id)
+    if limited:
+        return limited
 
     body = request.get_json(silent=True) or {}
     try:
