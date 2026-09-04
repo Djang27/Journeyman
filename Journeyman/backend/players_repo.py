@@ -10,6 +10,7 @@ two means they cannot disagree.
 
 from __future__ import annotations
 
+from difficulty import difficulty_for
 from validation import validate
 
 TABLE = "players"
@@ -74,7 +75,9 @@ def to_row(player, source):
         "career_games": player.get("games"),
         "first_season": min(seasons) if seasons else None,
         "last_season": max(seasons) if seasons else None,
-        "difficulty": player.get("difficulty"),
+        # Rated at import so the scheduler can prefer recognisable careers
+        # without recomputing, and so a rating can be overridden by hand later.
+        "difficulty": player.get("difficulty") or difficulty_for(player.get("ppg"), len(teams)),
         "validation_status": result["verdict"],
         "validation_notes": "; ".join(problems) or None,
         "source": source,
