@@ -24,6 +24,12 @@ def client(player_db):
     limiter = app_module.rate_limiter
     if hasattr(limiter, "_counts"):
         limiter._counts.clear()
+
+    # And again for the quota: without this, tests that start unlimited games
+    # spend an allowance later tests are then refused.
+    from quota import InMemoryQuotaStore
+
+    app_module.quota_store = InMemoryQuotaStore()
     with app.test_client() as test_client:
         yield test_client
 
@@ -635,6 +641,108 @@ class TestTheDailyPuzzleCache:
         assert stats["hit_rate"] == 0.9
 
 
+class TestTheFreeQuota:
+    """Five free unlimited games a day, enforced at the endpoint.
+
+    test_quota.py owns the rules. These pin what the HTTP surface does with
+    them: which status, what the body carries, and what is never charged for.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _fresh_store(self, client):
+        import app as app_module
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+
+    def start(self, client, mode="unlimited"):
+        return client.post("/api/game/start", json={"mode": mode})
+
+    def test_five_unlimited_games_are_allowed(self, client):
+        for _ in range(5):
+            assert self.start(client).status_code == 201
+
+    def test_the_sixth_is_402(self, client):
+        for _ in range(5):
+            self.start(client)
+        response = self.start(client)
+        # 402 rather than 429: a rate limit says "slow down" and resolves in
+        # seconds; this says "you have used what is free", which the UI must
+        # say differently and the player must do something different about.
+        assert response.status_code == 402
+
+    def test_the_refusal_explains_itself_and_points_at_the_daily(self, client):
+        for _ in range(5):
+            self.start(client)
+        body = self.start(client).get_json()
+        assert "free games" in body["error"]
+        assert "daily" in body["error"].lower()
+        assert body["quota"] == {
+            "used": 6,
+            "remaining": 0,
+            "limit": 5,
+            "resets": "midnight Eastern",
+        }
+
+    def test_a_successful_start_says_what_is_left(self, client):
+        remaining = [self.start(client).get_json()["quota"]["remaining"] for _ in range(5)]
+        assert remaining == [4, 3, 2, 1, 0]
+
+    def test_the_daily_is_never_charged(self, client):
+        # The funnel. Exhausting unlimited must not touch it.
+        for _ in range(6):
+            self.start(client)
+        assert self.start(client, mode="daily").status_code == 201
+
+    def test_the_daily_carries_no_quota_field(self, client):
+        # Absent rather than zero, so the client reads it as "not applicable".
+        assert "quota" not in self.start(client, mode="daily").get_json()
+
+    def test_a_refused_start_does_not_build_a_game(self, client):
+        import app as app_module
+
+        for _ in range(5):
+            self.start(client)
+        before = len(app_module.session_store._sessions)
+        self.start(client)
+        assert len(app_module.session_store._sessions) == before
+
+    def test_a_broken_quota_store_does_not_break_the_game(self, client):
+        # Free games are recoverable; an outage is not. Fails open, loudly.
+        import app as app_module
+
+        class BrokenStore:
+            def consume(self, *args, **kwargs):
+                raise RuntimeError("quota store is down")
+
+            def used(self, *args, **kwargs):
+                raise RuntimeError("quota store is down")
+
+        original = app_module.quota_store
+        app_module.quota_store = BrokenStore()
+        try:
+            for _ in range(8):
+                assert self.start(client).status_code == 201
+        finally:
+            app_module.quota_store = original
+
+    def test_a_paid_player_is_not_metered(self, client, monkeypatch):
+        import app as app_module
+
+        class Paid:
+            def is_unlimited(self, user_id):
+                return True
+
+        monkeypatch.setattr(app_module, "entitlements", Paid())
+        headers = TestSessionAPI.signed_in(monkeypatch)
+
+        for _ in range(8):
+            response = client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers)
+            assert response.status_code == 201
+            # No misleading "5 left" that never goes down.
+            assert "quota" not in response.get_json()
+
+
 class TestApiErrorsAreJson:
     """The client parses `error` from the body, so an HTML 500 tells it nothing."""
 
@@ -718,7 +826,17 @@ class TestRateLimiting:
         app_module.session_store = InMemorySessionStore()
         original = app_module.rate_limiter
         app_module.rate_limiter = InMemoryRateLimiter()
+
+        # These start far more than five games anonymously. An entitlement
+        # would not help -- it is only consulted for a verified user id, since
+        # an anonymous caller has nothing to check one against -- so the free
+        # allowance is raised instead. The quota has its own tests.
+        import quota
+
+        original_free = quota.FREE_GAMES_PER_DAY
+        quota.FREE_GAMES_PER_DAY = 10_000
         yield
+        quota.FREE_GAMES_PER_DAY = original_free
         app_module.rate_limiter = original
 
     def start(self, client, **headers):

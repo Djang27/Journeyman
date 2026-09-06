@@ -16,6 +16,13 @@ from observability import (
     safe_headers,
     set_request_id,
 )
+from quota import (
+    FreeTierOnly,
+    InMemoryQuotaStore,
+)
+from quota import (
+    consume as consume_quota,
+)
 from rate_limit import (
     GUESS_LIMIT,
     START_LIMIT,
@@ -182,6 +189,75 @@ def _build_rate_limiter(config):
 rate_limiter = _build_rate_limiter(config)
 
 
+def _build_quota_store(config):
+    """Postgres when configured, in-memory otherwise.
+
+    The in-memory one is for tests and local runs. On serverless each invocation
+    has its own dict, so an allowance would reset whenever a new instance served
+    the request -- which is to say, it would not be an allowance.
+    """
+    if not config.use_database:
+        return InMemoryQuotaStore()
+
+    from quota import PostgresQuotaStore
+
+    from supabase import create_client
+
+    return PostgresQuotaStore(create_client(config.supabase_url, config.supabase_service_key))
+
+
+quota_store = _build_quota_store(config)
+
+# Nobody has bought anything yet. feat/stripe-entitlements swaps this for one
+# that reads the entitlement column, and no caller changes.
+entitlements = FreeTierOnly()
+
+
+def _quota_exhausted(mode, user_id):
+    """Spends one game and returns a 402 when the allowance is gone, else None.
+
+    Also returns the decision, so the caller can put what is left on a
+    successful response without asking twice.
+
+    Fails open, like the rate limiter, and for a reason worth stating rather
+    than copying: if the quota store is unreachable the choice is between giving
+    away some free games and stopping the game working. Free games are
+    recoverable; an outage is not. It logs loudly, because silently free forever
+    is a different problem from briefly free.
+    """
+    try:
+        decision = consume_quota(
+            quota_store,
+            entitlements,
+            mode,
+            user_id,
+            today_eastern().isoformat(),
+            headers=request.headers,
+        )
+    except Exception:
+        logger.exception("quota store unavailable", extra={"http_path": request.path})
+        return None, None
+
+    if decision.allowed:
+        return None, decision
+
+    # 402 rather than 429. A rate limit says "slow down" and resolves itself in
+    # seconds; this says "you have used what is free", which is a different
+    # thing for the UI to say and a different thing for a player to do about it.
+    response = jsonify(
+        {
+            "error": "That is all five free games for today. The daily puzzle is always free.",
+            "quota": {
+                "used": decision.used,
+                "remaining": 0,
+                "limit": decision.limit,
+                "resets": "midnight Eastern",
+            },
+        }
+    )
+    return (response, 402), decision
+
+
 def _rate_limited(action, limit, user_id=None):
     """Returns a 429 response when the caller is over their limit, else None.
 
@@ -328,6 +404,18 @@ def _todays_puzzle(puzzle_date):
     return puzzle
 
 
+def _with_quota(view, decision):
+    """Attach what is left of the allowance to a session response.
+
+    Omitted entirely when there is nothing to say -- an unmetered caller or a
+    daily -- so the client can treat its absence as "not applicable" rather than
+    having to interpret a zero.
+    """
+    if decision is None or decision.unmetered:
+        return view
+    return {**view, "quota": {"remaining": decision.remaining, "limit": decision.limit}}
+
+
 def _session_error(exc, status):
     return jsonify({"error": str(exc)}), status
 
@@ -399,6 +487,7 @@ def api_game_start():
         return limited
 
     puzzle_date = None
+    quota = None
     if mode == "daily":
         puzzle_date = today_eastern().isoformat()
         # Before building a new one: an unfinished daily is resumed, not
@@ -409,6 +498,12 @@ def api_game_start():
             return jsonify(public_view(existing)), 200
         player_name, teams, player_id = _todays_puzzle(puzzle_date)
     else:
+        # Charged before the game is built, so a refused start costs nothing
+        # and cannot hand out a player the caller then keeps.
+        refused, quota = _quota_exhausted(mode, user_id)
+        if refused:
+            return refused
+
         exclude = body.get("exclude") or []
         exclude_ids = {int(x) for x in exclude if str(x).strip().lstrip("-").isdigit()}
         player_name, teams, player_id = randomPlayer(exclude_ids=exclude_ids)
@@ -427,7 +522,7 @@ def api_game_start():
     except SessionError as exc:
         return _session_error(exc, 409 if "already played" in str(exc) else 400)
 
-    return jsonify(public_view(session)), 201
+    return jsonify(_with_quota(public_view(session), quota)), 201
 
 
 @app.route("/api/game/<session_id>", methods=["GET"])
