@@ -2466,3 +2466,36 @@ body {
 }
 
 .resume-note { color: var(--text-muted); font-size: 0.72rem; }
+
+/* Today first. An all-time board rewards volume, and a newcomer can never
+   catch a week-one player; today resets for everybody every morning. */
+.lb-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.5rem 0 0.7rem;
+}
+
+.lb-tab {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+}
+
+.lb-tab.active {
+    border-color: var(--accent, #c9a227);
+    color: var(--accent, #c9a227);
+}
+
+.lb-your-rank {
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+/* Hard mode is worth 1.5x, so it belongs beside the name it earned. */
+.lb-hard { color: var(--accent, #c9a227); font-size: 0.7rem; }
