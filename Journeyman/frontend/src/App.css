@@ -2425,3 +2425,44 @@ body {
 }
 
 .archive-play-btn:disabled { opacity: 0.45; cursor: default; }
+
+/* The wordmark doubles as a way back to the start screen. Quiet, in the
+   corner, and only while a game is on -- the start screen has its own. */
+.home-wordmark {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+}
+
+.home-wordmark:hover { color: var(--text, #eee); }
+
+/* Offered before the mode buttons: starting a new unlimited game while one is
+   in progress spends a second free game and strands the first. */
+.resume-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+}
+
+.resume-btn {
+    border: 1px solid var(--accent, #c9a227);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent, #c9a227);
+    font-size: 0.85rem;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+}
+
+.resume-note { color: var(--text-muted); font-size: 0.72rem; }

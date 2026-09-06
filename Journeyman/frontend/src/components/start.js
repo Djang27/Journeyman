@@ -15,6 +15,8 @@ function StartScreen({
     buying = false,
     on_buy = null,
     on_open_archive = null,
+    resumable = null,
+    on_resume = null,
 }) {
     const remaining = quota?.remaining
     const out_of_games = quota_gone || remaining === 0
@@ -35,6 +37,21 @@ function StartScreen({
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '300px', lineHeight: 1.6 }}>
                 A player's name. Guess every team they played for, in order.
             </p>
+            {resumable && on_resume && (
+                // Offered above the mode buttons, because starting a new
+                // unlimited game while one is in progress spends a second free
+                // game and leaves the first stranded.
+                <div className="resume-panel">
+                    <button className="resume-btn" onClick={on_resume}>
+                        Resume your {resumable === 'daily' ? 'daily' : resumable === 'archive' ? 'archive' : 'game'}
+                    </button>
+                    {/* Said out loud, because the score is timed server-side
+                        and a player who assumed otherwise would find the score
+                        disagreed with them. */}
+                    <span className="resume-note">The clock kept running.</span>
+                </div>
+            )}
+
             <div className="start-mode-btns">
                 <button
                     className={`start-btn daily-start-btn ${daily_done ? 'daily-done' : ''}`}
