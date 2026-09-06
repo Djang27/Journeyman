@@ -36,6 +36,30 @@ function record_played_id(id) {
     }
 }
 
+// The session id is the only handle on a game in progress: the server holds the
+// answer and the clock, and this component holds nothing. Keeping it in React
+// state alone meant a refresh -- or a phone backgrounding the tab -- orphaned
+// the game. For the daily that was worse than annoying: the one-per-day index
+// refused a new one, so the puzzle was gone for the day.
+const ACTIVE_KEY = "journeyman_active_session"
+
+function save_active_session(session_id, mode) {
+    try { localStorage.setItem(ACTIVE_KEY, JSON.stringify({ session_id, mode })) } catch {}
+}
+
+function get_active_session() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null")
+        return stored?.session_id ? stored : null
+    } catch {
+        return null
+    }
+}
+
+function clear_active_session() {
+    try { localStorage.removeItem(ACTIVE_KEY) } catch {}
+}
+
 function get_daily_done() {
     try { return !!localStorage.getItem(DAILY_KEY) } catch { return false }
 }
@@ -103,6 +127,36 @@ function App() {
         return () => subscription.unsubscribe()
     }, [])
 
+    // Pick up a game that was in progress. The server is the record, so this
+    // asks it rather than trusting anything stored locally; a session that is
+    // gone, finished, or someone else's just clears the key.
+    useEffect(() => {
+        const stored = get_active_session()
+        if (!stored) return
+
+        let cancelled = false
+        api.get_game(stored.session_id)
+            .then(session => {
+                if (cancelled) return
+                if (session.status !== 'active') {
+                    clear_active_session()
+                    return
+                }
+                set_game({ ...BLANK, ...session })
+                set_guesses(Array(session.num_teams).fill(""))
+                set_game_mode(stored.mode || 'unlimited')
+                // Rebuild the timer's origin from the server's elapsed count so
+                // the display continues rather than restarting at zero.
+                const elapsed_so_far = session.elapsed_seconds || 0
+                start_time_ref.current = Date.now() - elapsed_so_far * 1000
+                set_elapsed(elapsed_so_far)
+                set_game_status(true)
+            })
+            .catch(() => clear_active_session())
+
+        return () => { cancelled = true }
+    }, [])
+
     // Live timer. Display only -- the score is timed by the server clock, so a
     // paused tab or a fiddled system clock changes what is shown and nothing else.
     useEffect(() => {
@@ -136,9 +190,13 @@ function App() {
 
             set_game({ ...BLANK, ...session })
             set_guesses(Array(session.num_teams).fill(""))
-            set_elapsed(0)
-            start_time_ref.current = Date.now()
+            // A resumed daily comes back mid-game, so the clock restarts from
+            // the server's count rather than from now.
+            const elapsed_so_far = session.elapsed_seconds || 0
+            set_elapsed(elapsed_so_far)
+            start_time_ref.current = Date.now() - elapsed_so_far * 1000
             if (session.day_number) set_day_number(session.day_number)
+            save_active_session(session.session_id, mode)
             set_game_status(true)
         } catch (err) {
             if (err.is_already_played) {
@@ -168,6 +226,7 @@ function App() {
     function finish_if_over(session) {
         if (session.status === 'active') return
         clearInterval(timer_ref.current)
+        clear_active_session()
         if (game_mode === 'daily') {
             save_daily_result(session.status === 'won' ? 'win' : 'loss', session.score)
             set_daily_done(true)
@@ -211,6 +270,7 @@ function App() {
 
     const reset_game = () => {
         clearInterval(timer_ref.current)
+        clear_active_session()
         set_game(BLANK)
         set_guesses([])
         set_elapsed(0)
