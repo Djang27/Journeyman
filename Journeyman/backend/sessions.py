@@ -194,6 +194,32 @@ def start_session(
     return store.create(session)
 
 
+def resume_daily(
+    store: SessionStore,
+    user_id: str | None,
+    puzzle_date: str | None,
+) -> Session | None:
+    """The unfinished daily this player already has, if any.
+
+    A daily is one attempt per player, enforced by a unique index. That is the
+    right rule and it is also a trap: the browser holds the session id in memory
+    only, so a refresh mid-game used to leave the player locked out of a puzzle
+    they had not finished, with no way back in. Handing the existing session
+    back turns that from a lockout into a resume.
+
+    Only *unfinished* sessions come back. A finished one still means "already
+    played" -- resuming is not a second attempt.
+    """
+    if not user_id or not puzzle_date:
+        # Anonymous play is not attributable, so there is nothing to resume and
+        # nothing stopping a fresh start.
+        return None
+    existing = store.find_daily(user_id, puzzle_date)
+    if existing is None or existing.is_finished:
+        return None
+    return existing
+
+
 def submit_guess(
     store: SessionStore,
     session_id: str,
