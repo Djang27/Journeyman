@@ -260,8 +260,16 @@ Depends on Phase 0; a quota is meaningless if the client can bypass it.
       simultaneous starts against a limit of five admitted exactly five.
       Anonymous play is metered on a hashed address too — a quota keyed only on
       accounts is bypassed by signing out
-- [ ] `feat/stripe-entitlements` — entitlement column; Checkout; webhook handler
-      (idempotent on event id); hosted portal; archive gating
+- [x] `feat/entitlements-model` — entitlements table, provider-agnostic, landed
+      alone so the schema was live before anything called it (#37)
+- [x] `feat/payment-events` — the append-only log that makes a webhook safe to
+      receive twice. Verified: 15 simultaneous deliveries fulfilled once (#38)
+- [x] `feat/stripe-checkout` — Checkout, signature-verified webhook, fulfilment
+      on the webhook and nowhere else. Refund and chargeback revoke (#39)
+- [x] `feat/billing-reconciliation` — the daily job that finds payments made and
+      never fulfilled, which is the failure nothing else here would notice
+- [ ] archive gating — past dailies for owners. The genuinely valuable half of
+      the offer, and still unbuilt
 
 Pricing: **5 free unlimited games/day** (not 10 — you can loosen a cap, tightening
 one reads as a takeaway). **Daily puzzle free forever, no account** — it's the
