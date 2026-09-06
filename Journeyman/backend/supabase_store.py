@@ -184,6 +184,11 @@ class SupabaseSessionStore(SessionStore):
             {
                 "user_id": session.user_id,
                 "game_slug": session.game_slug,
+                # Provenance: which game produced this row, and which day's
+                # puzzle it was. Without the date, "void today's daily" cannot
+                # be expressed at all.
+                "session_id": session.id,
+                "puzzle_date": session.puzzle_date,
                 "player_name": session.player_name,
                 "result": "win" if session.status == "won" else "loss",
                 "wrong_guesses": session.wrong_guesses,
