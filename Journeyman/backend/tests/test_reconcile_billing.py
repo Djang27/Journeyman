@@ -156,3 +156,41 @@ class TestTheWholeStory:
 
         # And a second run finds nothing left to do.
         assert missing_fulfilments(paid, events, entitlements.is_unlimited) == []
+
+
+class TestWhatReconciliationNeeds:
+    """A narrower question than "can we sell".
+
+    These were briefly the same check, and this job then reported that payments
+    were unconfigured while holding a perfectly good key. The job that exists to
+    catch silent failures is the worst possible one to have fail silently.
+    """
+
+    class Config:
+        def __init__(self, key="sk_test_x", webhook="", price=""):
+            self.stripe_secret_key = key
+            self.stripe_webhook_secret = webhook
+            self.stripe_price_id = price
+
+    def test_a_key_alone_is_enough(self):
+        # No price and no webhook secret. Reconciliation needs neither to read
+        # sessions or grant an entitlement.
+        from reconcile_billing import can_reconcile
+
+        assert can_reconcile(self.Config()) is True
+
+    def test_no_key_is_a_clean_skip(self):
+        # Before Stripe exists the nightly job must not fail every night.
+        from reconcile_billing import can_reconcile
+
+        assert can_reconcile(self.Config(key="")) is False
+
+    def test_it_does_not_borrow_the_checkout_check(self):
+        # The regression itself, pinned. is_configured is False for this config
+        # because there is no price; reconciliation must run anyway.
+        import stripe_billing
+        from reconcile_billing import can_reconcile
+
+        config = self.Config()
+        assert stripe_billing.is_configured(config) is False
+        assert can_reconcile(config) is True

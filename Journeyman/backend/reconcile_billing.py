@@ -126,6 +126,22 @@ def repair(problems, entitlements, dry_run=True):
     return repaired
 
 
+def can_reconcile(config) -> bool:
+    """Whether this job has what it needs.
+
+    Deliberately narrower than stripe_billing.is_configured, which answers "can
+    we offer checkout" and therefore requires a price id. Reconciliation reads
+    sessions and grants entitlements: it needs a key, and neither a price nor a
+    webhook secret.
+
+    They were briefly the same check, and this job then reported that payments
+    were unconfigured while holding a perfectly good key -- the job that exists
+    to catch silent failures, failing silently. Hence a named predicate rather
+    than a borrowed one.
+    """
+    return bool(getattr(config, "stripe_secret_key", ""))
+
+
 def fetch_recent_sessions(config, days=DEFAULT_LOOKBACK_DAYS, client=None):
     """Recent Checkout sessions, as plain dicts.
 
@@ -177,8 +193,8 @@ def main(argv=None):
     from supabase import create_client
 
     config = load_config()
-    if not stripe_billing.is_configured(config):
-        print("payments are not configured; nothing to reconcile")
+    if not can_reconcile(config):
+        print("no Stripe key configured; nothing to reconcile")
         return 0
     config.require_database()
 
