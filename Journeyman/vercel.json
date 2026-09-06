@@ -16,6 +16,10 @@
       "destination": "/api/app"
     },
     {
+      "source": "/api/admin/(.*)",
+      "destination": "/api/app"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

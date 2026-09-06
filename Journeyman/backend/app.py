@@ -1,5 +1,6 @@
 import logging
 
+from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
 from config import load_config
 from flask import Flask, jsonify, request
@@ -43,6 +44,32 @@ SENTRY_ENABLED = configure_sentry(
     release=_boot_config.release,
 )
 logger = logging.getLogger("journeyman")
+
+
+# Paths that keep working during maintenance: health, so a monitor can see the
+# state rather than a generic failure, and admin, so the person fixing it is not
+# locked out by their own switch.
+MAINTENANCE_EXEMPT = ("/api/health", "/api/admin/")
+
+
+@app.before_request
+def _reject_during_maintenance():
+    """Fail honestly during planned downtime.
+
+    Not a way to keep playing: since Phase 0 every game start writes a session
+    row, so there is no read-only mode in which the game still works. This turns
+    an outage into a message a person can read.
+    """
+    if not config.maintenance_mode:
+        return None
+    if request.path.startswith(MAINTENANCE_EXEMPT):
+        return None
+
+    response = jsonify({"error": config.maintenance_message, "maintenance": True})
+    # 503 with Retry-After, so monitors and crawlers treat it as temporary
+    # rather than as the game having ceased to exist.
+    response.headers["Retry-After"] = "300"
+    return response, 503
 
 
 @app.before_request
@@ -218,13 +245,16 @@ def api_health():
             database_ok = False
 
     body = {
-        "status": "ok" if database_ok else "degraded",
+        "status": "maintenance"
+        if config.maintenance_mode
+        else ("ok" if database_ok else "degraded"),
         "session_store": "database" if uses_database else "memory",
         "persistent": uses_database,
         "database_reachable": database_ok if uses_database else None,
         # Whether errors are actually being captured, rather than leaving anyone
         # to assume they are.
         "error_reporting": SENTRY_ENABLED,
+        "maintenance": config.maintenance_mode,
     }
 
     # 503 so an uptime monitor treats this as down. Reporting 200 while the
@@ -480,6 +510,95 @@ def api_game_abandon(session_id):
         return _session_error(exc, 404)
 
     return jsonify(public_view(session))
+
+
+# ---------------------------------------------------------------------------
+# Admin
+#
+# For the morning a bad puzzle ships. Guarded by a single shared token compared
+# in constant time -- not a user role, because there is one operator and building
+# an authorisation system for one person is how a weekend disappears.
+# ---------------------------------------------------------------------------
+
+
+def _build_admin(config):
+    if not config.use_database:
+        return None
+
+    from supabase import create_client
+
+    return AdminOperations(create_client(config.supabase_url, config.supabase_service_key))
+
+
+admin_ops = _build_admin(config)
+
+
+def _require_admin():
+    """None when authorised, otherwise the response to return."""
+    if not is_authorised(token_from_headers(request.headers), config.admin_token):
+        # Deliberately identical whether the token is wrong or unconfigured:
+        # telling a caller which would confirm an admin surface exists.
+        logger.warning("admin request refused", extra={"http_path": request.path})
+        return jsonify({"error": "Not authorised."}), 401
+    if admin_ops is None:
+        return jsonify({"error": "Admin operations need a database."}), 503
+    return None
+
+
+@app.route("/api/admin/puzzles", methods=["GET"])
+def api_admin_puzzles():
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    days = min(max(int(request.args.get("days", 7)), 1), 90)
+    return jsonify({"puzzles": admin_ops.upcoming_puzzles(today_eastern(), days)})
+
+
+@app.route("/api/admin/puzzles/<puzzle_date>", methods=["PUT"])
+def api_admin_swap_puzzle(puzzle_date):
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    body = request.get_json(silent=True) or {}
+    player_id = body.get("player_id")
+    if not player_id:
+        return jsonify({"error": "player_id is required"}), 400
+
+    try:
+        result = admin_ops.swap_puzzle(puzzle_date, player_id)
+    except AdminError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    logger.warning(
+        "puzzle swapped",
+        extra={"puzzle_date": puzzle_date, "player": result["player"]},
+    )
+    return jsonify(result)
+
+
+@app.route("/api/admin/results/<puzzle_date>/void", methods=["POST"])
+def api_admin_void_day(puzzle_date):
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    body = request.get_json(silent=True) or {}
+    result = admin_ops.void_day(puzzle_date, body.get("reason"))
+    logger.warning("day voided", extra={"puzzle_date": puzzle_date, **result})
+    return jsonify(result)
+
+
+@app.route("/api/admin/results/<puzzle_date>/restore", methods=["POST"])
+def api_admin_restore_day(puzzle_date):
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    result = admin_ops.restore_day(puzzle_date)
+    logger.warning("day restored", extra={"puzzle_date": puzzle_date, **result})
+    return jsonify(result)
 
 
 if __name__ == "__main__":

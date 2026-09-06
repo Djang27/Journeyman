@@ -57,6 +57,24 @@ class Config:
         # answerable: "which version was this?"
         self.release = env.get("VERCEL_GIT_COMMIT_SHA") or env.get("RELEASE") or None
 
+        # Operator credential. Unset means every admin route is closed, not
+        # open: the opposite default is how an admin endpoint ends up reachable
+        # on a deployment that never meant to enable one.
+        self.admin_token = env.get("ADMIN_TOKEN", "")
+
+        # Deliberate downtime. Since Phase 0 every game start writes a session
+        # row, so Postgres being unreachable means the game is unplayable -- this
+        # exists to fail honestly during planned work, not to keep playing.
+        self.maintenance_mode = (env.get("MAINTENANCE_MODE") or "").lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+        self.maintenance_message = env.get("MAINTENANCE_MESSAGE") or (
+            "Journeyman is down for maintenance. Back shortly."
+        )
+
         # Falls back to the in-memory store when Supabase is not configured, so
         # `python app.py` works out of the box for someone cloning the repo.
         self.use_database = bool(self.supabase_url and self.supabase_service_key)
