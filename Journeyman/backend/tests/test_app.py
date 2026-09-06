@@ -9,9 +9,21 @@ import pytest
 
 @pytest.fixture
 def client(player_db):
+    import app as app_module
     from app import app
 
     app.config["TESTING"] = True
+    # The puzzle cache is module-level, so without this one test's daily leaks
+    # into the next -- as a hit nothing set up, and as counters the health
+    # endpoint's body assertion then disagrees with.
+    app_module.daily_cache.reset()
+
+    # Same problem, longer standing: the rate limiter counts per process, so a
+    # test making many requests spent budget that later tests were then refused.
+    # It only surfaced once a test started 25 games.
+    limiter = app_module.rate_limiter
+    if hasattr(limiter, "_counts"):
+        limiter._counts.clear()
     with app.test_client() as test_client:
         yield test_client
 
@@ -273,6 +285,16 @@ class TestHealth:
                 # leaving anyone to assume they are.
                 "error_reporting": False,
                 "maintenance": False,
+                # Cold, because the fixture invalidates it. What matters is
+                # that the shape is here at all: a hit rate near zero on a busy
+                # deployment is the signal that instances are not being reused.
+                "daily_cache": {
+                    "hits": 0,
+                    "misses": 0,
+                    "hit_rate": None,
+                    "cached_date": None,
+                    "ttl_seconds": 60,
+                },
             }
         finally:
             app_module.session_store = original
@@ -513,6 +535,102 @@ class TestDailyScheduling:
 
         client.post("/api/game/start", json={"mode": "unlimited"})
         assert app_module.session_store.puzzles == {}
+
+
+class TestTheDailyPuzzleCache:
+    """The daily puzzle is one row that every player's start reads.
+
+    These test the claim the cache is built on -- that N starts cost one read --
+    against the real route, not against the cache in isolation. test_daily_cache
+    owns the expiry and rollover rules.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _fresh_store(self, client):
+        import app as app_module
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+
+    @pytest.fixture
+    def counting_repo(self, client):
+        """A puzzles repo that records how often it was asked."""
+        import app as app_module
+
+        class CountingRepo:
+            def __init__(self):
+                self.reads = 0
+                self.payload = {
+                    "player_name": "Bob Lanier",
+                    "teams": ["Detroit Pistons", "Milwaukee Bucks"],
+                    "player_id": "laniebo01",
+                }
+
+            def get(self, puzzle_date):
+                self.reads += 1
+                return {"payload": self.payload}
+
+        repo = CountingRepo()
+        original = app_module.puzzles_repo
+        app_module.puzzles_repo = repo
+        try:
+            yield repo
+        finally:
+            app_module.puzzles_repo = original
+
+    def test_many_starts_cost_one_database_read(self, client, counting_repo):
+        for _ in range(25):
+            assert client.post("/api/game/start", json={"mode": "daily"}).status_code == 201
+
+        assert counting_repo.reads == 1
+
+    def test_the_puzzle_served_is_still_the_scheduled_one(self, client, counting_repo):
+        # A cache that returns the wrong puzzle quickly is not an improvement.
+        for _ in range(5):
+            body = client.post("/api/game/start", json={"mode": "daily"}).get_json()
+            assert body["player"] == "Bob Lanier"
+            assert body["num_teams"] == 2
+
+    def test_a_swap_drops_the_cached_puzzle(self, client, counting_repo, monkeypatch):
+        import app as app_module
+
+        class StubOps:
+            def swap_puzzle(self, puzzle_date, player_id):
+                counting_repo.payload = {
+                    "player_name": "Dwight Jones",
+                    "teams": ["Atlanta Hawks", "Chicago Bulls"],
+                    "player_id": "jonesdw01",
+                }
+                return {"puzzle_date": puzzle_date, "player": "Dwight Jones", "teams": []}
+
+        monkeypatch.setattr(app_module.config, "admin_token", "s3cret")
+        monkeypatch.setattr(app_module, "admin_ops", StubOps())
+
+        first = client.post("/api/game/start", json={"mode": "daily"}).get_json()
+        assert first["player"] == "Bob Lanier"
+
+        today = app_module.today_eastern().isoformat()
+        swap = client.put(
+            f"/api/admin/puzzles/{today}",
+            json={"player_id": "jonesdw01"},
+            headers={"X-Admin-Token": "s3cret"},
+        )
+        assert swap.status_code == 200
+        # The response says how long other instances stay stale rather than
+        # implying the swap is already universal.
+        assert swap.get_json()["effective_within_seconds"] == 60
+
+        after = client.post("/api/game/start", json={"mode": "daily"}).get_json()
+        assert after["player"] == "Dwight Jones"
+
+    def test_health_reports_the_cache_working(self, client, counting_repo):
+        for _ in range(10):
+            client.post("/api/game/start", json={"mode": "daily"})
+
+        stats = client.get("/api/health").get_json()["daily_cache"]
+        assert stats["hits"] == 9
+        assert stats["misses"] == 1
+        assert stats["hit_rate"] == 0.9
 
 
 class TestApiErrorsAreJson:

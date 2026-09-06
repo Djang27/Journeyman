@@ -3,6 +3,7 @@ import logging
 from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
 from config import load_config
+from daily_cache import DEFAULT_TTL_SECONDS, PuzzleCache
 from flask import Flask, jsonify, request
 from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
 from observability import (
@@ -153,6 +154,11 @@ def _build_puzzles_repo(config):
 
 puzzles_repo = _build_puzzles_repo(config)
 
+# Today's puzzle is one row that every daily start reads and that changes at
+# most once a day. See daily_cache for why this is in-process with a short TTL
+# rather than at the edge until midnight, which is what the roadmap called for.
+daily_cache = PuzzleCache()
+
 
 def _build_rate_limiter(config):
     """Postgres when configured, in-memory otherwise.
@@ -256,6 +262,10 @@ def api_health():
         # to assume they are.
         "error_reporting": SENTRY_ENABLED,
         "maintenance": config.maintenance_mode,
+        # Whether the daily puzzle is actually being served from memory. A hit
+        # rate near zero on a busy deployment means instances are not being
+        # reused, and every start is paying for a database read.
+        "daily_cache": daily_cache.stats(),
     }
 
     # 503 so an uptime monitor treats this as down. Reporting 200 while the
@@ -283,11 +293,17 @@ def _todays_puzzle(puzzle_date):
     the calendar degrades to yesterday's behaviour instead of breaking the daily,
     but a scheduled row always wins.
     """
+    cached = daily_cache.get(puzzle_date)
+    if cached is not None:
+        return cached
+
     if puzzles_repo is not None:
         row = puzzles_repo.get(puzzle_date)
         if row and row.get("payload"):
             payload = row["payload"]
-            return payload["player_name"], payload["teams"], payload["player_id"]
+            puzzle = (payload["player_name"], payload["teams"], payload["player_id"])
+            daily_cache.put(puzzle_date, puzzle)
+            return puzzle
 
     player_name, teams, player_id, _ = daily_player()
 
@@ -297,7 +313,12 @@ def _todays_puzzle(puzzle_date):
         puzzle_date,
         {"player_name": player_name, "player_id": player_id, "teams": teams},
     )
-    return player_name, teams, player_id
+
+    # Cached too: the fallback is deterministic for the date, and the row has
+    # just been written, so re-deriving it per request buys nothing.
+    puzzle = (player_name, teams, player_id)
+    daily_cache.put(puzzle_date, puzzle)
+    return puzzle
 
 
 def _session_error(exc, status):
@@ -578,11 +599,17 @@ def api_admin_swap_puzzle(puzzle_date):
     except AdminError as exc:
         return jsonify({"error": str(exc)}), 400
 
+    # This instance is now holding the puzzle it just replaced. Other instances
+    # are covered by the TTL and cannot be reached from here, so the response
+    # says how long the swap takes to become universal rather than implying it
+    # already is.
+    daily_cache.invalidate()
+
     logger.warning(
         "puzzle swapped",
         extra={"puzzle_date": puzzle_date, "player": result["player"]},
     )
-    return jsonify(result)
+    return jsonify({**result, "effective_within_seconds": DEFAULT_TTL_SECONDS})
 
 
 @app.route("/api/admin/results/<puzzle_date>/void", methods=["POST"])
