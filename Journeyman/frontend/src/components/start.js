@@ -14,6 +14,7 @@ function StartScreen({
     billing = null,
     buying = false,
     on_buy = null,
+    on_open_archive = null,
 }) {
     const remaining = quota?.remaining
     const out_of_games = quota_gone || remaining === 0
@@ -50,6 +51,12 @@ function StartScreen({
                     Unlimited
                 </button>
             </div>
+
+            {on_open_archive && (
+                <button className="archive-link" onClick={on_open_archive}>
+                    Browse the archive
+                </button>
+            )}
 
             {billing?.owned && (
                 <p className="quota-note quota-note-owned">Unlimited access — thanks.</p>
