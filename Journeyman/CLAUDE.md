@@ -132,10 +132,27 @@ Things that have already cost time:
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 
-## Outstanding, needs the owner
+## Operations
 
-- `PRODUCTION_URL` secret -> enables the smoke test (currently skips)
-- `SENTRY_DSN` in Vercel -> enables error reporting
-- `SUPABASE_PRODUCTION_URL` / `SUPABASE_PRODUCTION_SERVICE_ROLE_KEY` secrets ->
-  enables the weekly puzzle top-up. **The calendar runs out 2026-12-02**, after
-  which the daily silently falls back to hashing the date.
+All four deployment secrets are configured and each was verified by running the
+thing it enables, not by observing that it was set:
+
+- `PRODUCTION_URL` -> the smoke test plays a real game against production every
+  30 minutes and on every backend merge
+- `SENTRY_DSN` (Vercel) -> `/api/health` reports `error_reporting_status:
+  enabled`
+- `SUPABASE_PRODUCTION_URL` / `SUPABASE_PRODUCTION_SERVICE_ROLE_KEY` -> the
+  weekly top-up runs Mondays. **The calendar now runs to 2027-01-03.**
+
+Two things worth knowing when one of these looks broken:
+
+- **A Vercel environment variable only applies to new deployments.** Setting one
+  does nothing to the build already running; it needs a redeploy. This cost an
+  hour of looking for a misconfiguration that did not exist.
+- **`SUPABASE_PRODUCTION_URL` must be the bare project URL**, no trailing slash
+  and no path. Anything else makes PostgREST return `PGRST125: Invalid path
+  specified in request URL`, which reads like a permissions problem and is not.
+  The schedule workflow dry-runs first, so this fails before it writes.
+
+`ADMIN_TOKEN` is deliberately unset. The admin routes are closed when it is
+missing rather than open, so leaving it unset disables them.
