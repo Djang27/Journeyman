@@ -2318,3 +2318,25 @@ body {
     max-width: 300px;
     line-height: 1.5;
 }
+
+/* Shown only once the free games are gone. Selling to somebody mid-session who
+   still has games left is how a generous cap starts feeling like a trap. */
+.upgrade-btn {
+    margin-top: 0.75rem;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--accent, #c9a227);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent, #c9a227);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.upgrade-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.quota-note-owned {
+    color: var(--accent, #c9a227);
+}

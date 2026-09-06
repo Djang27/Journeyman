@@ -29,6 +29,9 @@ from dataclasses import dataclass
 # seconds to start and a guess takes at least as long to type.
 START_LIMIT = (3600, 60)  # 60 games an hour
 GUESS_LIMIT = (60, 120)  # 120 guesses a minute
+# Checkout creates a session at Stripe, so this one costs a third-party call
+# rather than a row. Nobody buys a lifetime unlock ten times an hour.
+CHECKOUT_LIMIT = (3600, 10)
 
 # An IP is personal data and is never stored. The prefix of a salted hash is
 # enough to tell two callers apart and useless for identifying either.

@@ -112,6 +112,22 @@ export function set_hard_mode(session_id, enabled) {
     })
 }
 
+// -- billing -------------------------------------------------------------
+//
+// The browser never fulfils a purchase. It starts checkout and it reports what
+// the server says afterwards; the entitlement is granted by a signed webhook it
+// has no part in. Coming back from Stripe with ?purchase=success proves nothing
+// -- anyone can visit that URL -- so the UI asks the server rather than
+// believing the query string.
+
+export function billing_config() {
+    return request('/api/billing/config')
+}
+
+export function start_checkout() {
+    return request('/api/billing/checkout', { method: 'POST' })
+}
+
 export function abandon_game(session_id) {
     return request(`/api/game/${session_id}/abandon`, { method: 'POST' })
 }

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import StartScreen from './start'
 
 // The allowance is shown before it runs out, not only when it does. A cap a
@@ -74,5 +75,56 @@ describe('once they are gone', () => {
         // but the UI should not depend on it to stop offering a game that fails.
         show({ quota_gone: true, quota: null })
         expect(screen.getByText('Unlimited')).toBeDisabled()
+    })
+})
+
+describe('the upgrade offer', () => {
+    const available = { available: true, owned: false, signed_in: true, free_games_per_day: 5 }
+
+    test('is not shown while the player still has free games', () => {
+        // Selling mid-session to somebody who has games left is how a generous
+        // cap starts feeling like a trap.
+        show({ quota: { remaining: 3, limit: 5 }, billing: available, on_buy: () => {} })
+        expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
+    })
+
+    test('appears once they are gone', () => {
+        show({ quota_gone: true, billing: available, on_buy: () => {} })
+        expect(screen.getByText(/Unlock unlimited/i)).toBeInTheDocument()
+    })
+
+    test('is absent when the server says payments are unconfigured', () => {
+        // A deployment without Stripe shows no buy button rather than a broken one.
+        show({ quota_gone: true, billing: { available: false }, on_buy: () => {} })
+        expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
+    })
+
+    test('is absent for someone who already bought', () => {
+        show({ quota_gone: true, billing: { ...available, owned: true }, on_buy: () => {} })
+        expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
+    })
+
+    test('an owner is told they have access rather than being sold to', () => {
+        show({ billing: { ...available, owned: true } })
+        expect(screen.getByText(/Unlimited access/i)).toBeInTheDocument()
+    })
+
+    test('never appears from the URL alone', () => {
+        // The server decides. ?purchase=success proves nothing -- anyone can
+        // visit that address.
+        show({ quota_gone: true, billing: null, on_buy: () => {} })
+        expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
+    })
+
+    test('clicking it starts checkout', async () => {
+        const on_buy = jest.fn()
+        show({ quota_gone: true, billing: available, on_buy })
+        await userEvent.click(screen.getByText(/Unlock unlimited/i))
+        expect(on_buy).toHaveBeenCalled()
+    })
+
+    test('it disables itself while checkout is opening', () => {
+        show({ quota_gone: true, billing: available, on_buy: () => {}, buying: true })
+        expect(screen.getByText(/Opening checkout/i)).toBeDisabled()
     })
 })

@@ -62,6 +62,19 @@ class Config:
         # on a deployment that never meant to enable one.
         self.admin_token = env.get("ADMIN_TOKEN", "")
 
+        # Stripe. All four are absent by default, and checkout is simply not
+        # offered without them -- a deployment that has not configured payments
+        # should show no buy button rather than a broken one.
+        #
+        # The webhook secret is as load-bearing as the API key: without it a
+        # payment is taken and never fulfilled, which is worse than not selling.
+        self.stripe_secret_key = env.get("STRIPE_SECRET_KEY", "")
+        self.stripe_webhook_secret = env.get("STRIPE_WEBHOOK_SECRET", "")
+        self.stripe_price_id = env.get("STRIPE_PRICE_ID", "")
+        # Where Checkout sends the browser back to. Defaults to the deployment
+        # itself; set explicitly when the app is not at the domain root.
+        self.public_url = (env.get("PUBLIC_URL") or "").rstrip("/")
+
         # Deliberate downtime. Since Phase 0 every game start writes a session
         # row, so Postgres being unreachable means the game is unplayable -- this
         # exists to fail honestly during planned work, not to keep playing.
