@@ -25,7 +25,10 @@ backend/
   import_players.py     load the pool into Postgres
   schedule_puzzles.py   fill the daily calendar
   daily_cache.py        today's puzzle, held in process
-  quota.py              the free-tier allowance, and the entitlement seam
+  entitlements.py       what someone bought, provider-agnostic
+  payment_events.py     the log that makes a webhook safe to receive twice
+  quota.py              the free-tier allowance
+  stripe_billing.py     the only file that knows what Stripe is
   rate_limit.py         application-level limiting
   observability.py      structured logging, Sentry
   smoke_test.py         plays a real game against a deployment
@@ -84,7 +87,13 @@ Basketball-Reference dataset, of which ~1,345 are promoted and ~771 are
 recognisable enough for a daily. Puzzles are scheduled rows, seeded ~90 days
 ahead.
 
-**Phase 3 is in progress.** The free tier is five unlimited games a day,
+**Phase 3 is in progress.** Payments are Stripe, one-time, $9.99 lifetime.
+Fulfilment happens on a signature-verified webhook and nowhere else -- the
+Checkout redirect is client-controlled and proves nothing. Identity comes from
+`client_reference_id`, never email. The webhook is exempt from maintenance mode
+and rate limiting, because a rejected webhook is a payment event lost.
+
+ The free tier is five unlimited games a day,
 counted atomically in Postgres (migration 0012) and keyed on a verified user id
 or a hashed address — anonymous play is metered because a quota keyed only on
 accounts is bypassed by signing out. The daily puzzle is never charged. Refusal
@@ -170,6 +179,11 @@ Two things worth knowing when one of these looks broken:
   and no path. Anything else makes PostgREST return `PGRST125: Invalid path
   specified in request URL`, which reads like a permissions problem and is not.
   The schedule workflow dry-runs first, so this fails before it writes.
+
+Payments need four more, and checkout is not offered without them:
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, and
+optionally `PUBLIC_URL`. A deployment missing them shows no buy button rather
+than a broken one.
 
 `ADMIN_TOKEN` is deliberately unset. The admin routes are closed when it is
 missing rather than open, so leaving it unset disables them.

@@ -11,9 +11,18 @@ function StartScreen({
     day_number,
     quota = null,
     quota_gone = false,
+    billing = null,
+    buying = false,
+    on_buy = null,
 }) {
     const remaining = quota?.remaining
     const out_of_games = quota_gone || remaining === 0
+
+    // Offered only when the server says payments work, the player has not
+    // already bought, and there is a reason to care. Someone with games left is
+    // not being sold to mid-session.
+    const can_buy = Boolean(billing?.available) && !billing?.owned && Boolean(on_buy)
+    const offer_upgrade = can_buy && out_of_games
 
     return (
         <div className="start-screen">
@@ -42,13 +51,24 @@ function StartScreen({
                 </button>
             </div>
 
+            {billing?.owned && (
+                <p className="quota-note quota-note-owned">Unlimited access — thanks.</p>
+            )}
+
             {out_of_games ? (
                 // Says what is still available, not just what is not. The daily
                 // is free forever and is the reason to come back tomorrow.
-                <p className="quota-note quota-note-empty">
-                    That's today's free games. The daily puzzle is always free —
-                    more unlimited games tomorrow.
-                </p>
+                <>
+                    <p className="quota-note quota-note-empty">
+                        That's today's free games. The daily puzzle is always free —
+                        more unlimited games tomorrow.
+                    </p>
+                    {offer_upgrade && (
+                        <button className="upgrade-btn" onClick={on_buy} disabled={buying}>
+                            {buying ? 'Opening checkout…' : 'Unlock unlimited — one payment'}
+                        </button>
+                    )}
+                </>
             ) : remaining != null ? (
                 <p className="quota-note">
                     {remaining} free {remaining === 1 ? 'game' : 'games'} left today

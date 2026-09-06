@@ -1,5 +1,6 @@
 import logging
 
+import stripe_billing
 from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
 from config import load_config
@@ -17,13 +18,16 @@ from observability import (
     safe_headers,
     set_request_id,
 )
+from payment_events import InMemoryPaymentEventStore, apply_once
 from quota import (
+    FREE_GAMES_PER_DAY,
     InMemoryQuotaStore,
 )
 from quota import (
     consume as consume_quota,
 )
 from rate_limit import (
+    CHECKOUT_LIMIT,
     GUESS_LIMIT,
     START_LIMIT,
     InMemoryRateLimiter,
@@ -60,7 +64,13 @@ logger = logging.getLogger("journeyman")
 # Paths that keep working during maintenance: health, so a monitor can see the
 # state rather than a generic failure, and admin, so the person fixing it is not
 # locked out by their own switch.
-MAINTENANCE_EXEMPT = ("/api/health", "/api/admin/")
+#
+# The billing webhook is exempt too, and for a different reason from the other
+# two: a rejected webhook is a payment event lost. Stripe retries for three
+# days, so a short window is survivable, but there is no reason to spend that
+# budget on our own maintenance switch -- and the events arrive during exactly
+# the incident nobody is watching.
+MAINTENANCE_EXEMPT = ("/api/health", "/api/admin/", "/api/billing/webhook")
 
 
 @app.before_request
@@ -230,6 +240,22 @@ entitlements = _build_entitlements(config)
 # A syntactically valid uuid that belongs to nobody, so the health probe
 # exercises the real query without naming a real person.
 _HEALTH_PROBE_USER = "00000000-0000-0000-0000-000000000000"
+
+
+def _build_payment_events(config):
+    if not config.use_database:
+        return InMemoryPaymentEventStore()
+
+    from payment_events import PostgresPaymentEventStore
+
+    from supabase import create_client
+
+    return PostgresPaymentEventStore(
+        create_client(config.supabase_url, config.supabase_service_key)
+    )
+
+
+payment_events = _build_payment_events(config)
 
 
 def _quota_exhausted(mode, user_id):
@@ -683,6 +709,151 @@ def api_game_abandon(session_id):
         return _session_error(exc, 404)
 
     return jsonify(public_view(session))
+
+
+# ---------------------------------------------------------------------------
+# Billing
+#
+# Fulfilment happens on a signature-verified webhook and nowhere else. The
+# browser returning from Checkout proves nothing -- the success URL is
+# client-controlled and anyone can visit it.
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/billing/config", methods=["GET"])
+def api_billing_config():
+    """Whether to show a buy button, and what the caller already has.
+
+    One request rather than two, because the answer to "can they buy" and "have
+    they bought" are needed together and are both cheap.
+    """
+    try:
+        user_id = _current_user_id()
+    except AuthError as exc:
+        return _session_error(exc, 401)
+
+    owned = bool(user_id) and entitlements.is_unlimited(user_id)
+    return jsonify(
+        {
+            # False when payments are unconfigured, so a deployment without
+            # Stripe shows no buy button rather than a broken one.
+            "available": stripe_billing.is_configured(config),
+            "owned": owned,
+            # Stated rather than assumed by the client, so the copy and the
+            # rule cannot drift apart.
+            "free_games_per_day": FREE_GAMES_PER_DAY,
+            "signed_in": bool(user_id),
+        }
+    )
+
+
+@app.route("/api/billing/checkout", methods=["POST"])
+def api_billing_checkout():
+    """Start a Checkout session for the signed-in player."""
+    try:
+        user_id = _current_user_id()
+    except AuthError as exc:
+        return _session_error(exc, 401)
+
+    if not user_id:
+        # Not a failure so much as a precondition: an anonymous purchase would
+        # have nothing to attach itself to.
+        return jsonify(
+            {"error": "Sign in first, so the purchase is attached to your account."}
+        ), 401
+
+    limited = _rate_limited("billing_checkout", CHECKOUT_LIMIT, user_id)
+    if limited:
+        return limited
+
+    if entitlements.is_unlimited(user_id):
+        # Refusing is kinder than taking the money and refunding it later.
+        return jsonify({"error": "You already have unlimited access."}), 409
+
+    base = config.public_url or request.host_url.rstrip("/")
+    try:
+        session = stripe_billing.create_checkout_session(
+            config,
+            user_id,
+            success_url=f"{base}/?purchase=success",
+            cancel_url=f"{base}/?purchase=cancelled",
+        )
+    except stripe_billing.BillingError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        logger.exception("could not create a checkout session")
+        return jsonify({"error": "Could not start checkout. Try again shortly."}), 502
+
+    return jsonify(session), 201
+
+
+@app.route("/api/billing/webhook", methods=["POST"])
+def api_billing_webhook():
+    """Where money actually becomes an entitlement.
+
+    Never rate limited and never blocked by maintenance mode: a rejected webhook
+    is a payment event lost, and these arrive during exactly the incident nobody
+    is watching.
+    """
+    try:
+        event = stripe_billing.verify_event(
+            request.get_data(),
+            request.headers.get("Stripe-Signature"),
+            config.stripe_webhook_secret,
+        )
+    except stripe_billing.SignatureError:
+        # Logged without the reason: a precise answer is a cheap way to test
+        # signatures against us.
+        logger.warning("rejected a billing webhook with a bad signature")
+        return jsonify({"error": "bad signature"}), 400
+
+    described = stripe_billing.describe(event)
+    event_id, action, user_id = (
+        described["event_id"],
+        described["action"],
+        described["user_id"],
+    )
+
+    if not event_id:
+        return jsonify({"error": "event has no id"}), 400
+
+    if action is None:
+        # Acknowledged and ignored. Stripe sends a great deal, and retrying an
+        # event we will never act on helps nobody.
+        return jsonify({"status": "ignored", "type": described["type"]}), 200
+
+    if not user_id:
+        # Recorded rather than dropped: without our reference there is nothing
+        # to fulfil, and the reconciliation job should be able to find it.
+        payment_events.seen(stripe_billing.PROVIDER, event_id, described["type"], None)
+        payment_events.complete(stripe_billing.PROVIDER, event_id, error="no user_id on the event")
+        logger.error("billing event carried no user id", extra={"event_id": event_id})
+        return jsonify({"status": "unattributable"}), 200
+
+    def fulfil():
+        if action == "grant":
+            entitlements.grant(user_id, source=stripe_billing.PROVIDER, reference=event_id)
+        else:
+            entitlements.revoke(user_id, reason=described["reason"])
+
+    try:
+        outcome = apply_once(
+            payment_events,
+            stripe_billing.PROVIDER,
+            event_id,
+            described["type"],
+            fulfil,
+        )
+    except Exception:
+        logger.exception("billing event could not be applied", extra={"event_id": event_id})
+        # 500 so Stripe retries. The event is recorded with its error either
+        # way, so the reconciliation job can also repair it.
+        return jsonify({"error": "could not apply the event"}), 500
+
+    logger.warning(
+        "billing event %s", outcome, extra={"event_id": event_id, "billing_action": action}
+    )
+    return jsonify({"status": outcome}), 200
 
 
 # ---------------------------------------------------------------------------

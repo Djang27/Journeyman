@@ -809,6 +809,193 @@ class TestTheFreeQuota:
             assert "quota" not in response.get_json()
 
 
+class TestBilling:
+    """The endpoints where money becomes access.
+
+    test_stripe_billing.py owns signature and event parsing. These pin what the
+    HTTP surface does: who may buy, what a webhook is allowed to do, and what
+    happens when the same event arrives twice.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _billing(self, client, monkeypatch):
+        import app as app_module
+        from entitlements import InMemoryEntitlements
+        from payment_events import InMemoryPaymentEventStore
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+        app_module.entitlements = InMemoryEntitlements()
+        app_module.payment_events = InMemoryPaymentEventStore()
+        monkeypatch.setattr(app_module.config, "stripe_secret_key", "sk_test_x")
+        monkeypatch.setattr(app_module.config, "stripe_webhook_secret", "whsec_test")
+        monkeypatch.setattr(app_module.config, "stripe_price_id", "price_x")
+        yield
+
+    def post_event(self, client, event_type, event_id="evt_1", **obj):
+        """A genuinely signed webhook, computed the way Stripe computes it."""
+        import hashlib
+        import hmac
+        import json
+        import time
+
+        payload = json.dumps({"id": event_id, "type": event_type, "data": {"object": obj}}).encode()
+        timestamp = int(time.time())
+        signature = hmac.new(
+            b"whsec_test", f"{timestamp}.".encode() + payload, hashlib.sha256
+        ).hexdigest()
+        return client.post(
+            "/api/billing/webhook",
+            data=payload,
+            content_type="application/json",
+            headers={"Stripe-Signature": f"t={timestamp},v1={signature}"},
+        )
+
+    # -- who may buy ------------------------------------------------------
+
+    def test_an_anonymous_caller_cannot_check_out(self, client):
+        assert client.post("/api/billing/checkout").status_code == 401
+
+    def test_config_says_payments_are_available(self, client):
+        body = client.get("/api/billing/config").get_json()
+        assert body["available"] is True
+        assert body["owned"] is False
+        assert body["signed_in"] is False
+        assert body["free_games_per_day"] == 5
+
+    def test_config_reports_no_buy_button_when_unconfigured(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "stripe_webhook_secret", "")
+        assert client.get("/api/billing/config").get_json()["available"] is False
+
+    def test_an_owner_is_refused_a_second_purchase(self, client, monkeypatch):
+        # Kinder than taking the money and refunding it later.
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        assert client.post("/api/billing/checkout", headers=headers).status_code == 409
+
+    # -- the webhook ------------------------------------------------------
+
+    def test_an_unsigned_webhook_is_refused(self, client):
+        # The most valuable request an attacker could forge: it grants the
+        # product for free.
+        response = client.post("/api/billing/webhook", json={"id": "evt_x", "type": "paid"})
+        assert response.status_code == 400
+
+    def test_a_forged_signature_grants_nothing(self, client):
+        import app as app_module
+
+        client.post(
+            "/api/billing/webhook",
+            data=b'{"id":"evt_1","type":"checkout.session.completed",'
+            b'"data":{"object":{"client_reference_id":"u1"}}}',
+            content_type="application/json",
+            headers={"Stripe-Signature": "t=1,v1=deadbeef"},
+        )
+        assert not app_module.entitlements.is_unlimited("u1")
+
+    def test_a_payment_grants_access(self, client):
+        import app as app_module
+
+        response = self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        assert response.status_code == 200
+        assert response.get_json()["status"] == "applied"
+        assert app_module.entitlements.is_unlimited("u1")
+
+    def test_the_same_event_twice_grants_once(self, client):
+        import app as app_module
+
+        self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        app_module.entitlements.revoke("u1")
+
+        # A redelivery must not re-grant: the event was already applied, and
+        # what happened to the entitlement afterwards is not its business.
+        second = self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        assert second.get_json()["status"] == "duplicate"
+        assert not app_module.entitlements.is_unlimited("u1")
+
+    def test_a_refund_revokes(self, client):
+        import app as app_module
+
+        self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        response = self.post_event(
+            client, "charge.refunded", event_id="evt_2", metadata={"user_id": "u1"}
+        )
+        assert response.get_json()["status"] == "applied"
+        assert not app_module.entitlements.is_unlimited("u1")
+
+    def test_a_chargeback_revokes(self, client):
+        # Immediately, not when the dispute resolves: the money is already gone
+        # and the alternative is keeping the product for weeks.
+        import app as app_module
+
+        self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        self.post_event(
+            client, "charge.dispute.created", event_id="evt_3", metadata={"user_id": "u1"}
+        )
+        assert not app_module.entitlements.is_unlimited("u1")
+
+    def test_an_unrelated_event_is_acknowledged_and_ignored(self, client):
+        # 200, so Stripe stops retrying an event we will never act on.
+        response = self.post_event(client, "invoice.created", event_id="evt_9")
+        assert response.status_code == 200
+        assert response.get_json()["status"] == "ignored"
+
+    def test_an_event_without_a_user_is_recorded_not_dropped(self, client):
+        import app as app_module
+
+        response = self.post_event(client, "checkout.session.completed", event_id="evt_orphan")
+        assert response.status_code == 200
+        assert response.get_json()["status"] == "unattributable"
+        # Visible to the reconciliation job rather than silently gone.
+        pending = app_module.payment_events.unprocessed("stripe")
+        assert [event.event_id for event in pending] == ["evt_orphan"]
+
+    def test_the_webhook_survives_maintenance_mode(self, client, monkeypatch):
+        # A rejected webhook is a payment event lost, and these arrive during
+        # exactly the incident nobody is watching.
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "maintenance_mode", True)
+        assert client.post("/api/game/start", json={"mode": "daily"}).status_code == 503
+
+        response = self.post_event(client, "checkout.session.completed", client_reference_id="u1")
+        assert response.status_code == 200
+        assert app_module.entitlements.is_unlimited("u1")
+
+    # -- the whole path ---------------------------------------------------
+
+    def test_paying_lifts_the_quota_and_a_refund_restores_it(self, client, monkeypatch):
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        user = "11111111-1111-1111-1111-111111111111"
+
+        for _ in range(5):
+            client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers)
+        assert (
+            client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers).status_code
+            == 402
+        )
+
+        self.post_event(client, "checkout.session.completed", client_reference_id=user)
+        for _ in range(10):
+            assert (
+                client.post(
+                    "/api/game/start", json={"mode": "unlimited"}, headers=headers
+                ).status_code
+                == 201
+            )
+
+        self.post_event(client, "charge.refunded", event_id="evt_r", metadata={"user_id": user})
+        assert (
+            client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers).status_code
+            == 402
+        )
+
+
 class TestApiErrorsAreJson:
     """The client parses `error` from the body, so an HTML 500 tells it nothing."""
 

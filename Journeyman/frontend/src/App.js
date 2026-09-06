@@ -104,6 +104,11 @@ function App() {
     // which is why absence is distinct from zero throughout.
     const [quota, set_quota]                 = useState(null)
     const [quota_gone, set_quota_gone]       = useState(false)
+    // What the server says about buying. Never inferred from the URL: coming
+    // back from Stripe with ?purchase=success proves nothing, since anyone can
+    // visit that address.
+    const [billing, set_billing]             = useState(null)
+    const [buying, set_buying]               = useState(false)
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -161,6 +166,38 @@ function App() {
 
         return () => { cancelled = true }
     }, [])
+
+    // Whether to offer a purchase, and whether one already happened. Re-asked
+    // when the user changes, because entitlements belong to accounts.
+    //
+    // Also re-asked on returning from Checkout. The webhook that grants access
+    // may land before or after the browser gets back, so a success redirect is
+    // a reason to look again rather than evidence of anything.
+    useEffect(() => {
+        let cancelled = false
+
+        function refresh() {
+            api.billing_config()
+                .then(config => { if (!cancelled) set_billing(config) })
+                .catch(() => { if (!cancelled) set_billing(null) })
+        }
+
+        refresh()
+
+        const returned = new URLSearchParams(window.location.search).get('purchase')
+        if (returned === 'success') {
+            // Clear it so a refresh does not look like a fresh purchase.
+            window.history.replaceState({}, '', window.location.pathname)
+            set_quota_gone(false)
+            set_quota(null)
+            // Fulfilment is a webhook, so it may not have landed yet. A couple
+            // of retries covers the ordinary case without polling forever.
+            const timers = [1500, 4000].map(delay => setTimeout(refresh, delay))
+            return () => { cancelled = true; timers.forEach(clearTimeout) }
+        }
+
+        return () => { cancelled = true }
+    }, [user])
 
     // Live timer. Display only -- the score is timed by the server clock, so a
     // paused tab or a fiddled system clock changes what is shown and nothing else.
@@ -282,6 +319,19 @@ function App() {
         }
     }
 
+    const buy = async () => {
+        set_buying(true)
+        set_error(null)
+        try {
+            const { url } = await api.start_checkout()
+            // Stripe's hosted page. We never see a card number.
+            window.location.assign(url)
+        } catch (err) {
+            set_buying(false)
+            set_error(err.message)
+        }
+    }
+
     const reset_game = () => {
         clearInterval(timer_ref.current)
         clear_active_session()
@@ -332,6 +382,9 @@ function App() {
                     day_number={day_number}
                     quota={quota}
                     quota_gone={quota_gone}
+                    billing={billing}
+                    buying={buying}
+                    on_buy={buy}
                 />
             )}
             {game_start && (
