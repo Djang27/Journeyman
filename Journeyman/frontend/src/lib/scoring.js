@@ -31,15 +31,21 @@ export const TIME_GRACE       = 30    // free seconds before penalty starts
 export const TIME_RATE        = 1     // points lost per second after grace
 export const HINT_PEN         = 150   // penalty for using the hint
 export const WRONG_PEN        = 100   // penalty per wrong guess
+// A misplacement is not a wrong answer -- right team, wrong slot -- so it costs
+// no life. It costs points, because a free yellow would let anyone who knows
+// the teams permute them until everything turned green, and the order is the
+// game.
+export const MISPLACED_PEN    = 25    // penalty per right-team-wrong-slot guess
 export const SCORE_FLOOR      = 100   // minimum score for any win
 export const HARD_MULTIPLIER  = 1.5   // score multiplier for hard mode wins
 
-export function score_breakdown({ time_seconds, wrong_guesses, hint_used, hard_mode }) {
+export function score_breakdown({ time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses = 0 }) {
     return {
         base:        BASE,
         time_pen:    Math.max(0, time_seconds - TIME_GRACE) * TIME_RATE,
         hint_pen:    hint_used ? HINT_PEN  : 0,
         wrong_pen:   wrong_guesses * WRONG_PEN,
+        misplaced_pen: misplaced_guesses * MISPLACED_PEN,
         hard_mode:   !!hard_mode,
     }
 }

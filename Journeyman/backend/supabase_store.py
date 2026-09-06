@@ -58,6 +58,9 @@ def to_row(session: Session) -> dict:
             "results": session.results,
             "guesses": session.guesses,
             "wrong_guesses": session.wrong_guesses,
+            # Added after launch. `state` is jsonb, so this needs no migration,
+            # and a session started before it existed reads back as 0.
+            "misplaced_guesses": session.misplaced_guesses,
             "hint_used": session.hint_used,
             "hard_mode": session.hard_mode,
             "score": session.score,
@@ -85,6 +88,7 @@ def from_row(row: dict) -> Session:
         results=list(state.get("results", [])),
         guesses=list(state.get("guesses", [])),
         wrong_guesses=state.get("wrong_guesses", 0),
+        misplaced_guesses=state.get("misplaced_guesses", 0),
         hint_used=bool(state.get("hint_used", False)),
         hard_mode=bool(state.get("hard_mode", False)),
         status=row.get("status", "active"),

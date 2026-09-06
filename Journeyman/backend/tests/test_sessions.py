@@ -76,10 +76,47 @@ class TestGuessing:
         assert session.results[0] == "green"
         assert session.wrong_guesses == 0
 
-    def test_a_misplaced_team_is_yellow_and_counts_as_wrong(self, store):
+    def test_a_misplaced_team_is_yellow_and_costs_no_life(self, store):
+        # A misplacement is not a wrong answer: the team is right, the slot is
+        # not. Being punished for knowing a team was the complaint that changed
+        # this. It costs points instead -- see test_scoring.
         session = submit_guess(store, new_game(store).id, 0, "jazz")
         assert session.results[0] == "yellow"
-        assert session.wrong_guesses == 1
+        assert session.wrong_guesses == 0
+        assert session.misplaced_guesses == 1
+
+    def test_misplacements_accumulate(self, store):
+        game = new_game(store)
+        submit_guess(store, game.id, 0, "jazz")
+        session = submit_guess(store, game.id, 2, "celtics")
+        assert session.misplaced_guesses == 2
+        assert session.wrong_guesses == 0
+
+    def test_misplacements_never_end_the_game(self, store):
+        # Three of these used to be a loss.
+        game = new_game(store)
+        for _ in range(6):
+            session = submit_guess(store, game.id, 0, "jazz")
+        assert session.status == "active"
+
+    def test_a_misplacement_does_not_end_hard_mode(self, store):
+        # "One mistake ends it" should mean a mistake. A right team in the
+        # wrong slot is not one.
+        from sessions import set_hard_mode
+
+        game = new_game(store)
+        set_hard_mode(store, game.id, True)
+        session = submit_guess(store, game.id, 0, "jazz")
+        assert session.status == "active"
+        assert session.wrong_guesses == 0
+
+    def test_a_genuine_mistake_still_ends_hard_mode(self, store):
+        from sessions import set_hard_mode
+
+        game = new_game(store)
+        set_hard_mode(store, game.id, True)
+        session = submit_guess(store, game.id, 0, "lakers")
+        assert session.status == "lost"
 
     def test_an_absent_team_is_gray_and_counts_as_wrong(self, store):
         session = submit_guess(store, new_game(store).id, 0, "lakers")
