@@ -81,6 +81,23 @@ class SessionStore(ABC):
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None: ...
 
     @abstractmethod
+    def find_dated(self, user_id: str, puzzle_date: str, mode: str) -> Session | None:
+        """One caller's session for a dated puzzle, in either dated mode.
+
+        The generalisation of find_daily. Both the daily and the archive are one
+        attempt per player per date, so both need the same lookup.
+        """
+
+    @abstractmethod
+    def played_dates(self, user_id: str, mode: str) -> set:
+        """Which dated puzzles this caller has already started, in one query.
+
+        A set rather than a list: the archive listing asks "have I done this
+        one" for every row it renders, and doing that one query at a time is
+        how a sixty-item list becomes sixty round trips.
+        """
+
+    @abstractmethod
     def check_reachable(self) -> None:
         """Raise if the store cannot actually be used right now.
 
@@ -152,13 +169,24 @@ class InMemorySessionStore(SessionStore):
         self.recorded.append(session)
 
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None:
+        return self.find_dated(user_id, puzzle_date, "daily")
+
+    def find_dated(self, user_id: str, puzzle_date: str, mode: str) -> Session | None:
         for session in self._sessions.values():
             if (
-                session.mode == "daily"
+                session.mode == mode
                 and session.user_id == user_id
                 and session.puzzle_date == puzzle_date
             ):
                 return session
+        return None
+
+    def played_dates(self, user_id: str, mode: str) -> set:
+        return {
+            session.puzzle_date
+            for session in self._sessions.values()
+            if session.mode == mode and session.user_id == user_id and session.puzzle_date
+        }
         return None
 
 
@@ -173,7 +201,7 @@ def start_session(
     hard_mode: bool = False,
     now: datetime | None = None,
 ) -> Session:
-    if mode not in ("daily", "unlimited"):
+    if mode not in ("daily", "unlimited", "archive"):
         raise SessionError(f"unknown mode {mode!r}")
     if not teams:
         raise SessionError("a session needs at least one team")

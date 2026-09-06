@@ -1,5 +1,6 @@
 import logging
 
+import archive
 import stripe_billing
 from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
@@ -557,7 +558,40 @@ def api_game_start():
 
     puzzle_date = None
     quota = None
-    if mode == "daily":
+
+    if mode == archive.MODE:
+        if not user_id:
+            return jsonify({"error": "Sign in to play the archive."}), 401
+        if not entitlements.is_unlimited(user_id):
+            # 402, matching the quota: this is a purchase away, not a mistake.
+            return jsonify(
+                {"error": "The archive is part of the unlimited unlock.", "locked": True}
+            ), 402
+
+        try:
+            requested = archive.check_playable(body.get("puzzle_date"), today_eastern())
+        except archive.ArchiveError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        puzzle_date = requested.isoformat()
+
+        # Resumed rather than refused, exactly as the daily is.
+        existing = session_store.find_dated(user_id, puzzle_date, archive.MODE)
+        if existing is not None and not existing.is_finished:
+            return jsonify(public_view(existing)), 200
+        if existing is not None:
+            return jsonify({"error": "You have already played that one."}), 409
+
+        row = puzzles_repo.get(puzzle_date) if puzzles_repo else None
+        payload = (row or {}).get("payload") or {}
+        if not payload:
+            return jsonify({"error": "No puzzle was scheduled for that date."}), 404
+
+        player_name = payload["player_name"]
+        teams = payload["teams"]
+        player_id = payload["player_id"]
+
+    elif mode == "daily":
         puzzle_date = today_eastern().isoformat()
         # Before building a new one: an unfinished daily is resumed, not
         # refused. The unique index would otherwise turn a page refresh into a
@@ -592,6 +626,41 @@ def api_game_start():
         return _session_error(exc, 409 if "already played" in str(exc) else 400)
 
     return jsonify(_with_quota(public_view(session), quota)), 201
+
+
+@app.route("/api/game/archive", methods=["GET"])
+def api_game_archive():
+    """Past dailies. Visible to anyone signed in; playable only by owners.
+
+    The list is deliberately not gated. Somebody deciding whether to buy should
+    be able to see how much is there, and a list of dates is not the product --
+    the puzzles are. What is gated is starting one.
+
+    No unplayed puzzle's player name is included. That is the answer, and a
+    listing endpoint is an easy place to give away ninety of them at once.
+    """
+    try:
+        user_id = _current_user_id()
+    except AuthError as exc:
+        return _session_error(exc, 401)
+
+    if puzzles_repo is None:
+        return jsonify({"puzzles": [], "unlocked": False, "available": False})
+
+    today = today_eastern()
+    earliest, latest = archive.playable_range(today)
+    scheduled = puzzles_repo.scheduled_between(earliest, latest)
+
+    played = session_store.played_dates(user_id, archive.MODE) if user_id else set()
+
+    return jsonify(
+        {
+            "puzzles": archive.listing(scheduled, played, today),
+            "unlocked": bool(user_id) and entitlements.is_unlimited(user_id),
+            "available": True,
+            "signed_in": bool(user_id),
+        }
+    )
 
 
 @app.route("/api/game/<session_id>", methods=["GET"])

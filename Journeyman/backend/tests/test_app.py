@@ -4,6 +4,8 @@ Deliberately thin. These check request/response contracts -- the shapes the
 frontend depends on -- and leave grading rules to test_game_logic.py.
 """
 
+import json
+
 import pytest
 
 
@@ -1006,6 +1008,193 @@ class TestBilling:
         assert (
             client.post("/api/game/start", json={"mode": "unlimited"}, headers=headers).status_code
             == 402
+        )
+
+
+class TestTheArchive:
+    """Past dailies, sold rather than given.
+
+    test_archive.py owns the date rules. These pin the HTTP surface: who may
+    start one, what a refusal looks like, and that a listing never names a
+    player for a puzzle the caller has not finished.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _archive(self, client, monkeypatch):
+        import app as app_module
+        from entitlements import InMemoryEntitlements
+        from sessions import InMemorySessionStore
+
+        app_module.session_store = InMemorySessionStore()
+        app_module.entitlements = InMemoryEntitlements()
+
+        today = app_module.today_eastern()
+        self.yesterday = (today - __import__("datetime").timedelta(days=1)).isoformat()
+        self.tomorrow = (today + __import__("datetime").timedelta(days=1)).isoformat()
+        self.today = today.isoformat()
+
+        class Repo:
+            payload = {
+                "player_name": "Bob Lanier",
+                "teams": ["detroit pistons", "milwaukee bucks"],
+                "player_id": "laniebo01",
+            }
+
+            def get(inner, puzzle_date):
+                return {"payload": inner.payload}
+
+            def scheduled_between(inner, start, end):
+                return {
+                    self.yesterday: {"payload": inner.payload},
+                    self.tomorrow: {"payload": inner.payload},
+                }
+
+        original = app_module.puzzles_repo
+        app_module.puzzles_repo = Repo()
+        yield
+        app_module.puzzles_repo = original
+
+    def start_archive(self, client, date_string, headers=None):
+        return client.post(
+            "/api/game/start",
+            json={"mode": "archive", "puzzle_date": date_string},
+            headers=headers or {},
+        )
+
+    # -- who may play -----------------------------------------------------
+
+    def test_anonymous_callers_cannot_play_the_archive(self, client):
+        assert self.start_archive(client, self.yesterday).status_code == 401
+
+    def test_a_free_player_is_refused_with_402(self, client, monkeypatch):
+        # 402, matching the quota: a purchase away, not a mistake.
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        response = self.start_archive(client, self.yesterday, headers)
+        assert response.status_code == 402
+        assert response.get_json()["locked"] is True
+
+    def test_an_owner_can_play(self, client, monkeypatch):
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        assert self.start_archive(client, self.yesterday, headers).status_code == 201
+
+    # -- the answer leak --------------------------------------------------
+
+    def test_a_future_date_is_refused_even_for_an_owner(self, client, monkeypatch):
+        """The one that matters.
+
+        Puzzles are scheduled ~90 days ahead in the same table, so an owner
+        asking for tomorrow would be handed an answer nobody has seen. This is
+        an answer leak wearing a paywall bug's clothes.
+        """
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+
+        response = self.start_archive(client, self.tomorrow, headers)
+        assert response.status_code == 400
+        # Nothing about tomorrow's puzzle comes back -- not the prompt, and
+        # certainly not the answer.
+        blob = response.get_data(as_text=True).lower()
+        assert "lanier" not in blob
+        assert "pistons" not in blob
+
+    def test_today_is_refused_too(self, client, monkeypatch):
+        # That is the daily, and the daily is one attempt.
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        assert self.start_archive(client, self.today, headers).status_code == 400
+
+    def test_the_start_response_still_withholds_the_answer(self, client, monkeypatch):
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        body = self.start_archive(client, self.yesterday, headers).get_json()
+        # The player's name is the prompt -- "trace the career of Bob Lanier" --
+        # so it is meant to be there. The teams are the answer.
+        assert body["player"] == "Bob Lanier"
+        assert "teams" not in body
+        blob = json.dumps(body).lower()
+        assert "pistons" not in blob
+        assert "bucks" not in blob
+
+    # -- the listing ------------------------------------------------------
+
+    def test_the_listing_never_names_an_unplayed_player(self, client, monkeypatch):
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        response = client.get("/api/game/archive", headers=headers)
+        assert response.status_code == 200
+        assert "lanier" not in response.get_data(as_text=True).lower()
+
+    def test_the_listing_omits_future_dates(self, client, monkeypatch):
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        body = client.get("/api/game/archive", headers=headers).get_json()
+        assert [p["puzzle_date"] for p in body["puzzles"]] == [self.yesterday]
+
+    def test_the_listing_is_visible_before_buying(self, client, monkeypatch):
+        # Somebody deciding whether to buy should see how much is in there. A
+        # list of dates is not the product; the puzzles are.
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        body = client.get("/api/game/archive", headers=headers).get_json()
+        assert body["unlocked"] is False
+        assert len(body["puzzles"]) == 1
+
+    def test_the_listing_reports_the_unlock(self, client, monkeypatch):
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        assert client.get("/api/game/archive", headers=headers).get_json()["unlocked"] is True
+
+    # -- one attempt each -------------------------------------------------
+
+    def test_an_unfinished_archive_game_resumes(self, client, monkeypatch):
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+
+        first = self.start_archive(client, self.yesterday, headers)
+        second = self.start_archive(client, self.yesterday, headers)
+        assert second.status_code == 200
+        assert second.get_json()["session_id"] == first.get_json()["session_id"]
+
+    def test_a_finished_archive_game_is_409(self, client, monkeypatch):
+        # A replayable puzzle with a recorded score is a score you grind.
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+
+        session_id = self.start_archive(client, self.yesterday, headers).get_json()["session_id"]
+        answer = app_module.session_store.get(session_id).answer
+        for position, team in enumerate(answer):
+            client.post(
+                f"/api/game/{session_id}/guess",
+                json={"position": position, "guess": team},
+                headers=headers,
+            )
+
+        assert self.start_archive(client, self.yesterday, headers).status_code == 409
+
+    def test_the_archive_does_not_spend_the_free_quota(self, client, monkeypatch):
+        # It is what was bought, not what is rationed.
+        import app as app_module
+
+        headers = TestSessionAPI.signed_in(monkeypatch)
+        app_module.entitlements.grant("11111111-1111-1111-1111-111111111111")
+        self.start_archive(client, self.yesterday, headers)
+        assert (
+            app_module.quota_store.used(
+                "user:11111111-1111-1111-1111-111111111111", app_module.today_eastern().isoformat()
+            )
+            == 0
         )
 
 
