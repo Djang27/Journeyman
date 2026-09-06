@@ -343,6 +343,30 @@ class TestHealth:
             app_module.session_store = original_store
             app_module.quota_store = original_quota
 
+    def test_reports_a_broken_entitlement_lookup_the_same_way(self, client):
+        # A failure of either store means unmetered play: the quota refuses
+        # nobody if it cannot count, and an entitlement lookup that raises is
+        # caught by the same fail-open path.
+        import app as app_module
+
+        class BrokenEntitlements:
+            def is_unlimited(self, user_id):
+                raise RuntimeError("no such function")
+
+        class HealthyStore:
+            def check_reachable(self):
+                return None
+
+        originals = (app_module.session_store, app_module.entitlements)
+        app_module.session_store = HealthyStore()
+        app_module.entitlements = BrokenEntitlements()
+        try:
+            body = client.get("/api/health").get_json()
+            assert body["quota_enforcing"] is False
+            assert body["status"] == "ok"
+        finally:
+            app_module.session_store, app_module.entitlements = originals
+
     def test_the_health_probe_does_not_spend_anyones_allowance(self, client):
         import app as app_module
 
