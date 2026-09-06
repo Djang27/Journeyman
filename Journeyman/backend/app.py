@@ -7,6 +7,7 @@ from daily_cache import DEFAULT_TTL_SECONDS, PuzzleCache
 from flask import Flask, jsonify, request
 from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
 from observability import (
+    SENTRY_ACTIVE,
     RequestTimer,
     configure_logging,
     configure_sentry,
@@ -40,11 +41,12 @@ app = Flask(__name__)
 
 _boot_config = load_config()
 configure_logging()
-SENTRY_ENABLED = configure_sentry(
+SENTRY_STATUS = configure_sentry(
     _boot_config.sentry_dsn,
     environment=_boot_config.environment,
     release=_boot_config.release,
 )
+SENTRY_ENABLED = SENTRY_STATUS == SENTRY_ACTIVE
 logger = logging.getLogger("journeyman")
 
 
@@ -261,6 +263,11 @@ def api_health():
         # Whether errors are actually being captured, rather than leaving anyone
         # to assume they are.
         "error_reporting": SENTRY_ENABLED,
+        # Why, not just whether. "false" alone sent an operator redeploying to
+        # fix a variable that was never the problem: no_dsn means nothing
+        # reached the process, sdk_missing means the dependency is absent, and
+        # init_failed means the DSN itself was rejected.
+        "error_reporting_status": SENTRY_STATUS,
         "maintenance": config.maintenance_mode,
         # Whether the daily puzzle is actually being served from memory. A hit
         # rate near zero on a busy deployment means instances are not being

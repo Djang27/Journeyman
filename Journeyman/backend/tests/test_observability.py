@@ -10,6 +10,10 @@ import logging
 
 import pytest
 from observability import (
+    SENTRY_ACTIVE,
+    SENTRY_INIT_FAILED,
+    SENTRY_NO_DSN,
+    SENTRY_SDK_MISSING,
     JsonFormatter,
     RequestTimer,
     configure_logging,
@@ -135,8 +139,24 @@ class TestRequestTimer:
 class TestSentry:
     def test_it_stays_off_without_a_dsn(self):
         """Nothing here may require an account to run."""
-        assert configure_sentry("") is False
-        assert configure_sentry(None) is False
+        assert configure_sentry("") == SENTRY_NO_DSN
+        assert configure_sentry(None) == SENTRY_NO_DSN
+
+    def test_a_malformed_dsn_does_not_take_the_app_down(self):
+        # configure_sentry runs at import time. Letting sentry_sdk.init raise
+        # would mean a typo'd DSN takes the whole game offline to lose error
+        # reporting -- exactly backwards.
+        assert configure_sentry("not-a-dsn") == SENTRY_INIT_FAILED
+
+    def test_a_usable_dsn_reports_enabled(self):
+        # A syntactically valid DSN pointing nowhere. init does not connect, so
+        # this never leaves the machine.
+        assert configure_sentry("https://abc123@o0.ingest.sentry.io/1") == SENTRY_ACTIVE
+
+    def test_the_statuses_are_distinct(self):
+        # They are reported verbatim by /api/health and read by a person
+        # deciding what to fix, so two of them collapsing would be silent.
+        assert len({SENTRY_NO_DSN, SENTRY_SDK_MISSING, SENTRY_INIT_FAILED, SENTRY_ACTIVE}) == 4
 
 
 class TestConfigureLogging:

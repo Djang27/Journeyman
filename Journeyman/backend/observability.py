@@ -108,35 +108,55 @@ def configure_logging(level=logging.INFO, stream=None):
     return root
 
 
+# The reasons error reporting can be off. "false" on its own sent someone
+# redeploying to fix a variable that was never the problem, so the endpoint says
+# which of these it is.
+SENTRY_NO_DSN = "no_dsn"
+SENTRY_SDK_MISSING = "sdk_missing"
+SENTRY_INIT_FAILED = "init_failed"
+SENTRY_ACTIVE = "enabled"
+
+
 def configure_sentry(dsn, environment="production", release=None):
     """Enable error reporting when a DSN is configured. A no-op otherwise.
 
-    Returns whether it was enabled, so /api/health can say so rather than
-    leaving anyone guessing whether errors are being captured.
+    Returns *why* it ended up on or off, not just whether. The three ways this
+    can be off look identical from outside -- no DSN reached the process, the
+    SDK is not installed, or init itself failed -- and they have completely
+    different fixes. Reporting a bare False means guessing between them.
     """
     if not dsn:
-        return False
+        return SENTRY_NO_DSN
 
     try:
         import sentry_sdk
         from sentry_sdk.integrations.flask import FlaskIntegration
     except ImportError:
         logging.getLogger(__name__).warning("SENTRY_DSN is set but sentry-sdk is not installed")
-        return False
+        return SENTRY_SDK_MISSING
 
-    sentry_sdk.init(
-        dsn=dsn,
-        environment=environment,
-        release=release,
-        integrations=[FlaskIntegration()],
-        # Request bodies carry a guess, which is harmless -- but the habit of
-        # sending bodies is how tokens end up in someone else's system.
-        send_default_pii=False,
-        # A fraction, because a busy day should not become a Sentry bill. Enough
-        # to see latency shape without paying to record every request.
-        traces_sample_rate=0.1,
-    )
-    return True
+    try:
+        sentry_sdk.init(
+            dsn=dsn,
+            environment=environment,
+            release=release,
+            integrations=[FlaskIntegration()],
+            # Request bodies carry a guess, which is harmless -- but the habit
+            # of sending bodies is how tokens end up in someone else's system.
+            send_default_pii=False,
+            # A fraction, because a busy day should not become a Sentry bill.
+            # Enough to see latency shape without paying to record every
+            # request.
+            traces_sample_rate=0.1,
+        )
+    except Exception:
+        # A malformed DSN raises here. This runs at import time, so letting it
+        # propagate would take the whole app down to lose error reporting --
+        # exactly backwards.
+        logging.getLogger(__name__).exception("sentry init failed")
+        return SENTRY_INIT_FAILED
+
+    return SENTRY_ACTIVE
 
 
 class RequestTimer:
