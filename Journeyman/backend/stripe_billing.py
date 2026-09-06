@@ -64,15 +64,49 @@ class SignatureError(Exception):
     """The payload did not come from Stripe, or did not survive the trip."""
 
 
+# Why checkout is not being offered. Reported rather than reduced to a boolean,
+# because these have different fixes and the boolean sent an operator hunting
+# through an error tracker for something a config endpoint could have said.
+STRIPE_READY = "ready"
+STRIPE_NO_SECRET_KEY = "no_secret_key"
+STRIPE_NO_WEBHOOK_SECRET = "no_webhook_secret"
+STRIPE_NO_PRICE = "no_price"
+STRIPE_PRICE_IS_A_PRODUCT = "price_is_a_product"
+
+
+def configuration_status(config) -> str:
+    """Which of the four states the payment configuration is in.
+
+    All three settings are required and they fail differently. Without the
+    secret key there is nothing to create a session with. Without the webhook
+    secret a payment is taken and never fulfilled, which is worse than not
+    selling. Without a price there is nothing to sell.
+
+    The last case is the one that cost an evening: Stripe has both products and
+    prices, the dashboard shows the product id most prominently, and pasting a
+    `prod_` where a `price_` belongs produces a 500 at checkout and a perfectly
+    healthy-looking config endpoint. It is worth naming rather than discovering.
+    """
+    if not config.stripe_secret_key:
+        return STRIPE_NO_SECRET_KEY
+    if not config.stripe_webhook_secret:
+        return STRIPE_NO_WEBHOOK_SECRET
+    if not config.stripe_price_id:
+        return STRIPE_NO_PRICE
+    if config.stripe_price_id.startswith("prod_"):
+        return STRIPE_PRICE_IS_A_PRODUCT
+    return STRIPE_READY
+
+
 def is_configured(config) -> bool:
     """Whether checkout can be offered at all.
 
-    Both halves are needed and they fail differently: without the secret key
-    there is nothing to create a session with, and without the webhook secret a
-    payment would be taken and never fulfilled. Offering checkout with only the
-    first is worse than offering none.
+    True only when every setting checkout needs is present and plausible.
+    Reporting True on a partial configuration is how a buy button ends up
+    leading to a 500 -- which it did, because this used to check two of the
+    three.
     """
-    return bool(config.stripe_secret_key and config.stripe_webhook_secret)
+    return configuration_status(config) == STRIPE_READY
 
 
 def create_checkout_session(config, user_id, success_url, cancel_url, client=None):

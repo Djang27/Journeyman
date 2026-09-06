@@ -144,6 +144,10 @@ Things that have already cost time:
   minutes. Ship the migration alone, wait for it to apply, then ship the code.
   This is what "additive database changes merge early and alone" is for --
   ignoring it put production on a `consume_quota` that did not exist yet.
+- **Stripe has products and prices, and the dashboard shows the product id
+  first.** Pasting a `prod_` where `STRIPE_PRICE_ID` wants a `price_` is a 500
+  at checkout. `/api/billing/config` reports `status: price_is_a_product` for
+  exactly this.
 - **A quota is not a rate limit.** The limiter may be approximate — its worst
   case is 2x across a window boundary, which costs nothing. The quota is about
   money, so it consumes in one atomic statement. Do not merge the two.

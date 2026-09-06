@@ -738,6 +738,11 @@ def api_billing_config():
             # False when payments are unconfigured, so a deployment without
             # Stripe shows no buy button rather than a broken one.
             "available": stripe_billing.is_configured(config),
+            # Why not, when not. A bare False sent an operator to the error
+            # tracker to learn that a product id had been pasted where a price
+            # id belonged -- something this endpoint knew and was not saying.
+            # Names no secret, only which setting is missing or wrong.
+            "status": stripe_billing.configuration_status(config),
             "owned": owned,
             # Stated rather than assumed by the client, so the copy and the
             # rule cannot drift apart.
