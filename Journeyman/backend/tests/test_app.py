@@ -284,6 +284,8 @@ class TestHealth:
                 # Says whether errors are actually being captured, rather than
                 # leaving anyone to assume they are.
                 "error_reporting": False,
+                # Why it is off, not just that it is. Under test no DSN is set.
+                "error_reporting_status": "no_dsn",
                 "maintenance": False,
                 # Cold, because the fixture invalidates it. What matters is
                 # that the shape is here at all: a hit rate near zero on a busy
