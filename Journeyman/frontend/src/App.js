@@ -383,6 +383,25 @@ function App() {
         }
     }
 
+    // Leaving a game is not abandoning it. The daily and the archive are one
+    // attempt each, and an unlimited game has already cost a free game, so
+    // dropping the session because somebody wanted to look at the start screen
+    // would take something real away from them.
+    //
+    // The session stays on the server and in state; the start screen offers it
+    // back. The clock keeps running, because the score is timed server-side and
+    // pretending otherwise would be a lie the score would then contradict.
+    const go_home = () => {
+        set_error(null)
+        set_show_archive(false)
+        set_game_status(false)
+    }
+
+    const resume_game = () => {
+        set_error(null)
+        set_game_status(true)
+    }
+
     const reset_game = () => {
         clearInterval(timer_ref.current)
         clear_active_session()
@@ -412,6 +431,11 @@ function App() {
             <button className="menu-btn" onClick={() => open_sidebar()} aria-label="Open menu">
                 <span /><span /><span />
             </button>
+            {game_start && (
+                <button className="home-wordmark" onClick={go_home} aria-label="Back to the start screen">
+                    Journeyman
+                </button>
+            )}
             {user && (
                 <UserMenu
                     user={user}
@@ -434,6 +458,10 @@ function App() {
                     day_number={day_number}
                     quota={quota}
                     quota_gone={quota_gone}
+                    // A game left behind, still playable. Only while it is
+                    // unfinished -- a finished one has nothing to go back to.
+                    resumable={game.session_id && !game_over ? game_mode : null}
+                    on_resume={resume_game}
                     billing={billing}
                     buying={buying}
                     on_buy={buy}

@@ -128,3 +128,50 @@ describe('the upgrade offer', () => {
         expect(screen.getByText(/Opening checkout/i)).toBeDisabled()
     })
 })
+
+describe('resuming a game left behind', () => {
+    // Leaving a game is not abandoning it. The daily and the archive are one
+    // attempt each, and an unlimited game has already cost a free game, so the
+    // start screen has to offer the way back.
+
+    test('nothing is offered when there is no game in progress', () => {
+        show({ resumable: null, on_resume: () => {} })
+        expect(screen.queryByText(/Resume/i)).not.toBeInTheDocument()
+    })
+
+    test('a daily in progress is offered back by name', () => {
+        show({ resumable: 'daily', on_resume: () => {} })
+        expect(screen.getByText(/Resume your daily/i)).toBeInTheDocument()
+    })
+
+    test('an archive game in progress is named too', () => {
+        show({ resumable: 'archive', on_resume: () => {} })
+        expect(screen.getByText(/Resume your archive/i)).toBeInTheDocument()
+    })
+
+    test('an unlimited game is offered back generically', () => {
+        show({ resumable: 'unlimited', on_resume: () => {} })
+        expect(screen.getByText(/Resume your game/i)).toBeInTheDocument()
+    })
+
+    test('it says the clock kept running', () => {
+        // The score is timed server-side. A player who assumed leaving paused
+        // it would find the score disagreed with them.
+        show({ resumable: 'daily', on_resume: () => {} })
+        expect(screen.getByText(/clock kept running/i)).toBeInTheDocument()
+    })
+
+    test('clicking it resumes', async () => {
+        const on_resume = jest.fn()
+        show({ resumable: 'daily', on_resume })
+        await userEvent.click(screen.getByText(/Resume your daily/i))
+        expect(on_resume).toHaveBeenCalled()
+    })
+
+    test('the daily and unlimited buttons are still there', () => {
+        // Resuming is offered, not forced.
+        show({ resumable: 'daily', on_resume: () => {} })
+        expect(screen.getByText(/Daily Journey/)).toBeInTheDocument()
+        expect(screen.getByText('Unlimited')).toBeInTheDocument()
+    })
+})

@@ -113,3 +113,68 @@ describe('picking up a game that was in progress', () => {
         expect(screen.getByText(/Daily Journey/)).toBeInTheDocument()
     })
 })
+
+describe('leaving a game and coming back', () => {
+    const ACTIVE_KEY = 'journeyman_active_session'
+
+    const in_progress = {
+        session_id: 'abc-123',
+        player: 'Bob Lanier',
+        num_teams: 2,
+        results: [null, null],
+        guesses: [null, null],
+        wrong_guesses: 0,
+        max_wrong_guesses: 3,
+        status: 'active',
+        elapsed_seconds: 12,
+    }
+
+    function serve(session) {
+        global.fetch = jest.fn(() =>
+            Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(session) })
+        )
+    }
+
+    test('the wordmark returns to the start screen without ending the game', async () => {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify({ session_id: 'abc-123', mode: 'daily' }))
+        serve(in_progress)
+
+        // eslint-disable-next-line global-require
+        const App = require('./App').default
+        render(<App />)
+
+        // Rehydrates straight into the game.
+        expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
+
+        await userEvent.click(screen.getByLabelText(/Back to the start screen/i))
+
+        // Start screen is back, and the game was not abandoned: the stored
+        // session survives and the resume offer is there.
+        expect(await screen.findByText(/Daily Journey/)).toBeInTheDocument()
+        expect(screen.getByText(/Resume your daily/i)).toBeInTheDocument()
+        expect(localStorage.getItem(ACTIVE_KEY)).not.toBeNull()
+    })
+
+    test('resuming puts the same game back', async () => {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify({ session_id: 'abc-123', mode: 'daily' }))
+        serve(in_progress)
+
+        // eslint-disable-next-line global-require
+        const App = require('./App').default
+        render(<App />)
+
+        expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
+        await userEvent.click(screen.getByLabelText(/Back to the start screen/i))
+        await userEvent.click(await screen.findByText(/Resume your daily/i))
+
+        expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
+    })
+
+    test('the wordmark is not shown on the start screen', () => {
+        // It has its own logo there; a second one would be noise.
+        // eslint-disable-next-line global-require
+        const App = require('./App').default
+        render(<App />)
+        expect(screen.queryByLabelText(/Back to the start screen/i)).not.toBeInTheDocument()
+    })
+})
