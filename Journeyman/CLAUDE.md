@@ -101,6 +101,11 @@ is `402`, not `429`: a rate limit resolves itself in seconds, this does not.
 `quota.Entitlements` is the seam `feat/stripe-entitlements` fills; today
 `FreeTierOnly` always returns False.
 
+**Phase 4 is in progress.** The headline leaderboard ranks *today's puzzle*,
+not all-time totals: summing scores measures volume, and with unlimited mode the
+all-time winner is whoever played most. Ties break on time. `shadowbanned` on
+profiles is filtered from every board and is not readable by clients.
+
 **Phase 2 is complete.** Materialized leaderboard, rate limiting, structured
 logging, synthetic smoke test, maintenance mode, admin tools, and the daily
 puzzle cached in process. The frontend degrades rather than throwing when
@@ -148,6 +153,10 @@ Things that have already cost time:
   first.** Pasting a `prod_` where `STRIPE_PRICE_ID` wants a `price_` is a 500
   at checkout. `/api/billing/config` reports `status: price_is_a_product` for
   exactly this.
+- **Postgres will not subtract a column from a table-level SELECT grant.**
+  `revoke select (col) ... from anon` silently does nothing while the table
+  grant stands. Revoke the table and grant the wanted columns back -- 0017 does
+  this so `shadowbanned` stays invisible.
 - **A quota is not a rate limit.** The limiter may be approximate — its worst
   case is 2x across a window boundary, which costs nothing. The quota is about
   money, so it consumes in one atomic statement. Do not merge the two.

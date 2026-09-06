@@ -288,8 +288,12 @@ $20–60/month.
 
 Only trustworthy after Phase 0.
 
-- [ ] `feat/daily-leaderboard` — per-puzzle-date function; shadowban flag filtered
-      from all boards; daily board as headline with all-time and streaks as tabs
+- [x] `feat/daily-leaderboard-schema` — `get_daily_leaderboard(date, limit)` and
+      `daily_rank(date, user)`, live rather than materialized because they read
+      one indexed day; `shadowbanned` filtered from every board and unreadable
+      by clients (a shadowban you can detect is a ban with extra steps)
+- [x] `feat/daily-leaderboard` — daily board as the headline, all-time behind a
+      tab, and your own rank when you are outside the top ten
 
 **Rank by today's puzzle, not all-time total.** Summing scores measures volume,
 not skill — with unlimited mode the winner is whoever played most. It also

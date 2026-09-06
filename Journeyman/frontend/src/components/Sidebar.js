@@ -580,6 +580,13 @@ function HistoryTab({ user }) {
     const [leaderboard, setLeaderboard] = useState([])
     const [lbRefreshedAt, setLbRefreshedAt] = useState(null)
     const [lbError, setLbError]         = useState(false)
+    // Today's board is the headline. Summing scores measures volume, not
+    // skill -- with unlimited mode the all-time winner is whoever played most,
+    // and a newcomer can never catch a week-one player. Today resets for
+    // everybody every morning.
+    const [board, setBoard]             = useState('today')
+    const [daily, setDaily]             = useState([])
+    const [dailyRank, setDailyRank]     = useState(null)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchAll() }, [user])
@@ -622,7 +629,27 @@ function HistoryTab({ user }) {
         if (error) setLbError(true)
         else setLeaderboard(lb || [])
 
-        // The leaderboard is a materialized view refreshed on a schedule, so a
+        // Today's board. Not a materialized view -- it reads one indexed day,
+        // so it is live rather than refreshed, which matters on the board
+        // people watch change while they play.
+        const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
+            .format(new Date())
+
+        const { data: todayRows } = await supabase
+            .rpc('get_daily_leaderboard', { p_puzzle_date: today, limit_count: 10 })
+        setDaily(todayRows || [])
+
+        if (user) {
+            // Where they actually sit, which is the question somebody outside
+            // the top ten has. Computed server-side rather than found by paging.
+            const { data: rank } = await supabase
+                .rpc('daily_rank', { p_puzzle_date: today, p_user_id: user.id })
+            setDailyRank(rank?.[0] ?? null)
+        } else {
+            setDailyRank(null)
+        }
+
+        // The all-time board is a materialized view refreshed on a schedule, so a
         // game just finished may not be counted yet. Better to say so than to
         // let someone wonder why their score is missing.
         const { data: refreshedAt } = await supabase.rpc('leaderboard_refreshed_at')
@@ -734,13 +761,80 @@ function HistoryTab({ user }) {
             <div className="hist-section">
                 <span className="info-heading">Leaderboard</span>
 
-                {lbError && <p className="hist-empty">Leaderboard not available yet.</p>}
+                <div className="lb-tabs" role="tablist">
+                    <button
+                        role="tab"
+                        aria-selected={board === 'today'}
+                        className={`lb-tab ${board === 'today' ? 'active' : ''}`}
+                        onClick={() => setBoard('today')}
+                    >
+                        Today
+                    </button>
+                    <button
+                        role="tab"
+                        aria-selected={board === 'alltime'}
+                        className={`lb-tab ${board === 'alltime' ? 'active' : ''}`}
+                        onClick={() => setBoard('alltime')}
+                    >
+                        All-time
+                    </button>
+                </div>
 
-                {!lbError && leaderboard.length === 0 && (
+                {board === 'today' && (
+                    <>
+                        {daily.length === 0 && (
+                            <p className="hist-empty">
+                                Nobody has finished today&apos;s daily yet — go first.
+                            </p>
+                        )}
+
+                        {daily.length > 0 && (
+                            <div className="hist-leaderboard">
+                                <div className="hist-lb-header">
+                                    <span className="hist-lb-rank">#</span>
+                                    <span className="hist-lb-name">Player</span>
+                                    <span className="hist-lb-num">Time</span>
+                                    <span className="hist-lb-pts">Pts</span>
+                                </div>
+                                {daily.map((row, i) => (
+                                    <div
+                                        key={row.id}
+                                        className={`hist-lb-row ${user && row.id === user.id ? 'you' : ''}`}
+                                    >
+                                        <span className="hist-lb-rank">{i + 1}</span>
+                                        <span className="hist-lb-name">
+                                            {row.display_name}
+                                            {row.hard_mode && <span className="lb-hard" title="Hard mode"> ◆</span>}
+                                            {user && row.id === user.id && <span className="hist-lb-you"> you</span>}
+                                        </span>
+                                        <span className="hist-lb-num">{fmtTime(row.time_seconds) || '—'}</span>
+                                        <span className="hist-lb-pts">{(row.score ?? 0).toLocaleString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Shown only when they are not already visible above --
+                            telling somebody they are 4th while they can see
+                            themselves in 4th is noise. */}
+                        {dailyRank && dailyRank.rank > daily.length && (
+                            <p className="lb-your-rank">
+                                You are {dailyRank.rank} of {dailyRank.players} today
+                                {dailyRank.score != null && ` — ${dailyRank.score.toLocaleString()} pts`}
+                            </p>
+                        )}
+                    </>
+                )}
+
+                {board === 'alltime' && lbError && (
+                    <p className="hist-empty">Leaderboard not available yet.</p>
+                )}
+
+                {board === 'alltime' && !lbError && leaderboard.length === 0 && (
                     <p className="hist-empty">No entries yet — be the first to finish a journey!</p>
                 )}
 
-                {!lbError && leaderboard.length > 0 && (
+                {board === 'alltime' && !lbError && leaderboard.length > 0 && (
                     <div className="hist-leaderboard">
                         <div className="hist-lb-header">
                             <span className="hist-lb-rank">#</span>
