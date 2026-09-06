@@ -4,6 +4,7 @@ from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
 from config import load_config
 from daily_cache import DEFAULT_TTL_SECONDS, PuzzleCache
+from entitlements import FreeTierOnly
 from flask import Flask, jsonify, request
 from generate_players import daily_player, randomPlayer, today_eastern, use_pool_source
 from observability import (
@@ -17,7 +18,6 @@ from observability import (
     set_request_id,
 )
 from quota import (
-    FreeTierOnly,
     InMemoryQuotaStore,
 )
 from quota import (
@@ -208,9 +208,28 @@ def _build_quota_store(config):
 
 quota_store = _build_quota_store(config)
 
-# Nobody has bought anything yet. feat/stripe-entitlements swaps this for one
-# that reads the entitlement column, and no caller changes.
-entitlements = FreeTierOnly()
+
+def _build_entitlements(config):
+    """Reads the entitlements table when there is one, else nobody is entitled.
+
+    FreeTierOnly is also the right answer for a database-less local run: no
+    table, so nobody has bought anything.
+    """
+    if not config.use_database:
+        return FreeTierOnly()
+
+    from entitlements import PostgresEntitlements
+
+    from supabase import create_client
+
+    return PostgresEntitlements(create_client(config.supabase_url, config.supabase_service_key))
+
+
+entitlements = _build_entitlements(config)
+
+# A syntactically valid uuid that belongs to nobody, so the health probe
+# exercises the real query without naming a real person.
+_HEALTH_PROBE_USER = "00000000-0000-0000-0000-000000000000"
 
 
 def _quota_exhausted(mode, user_id):
@@ -335,12 +354,18 @@ def api_health():
     # calling it shipped together, and production ran for minutes calling a
     # function that did not exist yet. Nothing caught it except an error report.
     # A read here is what lets the smoke test catch it next time.
+    #
+    # Both stores are probed, because a failure of either means unmetered play:
+    # the quota refuses nobody if it cannot count, and an entitlement lookup
+    # that raises is caught by the same fail-open path. Which one broke goes to
+    # the log; this endpoint is public and says only whether metering works.
     quota_ok = True
     if uses_database:
         try:
             quota_store.used("health:probe", today_eastern().isoformat())
+            entitlements.is_unlimited(_HEALTH_PROBE_USER)
         except Exception:
-            logger.exception("health check could not reach the quota store")
+            logger.exception("health check could not reach the metering stores")
             quota_ok = False
 
     body = {

@@ -15,11 +15,10 @@ the most expensive possible place to put one.
 
 ## Entitlements
 
-`Entitlements` is a seam, not a feature. Today everyone is on the free tier and
-`is_unlimited` always returns False; feat/stripe-entitlements replaces the
-implementation without touching this file's callers. Keeping the seam here --
-rather than an `if user.paid` scattered through the start endpoint -- is what
-makes that a swap.
+Consumed here, owned by entitlements.py. This module asks one question -- is
+this caller exempt -- and knows nothing about what was bought or from whom.
+That separation is what lets a payment provider change without this file
+moving.
 
 ## Failing open, and why this one does not
 
@@ -61,24 +60,6 @@ class QuotaDecision:
 
 
 UNMETERED = QuotaDecision(allowed=True, used=0, remaining=0, unmetered=True)
-
-
-class Entitlements(ABC):
-    """Whether a caller has bought their way out of the quota."""
-
-    @abstractmethod
-    def is_unlimited(self, user_id) -> bool: ...
-
-
-class FreeTierOnly(Entitlements):
-    """Nobody has bought anything yet.
-
-    The whole of Phase 3's first half. feat/stripe-entitlements swaps this for
-    one that reads the entitlement column, and nothing else changes.
-    """
-
-    def is_unlimited(self, user_id) -> bool:
-        return False
 
 
 class QuotaStore(ABC):

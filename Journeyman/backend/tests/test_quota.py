@@ -6,10 +6,9 @@ refused even when two requests arrive together.
 """
 
 import pytest
+from entitlements import Entitlements, FreeTierOnly
 from quota import (
     FREE_GAMES_PER_DAY,
-    Entitlements,
-    FreeTierOnly,
     InMemoryQuotaStore,
     QuotaDecision,
     consume,
