@@ -179,9 +179,12 @@ Independent branches, mergeable in any order. Thousands of users is a small load
 (~3 writes/sec at 30k daily players); the risk is caching and blast radius, not
 throughput.
 
-- [ ] `perf/cache-daily` — **highest leverage on this list.** The daily puzzle is
-      identical for everyone; cache it at the edge until midnight ET and one DB
-      read serves 100k people
+- [x] `perf/cache-daily` — the daily puzzle is identical for everyone, so it is
+      read once and held in process. Measured: 200 starts went from 200 reads at
+      14.6ms to 1 read at 0.30ms. **Not** at the edge and **not** until
+      midnight, both of which this entry asked for and neither of which
+      survives Phase 0 — see `backend/daily_cache.py` for why: the daily is a
+      mutating POST, and a day-long TTL would defeat the admin swap
 - [x] `perf/leaderboard-mv` — materialized view + `pg_cron` 60s refresh (#25).
       85ms of full-table aggregation became 0.7ms
 - [x] `feat/rate-limits` — fixed window on `user_id`, hashed-IP fallback, in
@@ -214,6 +217,7 @@ is worse than none, because nobody checks it until the outage.
 | Supabase unconfigured in the browser | Game plays; accounts, history and leaderboard hide themselves | yes |
 | Leaderboard refresh failing | Last good snapshot is served, with its age shown | yes |
 | Refresh or crash mid-game | The server holds the game; the browser asks for it back | yes |
+| Puzzles table slow or briefly unreachable | Warm instances serve today's puzzle from memory for up to 60s | yes |
 | **Postgres down** | **The game is down.** Every start writes a session row, because the server holds the answer. Maintenance mode makes it a readable 503 rather than a 500 | yes |
 | Traffic spike | Rate limits shed load; maintenance mode is the manual lever. "Writes off, daily still playable" is not achievable and was removed | n/a |
 | Bad puzzle ships | Admin swap for tomorrow, void today's results, reversible | yes |
