@@ -48,6 +48,7 @@ class Session:
     results: list[str | None] = field(default_factory=list)
     guesses: list[str | None] = field(default_factory=list)
     wrong_guesses: int = 0
+    misplaced_guesses: int = 0
     hint_used: bool = False
     hard_mode: bool = False
     status: str = "active"
@@ -247,11 +248,25 @@ def submit_guess(
     guesses[position] = guess.strip().lower()
 
     wrong_guesses = session.wrong_guesses
-    if result != "green":
-        # Hard mode ends the game on the first mistake, matching App.js.
+    misplaced_guesses = session.misplaced_guesses
+
+    if result == "yellow":
+        # A misplacement is not a wrong answer: the team is right, the slot is
+        # not. It costs no life, in hard mode either, because "one mistake ends
+        # it" should mean a mistake. It costs points instead -- scoring.py --
+        # so knowing the teams but not the order is not free.
+        misplaced_guesses += 1
+    elif result != "green":
+        # Hard mode ends the game on the first genuine mistake.
         wrong_guesses = MAX_WRONG_GUESSES if session.hard_mode else wrong_guesses + 1
 
-    updated = replace(session, results=results, guesses=guesses, wrong_guesses=wrong_guesses)
+    updated = replace(
+        session,
+        results=results,
+        guesses=guesses,
+        wrong_guesses=wrong_guesses,
+        misplaced_guesses=misplaced_guesses,
+    )
 
     if updated.has_won:
         updated = _finish(updated, "won", now)
@@ -328,6 +343,7 @@ def _finish(session: Session, status: str, now: datetime | None) -> Session:
         wrong_guesses=session.wrong_guesses,
         hint_used=session.hint_used,
         hard_mode=session.hard_mode,
+        misplaced_guesses=session.misplaced_guesses,
     )
 
     return replace(session, status=status, finished_at=finished_at, score=score)
@@ -355,6 +371,9 @@ def public_view(session: Session, now: datetime | None = None) -> dict:
         "guesses": session.guesses,
         "wrong_guesses": session.wrong_guesses,
         "max_wrong_guesses": MAX_WRONG_GUESSES,
+        # Shown in the score breakdown. Distinct from wrong_guesses because it
+        # costs points rather than a life.
+        "misplaced_guesses": session.misplaced_guesses,
         "hint_used": session.hint_used,
         "hard_mode": session.hard_mode,
         "status": session.status,

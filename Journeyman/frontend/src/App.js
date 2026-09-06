@@ -75,6 +75,7 @@ const BLANK = {
     results: [],
     hints: null,
     wrong_guesses: 0,
+    misplaced_guesses: 0,
     max_wrong_guesses: 3,
     hint_used: false,
     hard_mode: false,
@@ -214,8 +215,19 @@ function App() {
         set_game(prev => ({ ...BLANK, ...prev, ...session }))
         set_guesses(prev => {
             const next = Array(session.num_teams ?? prev.length).fill("")
-            // Keep what the player typed in slots they have not solved.
-            return next.map((_, i) => (session.results?.[i] === 'green' ? "" : (prev[i] ?? "")))
+            return next.map((_, i) => {
+                // A solved slot shows the team that solved it. This used to
+                // clear the field, so getting one right made the answer you had
+                // just typed vanish behind a locked green card.
+                //
+                // Taken from the server's copy rather than the local draft,
+                // because after a reload the local one is empty.
+                if (session.results?.[i] === 'green') {
+                    return session.guesses?.[i] ?? prev[i] ?? ""
+                }
+                // Everywhere else, keep what the player typed.
+                return prev[i] ?? ""
+            })
         })
     }
 
@@ -401,6 +413,7 @@ function App() {
                     has_won={has_won}
                     has_lost={has_lost}
                     wrong_guesses={game.wrong_guesses}
+                    misplaced_guesses={game.misplaced_guesses}
                     max_guesses={game.max_wrong_guesses}
                     hint_active={game.hint_used}
                     on_hint={activate_hint}

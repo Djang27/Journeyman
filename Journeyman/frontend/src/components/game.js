@@ -67,14 +67,15 @@ function CareerTimeline({ teams, guesses, results }) {
     )
 }
 
-function ScoreBreakdown({ final_time, wrong_guesses, hint_active, hard_mode }) {
-    const { base, time_pen, hint_pen, wrong_pen } = score_breakdown({
+function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_active, hard_mode }) {
+    const { base, time_pen, hint_pen, wrong_pen, misplaced_pen } = score_breakdown({
         time_seconds: final_time,
         wrong_guesses,
+        misplaced_guesses,
         hint_used: hint_active,
         hard_mode,
     })
-    const floored = (base - time_pen - hint_pen - wrong_pen) < SCORE_FLOOR
+    const floored = (base - time_pen - hint_pen - wrong_pen - misplaced_pen) < SCORE_FLOOR
 
     return (
         <div className="score-breakdown">
@@ -82,13 +83,16 @@ function ScoreBreakdown({ final_time, wrong_guesses, hint_active, hard_mode }) {
             {time_pen  > 0 && <span className="sb-item pen">−{time_pen} time</span>}
             {hint_pen  > 0 && <span className="sb-item pen">−{hint_pen} hint</span>}
             {wrong_pen > 0 && <span className="sb-item pen">−{wrong_pen} wrong</span>}
+            {/* Named "misplaced", not "wrong". It cost no life and the wording
+                should not imply it did. */}
+            {misplaced_pen > 0 && <span className="sb-item pen">−{misplaced_pen} misplaced</span>}
             {floored        && <span className="sb-item floor">(floor {SCORE_FLOOR})</span>}
             {hard_mode      && <span className="sb-item hard">×{HARD_MULTIPLIER} hard</span>}
         </div>
     )
 }
 
-function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
+function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
     const hard_mode_locked = results.some(r => r !== null) || game_over
@@ -218,6 +222,7 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                                 <ScoreBreakdown
                                     final_time={final_time}
                                     wrong_guesses={wrong_guesses}
+                                    misplaced_guesses={misplaced_guesses}
                                     hint_active={hint_active}
                                     hard_mode={hard_mode}
                                 />

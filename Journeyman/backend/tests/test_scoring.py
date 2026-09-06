@@ -19,6 +19,7 @@ from scoring import (
     BASE,
     HARD_MULTIPLIER,
     HINT_PEN,
+    MISPLACED_PEN,
     SCORE_FLOOR,
     TIME_GRACE,
     WRONG_PEN,
@@ -128,6 +129,7 @@ class TestScoreBreakdown:
             "time_pen": 25,
             "hint_pen": HINT_PEN,
             "wrong_pen": 2 * WRONG_PEN,
+            "misplaced_pen": 0,
             "hard_mode": False,
         }
 
@@ -166,3 +168,49 @@ class TestScoreBreakdown:
             )
             == expected
         )
+
+
+class TestTheMisplacementPenalty:
+    """A right team in the wrong slot costs points, not a life.
+
+    The life part is in test_sessions. This is the other half: without a cost,
+    anyone who knew the teams could permute them until everything turned green,
+    and the order is the game.
+    """
+
+    def test_a_misplacement_costs_points(self):
+        clean = calculate_score("win", 0, 0, False, False)
+        with_one = calculate_score("win", 0, 0, False, False, misplaced_guesses=1)
+        assert clean - with_one == MISPLACED_PEN
+
+    def test_it_costs_less_than_a_wrong_answer(self):
+        # Knowing a team and misplacing it is better play than not knowing it.
+        assert MISPLACED_PEN < WRONG_PEN
+
+    def test_penalties_accumulate(self):
+        assert (
+            calculate_score("win", 0, 0, False, False, misplaced_guesses=4)
+            == BASE - 4 * MISPLACED_PEN
+        )
+
+    def test_the_floor_still_applies(self):
+        # Permuting endlessly cannot drive a win below the floor.
+        assert calculate_score("win", 0, 0, False, False, misplaced_guesses=100) == SCORE_FLOOR
+
+    def test_a_loss_is_still_zero(self):
+        assert calculate_score("loss", 0, 0, False, False, misplaced_guesses=3) == 0
+
+    def test_existing_scores_do_not_move(self):
+        # misplaced_guesses defaults to 0, which is why the 352 frozen parity
+        # cases still pass. Adding a penalty must not silently rewrite what
+        # anybody already earned.
+        assert calculate_score("win", 45, 1, True, False) == calculate_score(
+            "win", 45, 1, True, False, misplaced_guesses=0
+        )
+
+    def test_the_breakdown_reports_it_separately(self):
+        breakdown = score_breakdown(
+            time_seconds=0, wrong_guesses=0, hint_used=False, hard_mode=False, misplaced_guesses=3
+        )
+        assert breakdown["misplaced_pen"] == 3 * MISPLACED_PEN
+        assert breakdown["wrong_pen"] == 0

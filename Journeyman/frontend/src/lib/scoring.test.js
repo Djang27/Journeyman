@@ -4,6 +4,7 @@ import {
     BASE,
     TIME_GRACE,
     HINT_PEN,
+    MISPLACED_PEN,
     WRONG_PEN,
     SCORE_FLOOR,
     HARD_MULTIPLIER,
@@ -28,6 +29,7 @@ describe('score_breakdown', () => {
             time_pen: 25,
             hint_pen: HINT_PEN,
             wrong_pen: 2 * WRONG_PEN,
+            misplaced_pen: 0,
             hard_mode: false,
         })
     })
@@ -85,5 +87,33 @@ describe('calculate_streaks', () => {
 
     test('an all-win history streaks the whole way', () => {
         expect(calculate_streaks([win, win, win, win])).toEqual({ current: 4, best: 4 })
+    })
+})
+
+
+describe('the misplacement penalty', () => {
+    // A right team in the wrong slot costs points rather than a life. The
+    // server owns the rule; this is the display half, and the two must agree
+    // or the breakdown will not add up to the score shown beside it.
+
+    test('it is reported separately from wrong guesses', () => {
+        const breakdown = score_breakdown({
+            time_seconds: 0, wrong_guesses: 0, hint_used: false, hard_mode: false,
+            misplaced_guesses: 3,
+        })
+        expect(breakdown.misplaced_pen).toBe(3 * MISPLACED_PEN)
+        expect(breakdown.wrong_pen).toBe(0)
+    })
+
+    test('it costs less than a wrong answer', () => {
+        // Knowing a team and misplacing it is better play than not knowing it.
+        expect(MISPLACED_PEN).toBeLessThan(WRONG_PEN)
+    })
+
+    test('it defaults to nothing, so old games read unchanged', () => {
+        const breakdown = score_breakdown({
+            time_seconds: 0, wrong_guesses: 0, hint_used: false, hard_mode: false,
+        })
+        expect(breakdown.misplaced_pen).toBe(0)
     })
 })

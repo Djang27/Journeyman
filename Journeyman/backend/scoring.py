@@ -19,11 +19,16 @@ TIME_GRACE = 30  # free seconds before the time penalty starts
 TIME_RATE = 1  # points lost per second after the grace period
 HINT_PEN = 150
 WRONG_PEN = 100
+# A misplacement is not a wrong answer -- the team is right, the slot is not --
+# so it costs no life. It still costs points, because a free yellow would let
+# anyone who knows the teams permute them until everything turned green, and the
+# order is the game.
+MISPLACED_PEN = 25
 SCORE_FLOOR = 100  # minimum for any win, applied *before* the hard multiplier
 HARD_MULTIPLIER = 1.5
 
 
-def calculate_score(result, time_seconds, wrong_guesses, hint_used, hard_mode):
+def calculate_score(result, time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses=0):
     """Score one finished game. A loss is always zero."""
     if result != "win":
         return 0
@@ -31,8 +36,9 @@ def calculate_score(result, time_seconds, wrong_guesses, hint_used, hard_mode):
     time_pen = max(0, time_seconds - TIME_GRACE) * TIME_RATE
     hint_pen = HINT_PEN if hint_used else 0
     wrong_pen = wrong_guesses * WRONG_PEN
+    misplaced_pen = misplaced_guesses * MISPLACED_PEN
 
-    base_score = max(SCORE_FLOOR, BASE - time_pen - hint_pen - wrong_pen)
+    base_score = max(SCORE_FLOOR, BASE - time_pen - hint_pen - wrong_pen - misplaced_pen)
 
     # The floor is applied before the multiplier, so the lowest possible
     # hard-mode win is 150 rather than 100. Moving the multiplier inside the
@@ -53,13 +59,14 @@ def _js_round(value):
     return int(value + 0.5)
 
 
-def score_breakdown(time_seconds, wrong_guesses, hint_used, hard_mode):
+def score_breakdown(time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses=0):
     """The parts of the score, for display. Does not apply the floor."""
     return {
         "base": BASE,
         "time_pen": max(0, time_seconds - TIME_GRACE) * TIME_RATE,
         "hint_pen": HINT_PEN if hint_used else 0,
         "wrong_pen": wrong_guesses * WRONG_PEN,
+        "misplaced_pen": misplaced_guesses * MISPLACED_PEN,
         "hard_mode": bool(hard_mode),
     }
 
