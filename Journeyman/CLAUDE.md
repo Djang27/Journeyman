@@ -25,6 +25,7 @@ backend/
   import_players.py     load the pool into Postgres
   schedule_puzzles.py   fill the daily calendar
   daily_cache.py        today's puzzle, held in process
+  quota.py              the free-tier allowance, and the entitlement seam
   rate_limit.py         application-level limiting
   observability.py      structured logging, Sentry
   smoke_test.py         plays a real game against a deployment
@@ -83,6 +84,14 @@ Basketball-Reference dataset, of which ~1,345 are promoted and ~771 are
 recognisable enough for a daily. Puzzles are scheduled rows, seeded ~90 days
 ahead.
 
+**Phase 3 is in progress.** The free tier is five unlimited games a day,
+counted atomically in Postgres (migration 0012) and keyed on a verified user id
+or a hashed address — anonymous play is metered because a quota keyed only on
+accounts is bypassed by signing out. The daily puzzle is never charged. Refusal
+is `402`, not `429`: a rate limit resolves itself in seconds, this does not.
+`quota.Entitlements` is the seam `feat/stripe-entitlements` fills; today
+`FreeTierOnly` always returns False.
+
 **Phase 2 is complete.** Materialized leaderboard, rate limiting, structured
 logging, synthetic smoke test, maintenance mode, admin tools, and the daily
 puzzle cached in process. The frontend degrades rather than throwing when
@@ -121,10 +130,13 @@ Things that have already cost time:
   careers are held out of the rotation rather than guessed at.
 - **Vercel builds every pushed commit.** A red preview may be for an older commit
   on a branch since fixed -- check which SHA it built.
+- **A quota is not a rate limit.** The limiter may be approximate — its worst
+  case is 2x across a window boundary, which costs nothing. The quota is about
+  money, so it consumes in one atomic statement. Do not merge the two.
 - **Module-level state leaks between tests.** The puzzle cache and the rate
-  limiter both count per process, so one test's requests change what the next
-  test sees. The `client` fixture resets both; anything else process-global
-  needs the same treatment.
+  limiter and the quota store all count per process, so one test's requests
+  change what the next test sees. The `client` fixture resets all three;
+  anything else process-global needs the same treatment.
 - **`frontend/src/lib/supabase.js` is on the import path of everything.**
   `index.js -> App.js -> lib/supabase`. Anything thrown at module scope there
   happens before React mounts and shows a blank page, not an error. It returns

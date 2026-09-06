@@ -2304,3 +2304,17 @@ body {
     opacity: 0.55;
     letter-spacing: 0.02em;
 }
+
+/* The free-allowance line under the start buttons. Deliberately quiet: it is
+   the terms of use, not a call to action, and a loud counter makes a generous
+   cap feel like a countdown. */
+.quota-note {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+}
+
+.quota-note-empty {
+    max-width: 300px;
+    line-height: 1.5;
+}

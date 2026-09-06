@@ -99,6 +99,11 @@ function App() {
     const [user, set_user]                   = useState(null)
     const [recovery_mode, set_recovery_mode] = useState(false)
     const [elapsed, set_elapsed]             = useState(0)
+    // What is left of today's free unlimited games. null means "not
+    // applicable" -- unknown yet, or a player who is not metered at all --
+    // which is why absence is distinct from zero throughout.
+    const [quota, set_quota]                 = useState(null)
+    const [quota_gone, set_quota_gone]       = useState(false)
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -196,12 +201,21 @@ function App() {
             set_elapsed(elapsed_so_far)
             start_time_ref.current = Date.now() - elapsed_so_far * 1000
             if (session.day_number) set_day_number(session.day_number)
+            // Absent for the daily and for anyone unmetered, so absence is
+            // left as null rather than being read as zero.
+            set_quota(session.quota ?? null)
             save_active_session(session.session_id, mode)
             set_game_status(true)
         } catch (err) {
             if (err.is_already_played) {
                 set_daily_done(true)
                 set_error("You have already played today's puzzle.")
+            } else if (err.is_quota_exhausted) {
+                // Not an error the player can act on by retrying, so it is
+                // held as its own state rather than shown as a failure.
+                set_quota_gone(true)
+                set_quota(err.quota ? { remaining: 0, limit: err.quota.limit } : { remaining: 0 })
+                set_error(err.message)
             } else {
                 set_error(err.message)
             }
@@ -316,6 +330,8 @@ function App() {
                     on_start_unlimited={() => start_game('unlimited')}
                     daily_done={daily_done}
                     day_number={day_number}
+                    quota={quota}
+                    quota_gone={quota_gone}
                 />
             )}
             {game_start && (

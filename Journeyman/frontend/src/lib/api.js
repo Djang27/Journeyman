@@ -11,16 +11,31 @@ import { supabase, authAvailable } from './supabase'
 // appears in a response only once the game is over.
 
 export class ApiError extends Error {
-    constructor(message, status) {
+    constructor(message, status, payload = {}) {
         super(message)
         this.name = 'ApiError'
         this.status = status
+        // The server's structured detail, where it sent any -- the quota block
+        // on a 402, for instance. Kept off the message so the UI can render
+        // numbers rather than parse a sentence.
+        this.payload = payload
     }
 
     // The daily has already been played by this account today. A distinct
     // check because it is an ordinary outcome, not a failure.
     get is_already_played() {
         return this.status === 409
+    }
+
+    // The free games for today are gone. Also an ordinary outcome, and a
+    // different one from being rate limited: nothing the player does in the
+    // next few seconds changes it.
+    get is_quota_exhausted() {
+        return this.status === 402
+    }
+
+    get quota() {
+        return this.payload.quota ?? null
     }
 }
 
@@ -62,7 +77,7 @@ async function request(path, { method = 'GET', body } = {}) {
     }
 
     if (!response.ok) {
-        throw new ApiError(payload.error || 'Something went wrong.', response.status)
+        throw new ApiError(payload.error || 'Something went wrong.', response.status, payload)
     }
 
     return payload
