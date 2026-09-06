@@ -182,25 +182,46 @@ throughput.
 - [ ] `perf/cache-daily` — **highest leverage on this list.** The daily puzzle is
       identical for everyone; cache it at the edge until midnight ET and one DB
       read serves 100k people
-- [ ] `perf/leaderboard-mv` — materialized view + `pg_cron` 60s refresh.
-      `get_leaderboard` currently aggregates the whole table on every sidebar open
-- [ ] `feat/rate-limits` — token bucket on `user_id`, hashed-IP fallback.
-      ~30/hour on start, ~120/min on guess
-- [~] `ops/observability` — `/api/health` checks the database rather than just
-      the config, returning 503 when it cannot be reached (#11, #15). Still to
-      do: Sentry on frontend and API; uptime monitor; Cloudflare
-- [ ] `ops/degraded-mode` — read-only flag; client-side pending-result buffer that
-      flushes on reconnect; admin endpoints to swap a puzzle and void a day
+- [x] `perf/leaderboard-mv` — materialized view + `pg_cron` 60s refresh (#25).
+      85ms of full-table aggregation became 0.7ms
+- [x] `feat/rate-limits` — fixed window on `user_id`, hashed-IP fallback, in
+      Postgres behind a `RateLimiter` interface (#27). 60/hour on start,
+      120/min on guess
+- [x] `ops/observability` — `/api/health` checks the database rather than the
+      config (#11, #15); structured JSON logging with request correlation,
+      Sentry, and a synthetic smoke test that plays a real game (#28). Still to
+      do: uptime monitor; Cloudflare
+- [x] `ops/degraded-mode` — maintenance mode (503 + `Retry-After`), result
+      provenance, admin endpoints to swap a puzzle and void a day (#30)
+- [x] `fix/frontend-degradation` — the frontend survives what the backend
+      already survived: unconfigured Supabase degrades to anonymous play
+      instead of throwing at import, and a refresh mid-game resumes rather
+      than losing the puzzle
 
 **Fallbacks.** The governing rule: *a user request must never touch a third party.*
 
-| When | What happens |
-|---|---|
-| Ingestion API blocked | Nothing user-facing. Puzzles come from Postgres. |
-| Postgres down | Daily works from edge cache; results buffer client-side; unlimited falls back to bundled JSON |
-| Auth down | Anonymous play continues |
-| Traffic spike | Degraded mode: writes and unlimited off, daily still playable |
-| Bad puzzle ships | Admin swap for tomorrow, void today's results |
+This table was written before Phase 0. Two rows of it turned out to be wishes
+rather than designs, and are corrected here — a fallback plan that is not true
+is worse than none, because nobody checks it until the outage.
+
+| When | What actually happens | Verified |
+|---|---|---|
+| Ingestion source blocked | Nothing user-facing. Puzzles come from Postgres. | yes |
+| Players table unreachable | Falls back to the bundled `nba_players.json`, 2,582 careers | yes |
+| Puzzle calendar has no row | Falls back to `md5(date) % len(players)` | yes |
+| Rate limiter unavailable | Fails open. A limiter that is down must not take the game down | yes |
+| Auth or JWKS down | Anonymous play continues; an unreachable JWKS is not a forged token | yes |
+| Supabase unconfigured in the browser | Game plays; accounts, history and leaderboard hide themselves | yes |
+| Leaderboard refresh failing | Last good snapshot is served, with its age shown | yes |
+| Refresh or crash mid-game | The server holds the game; the browser asks for it back | yes |
+| **Postgres down** | **The game is down.** Every start writes a session row, because the server holds the answer. Maintenance mode makes it a readable 503 rather than a 500 | yes |
+| Traffic spike | Rate limits shed load; maintenance mode is the manual lever. "Writes off, daily still playable" is not achievable and was removed | n/a |
+| Bad puzzle ships | Admin swap for tomorrow, void today's results, reversible | yes |
+
+Two rows above replaced earlier claims. "Daily works from edge cache; results
+buffer client-side" assumed a stateless daily and a browser that computes its
+own score — both true before Phase 0 and neither true after. The client-side
+buffer has nothing to buffer: the server writes the result.
 
 ---
 

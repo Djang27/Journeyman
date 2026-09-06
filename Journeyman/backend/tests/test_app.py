@@ -137,7 +137,9 @@ class TestSessionAPI:
         )
         assert response.status_code == 400
 
-    def test_a_second_daily_for_the_same_user_is_409(self, client, monkeypatch):
+    @staticmethod
+    def signed_in(monkeypatch, subject="11111111-1111-1111-1111-111111111111"):
+        """Headers for a verified Supabase user, signing with the shared secret."""
         import time
 
         import app as app_module
@@ -147,23 +149,79 @@ class TestSessionAPI:
         monkeypatch.setattr(app_module.config, "jwks_url", "")
         monkeypatch.setattr(app_module.config, "supabase_jwt_secret", secret)
         token = jwt.encode(
-            {
-                "sub": "11111111-1111-1111-1111-111111111111",
-                "aud": "authenticated",
-                "exp": int(time.time()) + 3600,
-            },
+            {"sub": subject, "aud": "authenticated", "exp": int(time.time()) + 3600},
             secret,
             algorithm="HS256",
         )
-        headers = {"Authorization": f"Bearer {token}"}
+        return {"Authorization": f"Bearer {token}"}
 
-        assert (
-            client.post("/api/game/start", json={"mode": "daily"}, headers=headers).status_code
-            == 201
+    def test_an_unfinished_daily_resumes_instead_of_locking_the_player_out(
+        self, client, monkeypatch
+    ):
+        # The browser holds the session id in memory only, so a refresh used to
+        # meet the one-daily-per-player index and lose the puzzle for the day.
+        headers = self.signed_in(monkeypatch)
+
+        first = client.post("/api/game/start", json={"mode": "daily"}, headers=headers)
+        assert first.status_code == 201
+
+        second = client.post("/api/game/start", json={"mode": "daily"}, headers=headers)
+        assert second.status_code == 200
+        assert second.get_json()["session_id"] == first.get_json()["session_id"]
+
+    def test_resuming_preserves_the_guesses_already_made(self, client, monkeypatch):
+        import app as app_module
+
+        headers = self.signed_in(monkeypatch)
+        session_id = client.post(
+            "/api/game/start", json={"mode": "daily"}, headers=headers
+        ).get_json()["session_id"]
+
+        answer = app_module.session_store.get(session_id).answer
+        client.post(
+            f"/api/game/{session_id}/guess",
+            json={"position": 0, "guess": answer[0]},
+            headers=headers,
         )
+
+        resumed = client.post("/api/game/start", json={"mode": "daily"}, headers=headers).get_json()
+        assert resumed["results"][0] == "green"
+        assert resumed["guesses"][0] == answer[0]
+
+    def test_a_finished_daily_is_still_409(self, client, monkeypatch):
+        # Resuming is not a second attempt. Once the game is over the index
+        # rule stands.
+        import app as app_module
+
+        headers = self.signed_in(monkeypatch)
+        session_id = client.post(
+            "/api/game/start", json={"mode": "daily"}, headers=headers
+        ).get_json()["session_id"]
+
+        answer = app_module.session_store.get(session_id).answer
+        for position, team in enumerate(answer):
+            client.post(
+                f"/api/game/{session_id}/guess",
+                json={"position": position, "guess": team},
+                headers=headers,
+            )
 
         second = client.post("/api/game/start", json={"mode": "daily"}, headers=headers)
         assert second.status_code == 409
+
+    def test_another_player_does_not_resume_someone_elses_daily(self, client, monkeypatch):
+        first = client.post(
+            "/api/game/start",
+            json={"mode": "daily"},
+            headers=self.signed_in(monkeypatch),
+        )
+        second = client.post(
+            "/api/game/start",
+            json={"mode": "daily"},
+            headers=self.signed_in(monkeypatch, "22222222-2222-2222-2222-222222222222"),
+        )
+        assert second.status_code == 201
+        assert second.get_json()["session_id"] != first.get_json()["session_id"]
 
     def test_anonymous_dailies_are_not_blocked(self, client):
         # No user_id means no way to attribute the attempt, so the database

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, authAvailable } from '../lib/supabase'
 
 function UserMenu({ user, onOpenStats, onOpenHistory, onOpenAccount }) {
     const [open, setOpen] = useState(false)
@@ -18,6 +18,7 @@ function UserMenu({ user, onOpenStats, onOpenHistory, onOpenAccount }) {
 
     async function handleSignOut() {
         setOpen(false)
+        if (!authAvailable) return
         await supabase.auth.signOut()
     }
 

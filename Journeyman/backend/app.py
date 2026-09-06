@@ -27,6 +27,7 @@ from sessions import (
     SessionNotFound,
     abandon,
     public_view,
+    resume_daily,
     set_hard_mode,
     start_session,
     submit_guess,
@@ -372,6 +373,12 @@ def api_game_start():
     puzzle_date = None
     if mode == "daily":
         puzzle_date = today_eastern().isoformat()
+        # Before building a new one: an unfinished daily is resumed, not
+        # refused. The unique index would otherwise turn a page refresh into a
+        # lockout for the rest of the day.
+        existing = resume_daily(session_store, user_id, puzzle_date)
+        if existing is not None:
+            return jsonify(public_view(existing)), 200
         player_name, teams, player_id = _todays_puzzle(puzzle_date)
     else:
         exclude = body.get("exclude") or []

@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, authAvailable } from './supabase'
 
 // Client for the session API.
 //
@@ -25,6 +25,7 @@ export class ApiError extends Error {
 }
 
 async function auth_headers() {
+    if (!authAvailable) return {}
     try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.access_token) {
