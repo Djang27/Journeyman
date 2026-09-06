@@ -3,7 +3,7 @@ import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
 import UserMenu from "./components/UserMenu"
-import { supabase } from './lib/supabase'
+import { supabase, authAvailable } from './lib/supabase'
 import * as api from './lib/api'
 import './App.css'
 
@@ -84,6 +84,10 @@ function App() {
     const game_over = has_won || has_lost
 
     useEffect(() => {
+        // No Supabase configured: nobody can be signed in, and asking would
+        // throw. The game itself talks only to /api, so it plays on.
+        if (!authAvailable) return undefined
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             set_user(session?.user ?? null)
         })

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, authAvailable } from '../lib/supabase'
 import { calculate_streaks } from '../lib/scoring'
 
 const TABS = [
@@ -230,6 +230,20 @@ function AccountTab({ user, recoveryMode }) {
 
     // ── Render helpers ─────────────────────────────────
     const displayedName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Player'
+
+    // Every form below calls Supabase. With no client there is nothing to
+    // submit to, so say what is unavailable rather than rendering a sign-in
+    // that fails on click.
+    if (!authAvailable) {
+        return (
+            <div className="sidebar-tab-content">
+                <p className="hist-empty">
+                    Accounts are unavailable right now. You can still play; scores
+                    just will not be saved.
+                </p>
+            </div>
+        )
+    }
 
     return (
         <div className="sidebar-tab-content">
@@ -590,6 +604,14 @@ function HistoryTab({ user }) {
                 setStats({ played: data.length, wins, losses, bestScore, totalScore, currentStreak, bestStreak })
                 setRecent(data.slice(0, 6))
             }
+        }
+
+        // Unconfigured Supabase reaches here with user === null, so only the
+        // leaderboard is left to skip. Same visible outcome as a failed read.
+        if (!authAvailable) {
+            setLbError(true)
+            setLoading(false)
+            return
         }
 
         // Called as a function, not a table: reading across every user's results
