@@ -233,8 +233,11 @@ buffer has nothing to buffer: the server writes the result.
 
 Depends on Phase 0; a quota is meaningless if the client can bypass it.
 
-- [ ] `feat/daily-quota` — `daily_quota(user_id, game_slug, date)`; atomic consume
-      in the start endpoint; remaining-games UI
+- [x] `feat/daily-quota` — `consume_quota(game_slug, subject, date, limit)`;
+      atomic consume in the start endpoint; remaining-games UI. Verified: 20
+      simultaneous starts against a limit of five admitted exactly five.
+      Anonymous play is metered on a hashed address too — a quota keyed only on
+      accounts is bypassed by signing out
 - [ ] `feat/stripe-entitlements` — entitlement column; Checkout; webhook handler
       (idempotent on event id); hosted portal; archive gating
 
