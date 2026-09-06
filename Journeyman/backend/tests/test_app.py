@@ -859,6 +859,7 @@ class TestBilling:
     def test_config_says_payments_are_available(self, client):
         body = client.get("/api/billing/config").get_json()
         assert body["available"] is True
+        assert body["status"] == "ready"
         assert body["owned"] is False
         assert body["signed_in"] is False
         assert body["free_games_per_day"] == 5
@@ -867,7 +868,19 @@ class TestBilling:
         import app as app_module
 
         monkeypatch.setattr(app_module.config, "stripe_webhook_secret", "")
-        assert client.get("/api/billing/config").get_json()["available"] is False
+        body = client.get("/api/billing/config").get_json()
+        assert body["available"] is False
+        assert body["status"] == "no_webhook_secret"
+
+    def test_config_names_a_product_id_pasted_as_a_price(self, client, monkeypatch):
+        # The endpoint knew this and was not saying it, so the answer came from
+        # the error tracker after somebody pressed a button that 500'd.
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "stripe_price_id", "prod_VCyQuhukWbr55N")
+        body = client.get("/api/billing/config").get_json()
+        assert body["available"] is False
+        assert body["status"] == "price_is_a_product"
 
     def test_an_owner_is_refused_a_second_purchase(self, client, monkeypatch):
         # Kinder than taking the money and refunding it later.

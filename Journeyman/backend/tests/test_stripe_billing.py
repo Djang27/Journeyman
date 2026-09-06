@@ -40,12 +40,64 @@ def event_bytes(event_type, **obj):
 
 
 class TestConfiguration:
-    def test_both_secrets_are_required(self):
-        # Without the webhook secret a payment is taken and never fulfilled,
-        # which is worse than not selling at all.
+    """`available` has to mean what it says.
+
+    It used to check two of the three settings checkout needs, so a deployment
+    with a missing or malformed price reported itself ready and then returned a
+    500 when somebody pressed the button. That happened.
+    """
+
+    def test_a_complete_configuration_is_ready(self):
         assert stripe_billing.is_configured(Config()) is True
-        assert stripe_billing.is_configured(Config(webhook="")) is False
+        assert stripe_billing.configuration_status(Config()) == stripe_billing.STRIPE_READY
+
+    def test_the_secret_key_is_required(self):
         assert stripe_billing.is_configured(Config(secret="")) is False
+        assert (
+            stripe_billing.configuration_status(Config(secret=""))
+            == stripe_billing.STRIPE_NO_SECRET_KEY
+        )
+
+    def test_the_webhook_secret_is_required(self):
+        # Without it a payment is taken and never fulfilled, which is worse
+        # than not selling at all.
+        assert stripe_billing.is_configured(Config(webhook="")) is False
+        assert (
+            stripe_billing.configuration_status(Config(webhook=""))
+            == stripe_billing.STRIPE_NO_WEBHOOK_SECRET
+        )
+
+    def test_the_price_is_required(self):
+        # The gap that shipped: this used to report ready with no price at all.
+        assert stripe_billing.is_configured(Config(price="")) is False
+        assert (
+            stripe_billing.configuration_status(Config(price="")) == stripe_billing.STRIPE_NO_PRICE
+        )
+
+    def test_a_product_id_pasted_as_a_price_is_caught(self):
+        # The actual mistake. Stripe shows the product id most prominently, and
+        # a prod_ where a price_ belongs is a 500 at checkout and a config
+        # endpoint reporting everything fine.
+        config = Config(price="prod_VCyQuhukWbr55N")
+        assert stripe_billing.is_configured(config) is False
+        assert (
+            stripe_billing.configuration_status(config) == stripe_billing.STRIPE_PRICE_IS_A_PRODUCT
+        )
+
+    def test_the_statuses_are_distinct(self):
+        # Read by a person deciding what to fix, so two collapsing is silent.
+        assert (
+            len(
+                {
+                    stripe_billing.STRIPE_READY,
+                    stripe_billing.STRIPE_NO_SECRET_KEY,
+                    stripe_billing.STRIPE_NO_WEBHOOK_SECRET,
+                    stripe_billing.STRIPE_NO_PRICE,
+                    stripe_billing.STRIPE_PRICE_IS_A_PRODUCT,
+                }
+            )
+            == 5
+        )
 
 
 class TestSignatureVerification:
