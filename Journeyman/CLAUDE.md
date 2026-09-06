@@ -82,8 +82,17 @@ Basketball-Reference dataset, of which ~1,345 are promoted and ~771 are
 recognisable enough for a daily. Puzzles are scheduled rows, seeded ~90 days
 ahead.
 
-**Phase 2 is in progress.** Done: materialized leaderboard, rate limiting,
-structured logging, synthetic smoke test. Remaining: degraded mode.
+**Phase 2 is complete.** Materialized leaderboard, rate limiting, structured
+logging, synthetic smoke test, maintenance mode and admin tools. The frontend
+degrades rather than throwing when Supabase is unconfigured, and a game in
+progress survives a refresh. `perf/cache-daily` is the one item deliberately
+left: see `docs/ROADMAP.md` for the fallback table, which now records what was
+verified rather than what was hoped.
+
+**Postgres down means the game is down.** Every start writes a session row
+because the server holds the answer. Maintenance mode makes that a readable 503
+instead of a 500; there is no design under which the daily plays without a
+database.
 
 ## Gotchas
 
@@ -111,6 +120,10 @@ Things that have already cost time:
   careers are held out of the rotation rather than guessed at.
 - **Vercel builds every pushed commit.** A red preview may be for an older commit
   on a branch since fixed -- check which SHA it built.
+- **`frontend/src/lib/supabase.js` is on the import path of everything.**
+  `index.js -> App.js -> lib/supabase`. Anything thrown at module scope there
+  happens before React mounts and shows a blank page, not an error. It returns
+  a null client and `authAvailable: false` instead; guard new call sites.
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 
