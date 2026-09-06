@@ -222,6 +222,28 @@ is worse than none, because nobody checks it until the outage.
 | Traffic spike | Rate limits shed load; maintenance mode is the manual lever. "Writes off, daily still playable" is not achievable and was removed | n/a |
 | Bad puzzle ships | Admin swap for tomorrow, void today's results, reversible | yes |
 
+### Deferred: making the game survive Postgres entirely
+
+Everything above degrades *around* a game that cannot start, because since
+Phase 0 every start writes a session row -- the server has to hold the answer
+somewhere. The only design that changes this is moving session state off the
+database and into a **signed, encrypted token held by the client**: the server
+keeps the key, the token carries the answer, the guesses and the clock. Nothing
+about Phase 0 is given up, since the answer stays unreadable to the browser and
+scoring stays server-side, but the game becomes playable with no database at
+all.
+
+What would still be lost during an outage, and only then:
+
+- one-daily-per-player enforcement, which has no storage to check against
+- results and leaderboard writes, which would need to queue and replay
+
+Not scheduled. It is a branch the size of `feat/daily-quota` -- a session codec,
+key management and rotation, a size limit, and replay protection -- against a
+rare failure at current traffic. The cheaper win first is tripping maintenance
+mode automatically off the health probe, so the outage returns a readable 503
+instead of an unhandled 500.
+
 Two rows above replaced earlier claims. "Daily works from edge cache; results
 buffer client-side" assumed a stateless daily and a browser that computes its
 own score — both true before Phase 0 and neither true after. The client-side
