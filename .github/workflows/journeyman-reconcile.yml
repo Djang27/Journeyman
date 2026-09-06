@@ -1,0 +1,86 @@
+name: Journeyman Billing Reconciliation
+
+# Finds payments that were made and never fulfilled.
+#
+# The failure this exists for raises nothing. Somebody pays, the webhook never
+# arrives or its handler throws, and every other check in this repo reports a
+# perfectly healthy game. The first anyone hears is an email from a person who
+# is annoyed and correct.
+#
+# Same class as the leaderboard that was empty for months and the daily that
+# 500'd on a foreign key: silent, and only findable by asking from outside.
+
+on:
+  schedule:
+    # Daily, well after the nightly rollover. Stripe retries for three days, so
+    # anything this finds has genuinely failed rather than being in flight.
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "How far back to look"
+        required: false
+        default: "7"
+      repair:
+        description: "Actually grant what is owed (otherwise report only)"
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  # Two runs granting the same entitlement would be harmless -- grant is
+  # idempotent -- but there is no reason to pay Stripe's API twice.
+  group: journeyman-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Find unfulfilled payments
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: Journeyman
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Journeyman/backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check the job is configured
+        id: configured
+        env:
+          URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
+          STRIPE: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ] || [ -z "$STRIPE" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Reconciliation skipped: payments are not configured yet."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reconcile
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          DAYS: ${{ inputs.days || '7' }}
+        # No --repair on the schedule. A job that silently grants entitlements
+        # is one nobody reads the output of; this fails loudly instead, and a
+        # person decides. Run it by hand with repair=true to apply.
+        run: |
+          if [ "${{ inputs.repair }}" = "true" ]; then
+            python backend/reconcile_billing.py --days "$DAYS" --repair
+          else
+            python backend/reconcile_billing.py --days "$DAYS"
+          fi
