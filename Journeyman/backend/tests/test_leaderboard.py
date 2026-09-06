@@ -137,14 +137,102 @@ class TestStaleness:
             anon.rpc("refresh_leaderboard").execute()
 
 
-class TestAgreementWithTheSource:
-    def test_the_view_matches_a_live_aggregate(self, client):
-        """A materialized view that drifts from its source is worse than none."""
+class TestTheArchiveDoesNotBuyRank:
+    """Archive results are recorded and not ranked.
+
+    The archive is about ninety puzzles deep and grows daily. If an archive win
+    scored like a daily, ten dollars would buy ninety games' worth of points and
+    the top of the board would be a list of people who paid, ordered by spare
+    time. A leaderboard where money buys rank is not a leaderboard.
+    """
+
+    @pytest.fixture
+    def archive_result(self, client):
+        row_id = str(uuid.uuid4())
+        client.table("game_results").insert(
+            {
+                "id": row_id,
+                "user_id": ADA,
+                "game_slug": "journeyman",
+                "player_name": "Archive Test",
+                "result": "win",
+                "score": 777,
+                "game_mode": "archive",
+            }
+        ).execute()
+        client.rpc("refresh_leaderboard").execute()
+        yield row_id
+        client.table("game_results").delete().eq("id", row_id).execute()
         client.rpc("refresh_leaderboard").execute()
 
-        results = client.table("game_results").select("user_id,result,score").execute().data
+    def test_an_archive_win_does_not_move_the_leaderboard(self, client, archive_result):
+        before = next(r for r in leaderboard(client) if r["display_name"] == "Ada")
+
+        # A second one, to be sure it is the mode being excluded rather than a
+        # refresh that had not run.
+        client.rpc("refresh_leaderboard").execute()
+        after = next(r for r in leaderboard(client) if r["display_name"] == "Ada")
+
+        assert after["total_score"] == before["total_score"]
+
+    def test_the_result_is_still_recorded(self, client, archive_result):
+        # It belongs in the player's own history and stats. Excluded from the
+        # ranking is not the same as thrown away.
+        rows = (
+            client.table("game_results")
+            .select("id,game_mode,score")
+            .eq("id", archive_result)
+            .execute()
+        )
+        assert rows.data[0]["game_mode"] == "archive"
+        assert rows.data[0]["score"] == 777
+
+    def test_an_unlimited_result_of_the_same_size_does_move_it(self, client):
+        # The control. Without this the test above would pass against a
+        # leaderboard that had simply stopped updating.
+        row_id = str(uuid.uuid4())
+        before = next(r for r in leaderboard(client) if r["display_name"] == "Ada")
+        client.table("game_results").insert(
+            {
+                "id": row_id,
+                "user_id": ADA,
+                "game_slug": "journeyman",
+                "player_name": "Control",
+                "result": "win",
+                "score": 777,
+                "game_mode": "unlimited",
+            }
+        ).execute()
+        try:
+            client.rpc("refresh_leaderboard").execute()
+            after = next(r for r in leaderboard(client) if r["display_name"] == "Ada")
+            assert after["total_score"] == before["total_score"] + 777
+        finally:
+            client.table("game_results").delete().eq("id", row_id).execute()
+            client.rpc("refresh_leaderboard").execute()
+
+
+class TestAgreementWithTheSource:
+    def test_the_view_matches_a_live_aggregate(self, client):
+        """A materialized view that drifts from its source is worse than none.
+
+        The aggregate has to apply the same exclusions the view does, or this
+        starts failing the day somebody plays their first archive puzzle -- and
+        it would look like drift rather than like a test that was never taught
+        about the rule.
+        """
+        client.rpc("refresh_leaderboard").execute()
+
+        results = (
+            client.table("game_results")
+            .select("user_id,result,score,game_mode,voided")
+            .execute()
+            .data
+        )
         expected = {}
         for row in results:
+            if row.get("voided") or row.get("game_mode") == "archive":
+                continue
             entry = expected.setdefault(row["user_id"], {"games": 0, "wins": 0, "score": 0})
             entry["games"] += 1
             entry["wins"] += 1 if row["result"] == "win" else 0
