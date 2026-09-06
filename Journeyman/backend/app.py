@@ -329,6 +329,20 @@ def api_health():
             logger.exception("health check could not reach the database")
             database_ok = False
 
+    # The quota fails open, which is right -- free games are recoverable and an
+    # outage is not -- but it means a broken quota looks exactly like a working
+    # game while every start is free. That happened: migration 0012 and the code
+    # calling it shipped together, and production ran for minutes calling a
+    # function that did not exist yet. Nothing caught it except an error report.
+    # A read here is what lets the smoke test catch it next time.
+    quota_ok = True
+    if uses_database:
+        try:
+            quota_store.used("health:probe", today_eastern().isoformat())
+        except Exception:
+            logger.exception("health check could not reach the quota store")
+            quota_ok = False
+
     body = {
         "status": "maintenance"
         if config.maintenance_mode
@@ -349,6 +363,10 @@ def api_health():
         # rate near zero on a busy deployment means instances are not being
         # reused, and every start is paying for a database read.
         "daily_cache": daily_cache.stats(),
+        # Enforcing, or failing open and giving the game away. Not folded into
+        # `status`: the game genuinely works with the quota down, so this must
+        # not read as an outage to an uptime monitor.
+        "quota_enforcing": quota_ok if uses_database else None,
     }
 
     # 503 so an uptime monitor treats this as down. Reporting 200 while the

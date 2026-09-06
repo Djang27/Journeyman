@@ -60,7 +60,7 @@ def check(condition, message):
     print(f"  ok  {message}")
 
 
-def run(client, mode="unlimited"):
+def run(client, mode="daily"):
     """Play one game through and assert what must be true of it."""
     print(f"health check at {client.base}")
     status, health = client.request("GET", "/api/health")
@@ -71,6 +71,14 @@ def run(client, mode="unlimited"):
         "sessions are persistent -- an in-memory store loses them between requests",
     )
     check(health.get("database_reachable") is not False, "the database is reachable")
+    # The quota fails open by design, so a broken one looks exactly like a
+    # working game while every unlimited start is free. That shipped once: the
+    # migration and the code calling it merged together, and nothing here
+    # noticed for the minutes it took to apply.
+    check(
+        health.get("quota_enforcing") is not False,
+        "the quota is enforcing -- failing open means every unlimited game is free",
+    )
 
     print(f"\nstarting a {mode} game")
     status, game = client.request("POST", "/api/game/start", {"mode": mode})
@@ -120,7 +128,14 @@ def run(client, mode="unlimited"):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", required=True, help="base URL of the deployment")
-    parser.add_argument("--mode", default="unlimited", choices=["unlimited", "daily"])
+    # Daily, not unlimited. Unlimited is metered at five a day, so a check
+    # running every thirty minutes would spend its allowance in under three
+    # hours and then fail forever -- monitoring that breaks itself. The daily
+    # is free by design and is the path that must never break anyway.
+    #
+    # Anonymous daily starts are not capped: the one-per-day index is partial
+    # on user_id, and this caller never signs in.
+    parser.add_argument("--mode", default="daily", choices=["unlimited", "daily"])
     args = parser.parse_args(argv)
 
     try:

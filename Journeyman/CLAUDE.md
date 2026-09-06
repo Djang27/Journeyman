@@ -130,6 +130,11 @@ Things that have already cost time:
   careers are held out of the rotation rather than guessed at.
 - **Vercel builds every pushed commit.** A red preview may be for an older commit
   on a branch since fixed -- check which SHA it built.
+- **Code that needs a migration must not merge with it.** Vercel deploys on
+  push to `main` immediately; the migration workflow runs in parallel and takes
+  minutes. Ship the migration alone, wait for it to apply, then ship the code.
+  This is what "additive database changes merge early and alone" is for --
+  ignoring it put production on a `consume_quota` that did not exist yet.
 - **A quota is not a rate limit.** The limiter may be approximate — its worst
   case is 2x across a window boundary, which costs nothing. The quota is about
   money, so it consumes in one atomic statement. Do not merge the two.
