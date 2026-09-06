@@ -206,19 +206,40 @@ class SupabaseSessionStore(SessionStore):
         ).execute()
 
     def find_daily(self, user_id: str, puzzle_date: str) -> Session | None:
+        return self.find_dated(user_id, puzzle_date, "daily")
+
+    def find_dated(self, user_id: str, puzzle_date: str, mode: str) -> Session | None:
         response = (
             self._table()
             .select(",".join(_COLUMNS))
             .eq("game_slug", "journeyman")
             .eq("user_id", user_id)
             .eq("puzzle_date", puzzle_date)
-            .eq("mode", "daily")
+            .eq("mode", mode)
             .limit(1)
             .execute()
         )
         if not response.data:
             return None
         return from_row(response.data[0])
+
+    def played_dates(self, user_id: str, mode: str) -> set:
+        """One query for the whole listing, rather than one per row.
+
+        Selects only the date: the rows carry answers, and there is no reason
+        to pull ninety of them across the wire to render a list of checkmarks.
+        """
+        response = (
+            self._table()
+            .select("puzzle_date")
+            .eq("game_slug", "journeyman")
+            .eq("user_id", user_id)
+            .eq("mode", mode)
+            .not_.is_("puzzle_date", "null")
+            .limit(1000)
+            .execute()
+        )
+        return {_date_str(row["puzzle_date"]) for row in (response.data or [])}
 
 
 def _is_unique_violation(exc) -> bool:

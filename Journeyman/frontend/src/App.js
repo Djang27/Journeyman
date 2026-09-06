@@ -3,6 +3,7 @@ import StartScreen from "./components/start"
 import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
 import UserMenu from "./components/UserMenu"
+import Archive from "./components/Archive"
 import { supabase, authAvailable } from './lib/supabase'
 import * as api from './lib/api'
 import './App.css'
@@ -110,6 +111,8 @@ function App() {
     // visit that address.
     const [billing, set_billing]             = useState(null)
     const [buying, set_buying]               = useState(false)
+    const [archive, set_archive]             = useState(null)
+    const [show_archive, set_show_archive]   = useState(false)
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -199,6 +202,19 @@ function App() {
 
         return () => { cancelled = true }
     }, [user])
+
+    // The archive listing. Asked for when the player opens it rather than on
+    // every load: it is a query per row's worth of dates, and most sessions
+    // never look at it.
+    const load_archive = React.useCallback(() => {
+        api.archive_list()
+            .then(set_archive)
+            .catch(() => set_archive(null))
+    }, [])
+
+    useEffect(() => {
+        if (show_archive) load_archive()
+    }, [show_archive, user, load_archive])
 
     // Live timer. Display only -- the score is timed by the server clock, so a
     // paused tab or a fiddled system clock changes what is shown and nothing else.
@@ -331,6 +347,29 @@ function App() {
         }
     }
 
+    const start_archive_game = async (puzzle_date) => {
+        set_loading(true)
+        set_error(null)
+        set_game_mode('archive')
+        try {
+            const session = await api.start_archive(puzzle_date)
+            set_game({ ...BLANK, ...session })
+            set_guesses(Array(session.num_teams).fill(""))
+            const elapsed_so_far = session.elapsed_seconds || 0
+            set_elapsed(elapsed_so_far)
+            start_time_ref.current = Date.now() - elapsed_so_far * 1000
+            save_active_session(session.session_id, 'archive')
+            set_show_archive(false)
+            set_game_status(true)
+        } catch (err) {
+            // A locked archive is not a failure, it is the offer.
+            if (err.status === 402) set_show_archive(true)
+            set_error(err.message)
+        } finally {
+            set_loading(false)
+        }
+    }
+
     const buy = async () => {
         set_buying(true)
         set_error(null)
@@ -388,6 +427,7 @@ function App() {
             )}
             {!game_start && (
                 <StartScreen
+                    on_open_archive={() => set_show_archive(true)}
                     on_start_daily={() => start_game('daily')}
                     on_start_unlimited={() => start_game('unlimited')}
                     daily_done={daily_done}
@@ -397,6 +437,16 @@ function App() {
                     billing={billing}
                     buying={buying}
                     on_buy={buy}
+                />
+            )}
+            {show_archive && (
+                <Archive
+                    archive={archive}
+                    loading={archive === null}
+                    buying={buying}
+                    on_play={start_archive_game}
+                    on_buy={billing?.available && !billing?.owned ? buy : null}
+                    on_close={() => set_show_archive(false)}
                 />
             )}
             {game_start && (

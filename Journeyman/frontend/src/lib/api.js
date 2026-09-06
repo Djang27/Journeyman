@@ -128,6 +128,17 @@ export function start_checkout() {
     return request('/api/billing/checkout', { method: 'POST' })
 }
 
+export function archive_list() {
+    return request('/api/game/archive')
+}
+
+export function start_archive(puzzle_date) {
+    return request('/api/game/start', {
+        method: 'POST',
+        body: { mode: 'archive', puzzle_date },
+    })
+}
+
 export function abandon_game(session_id) {
     return request(`/api/game/${session_id}/abandon`, { method: 'POST' })
 }
