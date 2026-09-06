@@ -296,6 +296,7 @@ class TestHealth:
                 # Cold, because the fixture invalidates it. What matters is
                 # that the shape is here at all: a hit rate near zero on a busy
                 # deployment is the signal that instances are not being reused.
+                "quota_enforcing": True,
                 "daily_cache": {
                     "hits": 0,
                     "misses": 0,
@@ -306,6 +307,47 @@ class TestHealth:
             }
         finally:
             app_module.session_store = original
+
+    def test_reports_the_quota_failing_open(self, client):
+        """A broken quota looks exactly like a working game, and is not one.
+
+        This is the bug that shipped: migration 0012 and the code calling it
+        merged together, so production spent minutes calling a function that did
+        not exist. The quota failed open, the game worked, the smoke test
+        passed, and every unlimited game was free. Only an error report caught
+        it.
+        """
+        import app as app_module
+
+        class BrokenQuota:
+            def used(self, *args, **kwargs):
+                raise RuntimeError("no such function")
+
+            def consume(self, *args, **kwargs):
+                raise RuntimeError("no such function")
+
+        class HealthyStore:
+            def check_reachable(self):
+                return None
+
+        original_store, original_quota = app_module.session_store, app_module.quota_store
+        app_module.session_store = HealthyStore()
+        app_module.quota_store = BrokenQuota()
+        try:
+            body = client.get("/api/health").get_json()
+            assert body["quota_enforcing"] is False
+            # Still 200 and still "ok": the game genuinely works with the quota
+            # down, so this must not read as an outage to an uptime monitor.
+            assert body["status"] == "ok"
+        finally:
+            app_module.session_store = original_store
+            app_module.quota_store = original_quota
+
+    def test_the_health_probe_does_not_spend_anyones_allowance(self, client):
+        import app as app_module
+
+        client.get("/api/health")
+        assert app_module.quota_store.used("health:probe", "2026-09-05") == 0
 
     def test_reports_degraded_when_the_database_is_unreachable(self, client):
         """The bug this exists for: it used to report healthy during an outage."""
