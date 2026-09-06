@@ -137,6 +137,57 @@ class TestStaleness:
             anon.rpc("refresh_leaderboard").execute()
 
 
+class TestShadowbanning:
+    """Filtered from every board, and undetectable by the person filtered.
+
+    A cheater told they are banned makes another account. One who quietly stops
+    appearing usually does not, and their own history is unchanged -- so the
+    flag only means anything while they cannot see it.
+    """
+
+    @pytest.fixture
+    def banned(self, client):
+        client.table("profiles").update({"shadowbanned": True}).eq("id", ADA).execute()
+        client.rpc("refresh_leaderboard").execute()
+        yield ADA
+        client.table("profiles").update({"shadowbanned": False}).eq("id", ADA).execute()
+        client.rpc("refresh_leaderboard").execute()
+
+    def test_they_vanish_from_the_all_time_board(self, client, banned):
+        assert banned not in {row["id"] for row in leaderboard(client, limit=100)}
+
+    def test_they_come_back_when_it_is_lifted(self, client, banned):
+        # Reversible: a wrong call must be undoable without touching results.
+        client.table("profiles").update({"shadowbanned": False}).eq("id", banned).execute()
+        client.rpc("refresh_leaderboard").execute()
+        assert banned in {row["id"] for row in leaderboard(client, limit=100)}
+
+    def test_their_own_results_are_untouched(self, client, banned):
+        # Their history and stats keep working. Nothing about their experience
+        # changes, which is the entire point.
+        rows = client.table("game_results").select("id").eq("user_id", banned).execute().data
+        assert len(rows) > 0
+
+    def test_a_client_cannot_read_the_flag(self, anon):
+        """The flag has to be invisible or it is just a ban with extra steps.
+
+        profiles carries a publicly-readable RLS policy, so this is a
+        column-level grant rather than a policy. Postgres will not subtract a
+        column from a table-level SELECT grant, so 0017 revokes the table and
+        grants id and display_name back.
+        """
+        from postgrest.exceptions import APIError
+
+        with pytest.raises(APIError):
+            anon.table("profiles").select("shadowbanned").limit(1).execute()
+
+    def test_a_client_can_still_read_display_names(self, anon):
+        # The boards need them, so the revoke must not have taken the row with
+        # it.
+        rows = anon.table("profiles").select("id,display_name").limit(1).execute()
+        assert rows.data is not None
+
+
 class TestTheArchiveDoesNotBuyRank:
     """Archive results are recorded and not ranked.
 
@@ -254,11 +305,34 @@ class TestEveryAccountIsCounted:
     """
 
     def test_a_player_with_results_appears(self, client):
-        with_results = {
-            row["user_id"] for row in client.table("game_results").select("user_id").execute().data
+        """Every account with a rankable result is on the board.
+
+        "Rankable" has grown two exclusions since this was written, and both
+        have to be applied here or this starts failing for the wrong reason:
+        archive results do not rank (they would let money buy position) and a
+        shadowbanned player does not appear anywhere. Without them the first
+        archive game or the first shadowban would look like the empty-board bug
+        this test exists to catch.
+        """
+        results = client.table("game_results").select("user_id,game_mode,voided").execute().data
+        rankable = {
+            row["user_id"]
+            for row in results
+            if row.get("game_mode") != "archive" and not row.get("voided")
         }
+
+        hidden = {
+            row["id"]
+            for row in client.table("profiles")
+            .select("id,shadowbanned")
+            .eq("shadowbanned", True)
+            .execute()
+            .data
+        }
+
         ranked = {row["id"] for row in leaderboard(client, limit=100)}
-        assert with_results <= ranked, with_results - ranked
+        expected = rankable - hidden
+        assert expected <= ranked, expected - ranked
 
     def test_nobody_is_missing_a_profile(self, client):
         """The join that made the leaderboard empty."""
