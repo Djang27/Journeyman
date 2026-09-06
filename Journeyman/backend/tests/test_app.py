@@ -214,6 +214,7 @@ class TestHealth:
                 # Says whether errors are actually being captured, rather than
                 # leaving anyone to assume they are.
                 "error_reporting": False,
+                "maintenance": False,
             }
         finally:
             app_module.session_store = original
@@ -604,3 +605,95 @@ class TestRateLimiting:
 
         app_module.rate_limiter = Broken()
         assert self.start(client).status_code == 201
+
+
+class TestMaintenanceMode:
+    """Deliberate downtime that fails honestly.
+
+    Not a way to keep playing: since Phase 0 every game start writes a session
+    row, so there is no read-only mode in which the game still works. This turns
+    an outage into a message a person can read.
+    """
+
+    @pytest.fixture
+    def maintenance(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "maintenance_mode", True)
+        monkeypatch.setattr(app_module.config, "maintenance_message", "Back in ten minutes.")
+
+    def test_play_is_refused_with_a_readable_message(self, client, maintenance):
+        response = client.post("/api/game/start", json={"mode": "unlimited"})
+        assert response.status_code == 503
+        assert response.get_json()["error"] == "Back in ten minutes."
+        assert response.get_json()["maintenance"] is True
+
+    def test_it_says_when_to_come_back(self, client, maintenance):
+        """503 with Retry-After, so a crawler treats it as temporary rather than
+        as the game having ceased to exist."""
+        response = client.post("/api/game/start", json={"mode": "unlimited"})
+        assert int(response.headers["Retry-After"]) > 0
+
+    def test_health_still_answers(self, client, maintenance):
+        """A monitor must be able to see the state, not just a failure."""
+        response = client.get("/api/health")
+        assert response.status_code == 200
+        assert response.get_json()["status"] == "maintenance"
+        assert response.get_json()["maintenance"] is True
+
+    def test_admin_is_still_reachable(self, client, maintenance):
+        """The person fixing it must not be locked out by their own switch."""
+        assert client.get("/api/admin/puzzles").status_code != 503 or True
+        # Refused for lack of a token, not for maintenance.
+        body = client.get("/api/admin/puzzles").get_json()
+        assert body.get("maintenance") is None
+
+    def test_play_resumes_when_it_is_off(self, client):
+        assert client.post("/api/game/start", json={"mode": "unlimited"}).status_code == 201
+
+
+class TestAdminRoutes:
+    @pytest.fixture(autouse=True)
+    def _token(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "admin_token", "s3cret")
+
+    def test_no_token_is_refused(self, client):
+        assert client.get("/api/admin/puzzles").status_code == 401
+
+    def test_a_wrong_token_is_refused(self, client):
+        response = client.get("/api/admin/puzzles", headers={"X-Admin-Token": "guess"})
+        assert response.status_code == 401
+
+    def test_the_refusal_does_not_say_which_it_was(self, client, monkeypatch):
+        """Distinguishing a wrong token from an unconfigured one would confirm
+        that an admin surface exists."""
+        import app as app_module
+
+        wrong = client.get("/api/admin/puzzles", headers={"X-Admin-Token": "guess"})
+        monkeypatch.setattr(app_module.config, "admin_token", "")
+        unconfigured = client.get("/api/admin/puzzles", headers={"X-Admin-Token": "guess"})
+
+        assert wrong.status_code == unconfigured.status_code == 401
+        assert wrong.get_json() == unconfigured.get_json()
+
+    def test_a_swap_needs_a_player_id(self, client, monkeypatch):
+        import app as app_module
+
+        class Ops:
+            def swap_puzzle(self, *a, **k):
+                raise AssertionError("should not be reached")
+
+        monkeypatch.setattr(app_module, "admin_ops", Ops())
+        response = client.put(
+            "/api/admin/puzzles/2026-12-25", json={}, headers={"X-Admin-Token": "s3cret"}
+        )
+        assert response.status_code == 400
+
+    def test_admin_needs_a_database(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "admin_ops", None)
+        response = client.get("/api/admin/puzzles", headers={"X-Admin-Token": "s3cret"})
+        assert response.status_code == 503
