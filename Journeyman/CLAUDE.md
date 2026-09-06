@@ -24,6 +24,7 @@ backend/
   build_pool.py         rebuild nba_players.json from the source (run by hand)
   import_players.py     load the pool into Postgres
   schedule_puzzles.py   fill the daily calendar
+  daily_cache.py        today's puzzle, held in process
   rate_limit.py         application-level limiting
   observability.py      structured logging, Sentry
   smoke_test.py         plays a real game against a deployment
@@ -83,11 +84,11 @@ recognisable enough for a daily. Puzzles are scheduled rows, seeded ~90 days
 ahead.
 
 **Phase 2 is complete.** Materialized leaderboard, rate limiting, structured
-logging, synthetic smoke test, maintenance mode and admin tools. The frontend
-degrades rather than throwing when Supabase is unconfigured, and a game in
-progress survives a refresh. `perf/cache-daily` is the one item deliberately
-left: see `docs/ROADMAP.md` for the fallback table, which now records what was
-verified rather than what was hoped.
+logging, synthetic smoke test, maintenance mode, admin tools, and the daily
+puzzle cached in process. The frontend degrades rather than throwing when
+Supabase is unconfigured, and a game in progress survives a refresh. See
+`docs/ROADMAP.md` for the fallback table, which now records what was verified
+rather than what was hoped.
 
 **Postgres down means the game is down.** Every start writes a session row
 because the server holds the answer. Maintenance mode makes that a readable 503
@@ -120,6 +121,10 @@ Things that have already cost time:
   careers are held out of the rotation rather than guessed at.
 - **Vercel builds every pushed commit.** A red preview may be for an older commit
   on a branch since fixed -- check which SHA it built.
+- **Module-level state leaks between tests.** The puzzle cache and the rate
+  limiter both count per process, so one test's requests change what the next
+  test sees. The `client` fixture resets both; anything else process-global
+  needs the same treatment.
 - **`frontend/src/lib/supabase.js` is on the import path of everything.**
   `index.js -> App.js -> lib/supabase`. Anything thrown at module scope there
   happens before React mounts and shows a blank page, not an error. It returns
