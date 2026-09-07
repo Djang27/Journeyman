@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { VerdictKey } from './verdict'
 
-// The front page of the register.
+// The front page.
 //
 // It was a logo and two buttons on an empty field, which is a splash screen
 // rather than a paper. A front page has a masthead, a lead, a standings column
@@ -91,7 +91,7 @@ function StartScreen({
                     <span className="fp-issue">{issueDate()}</span>
                 </div>
                 <Rule heavy />
-                <h1 className="fp-title">The Journeyman Register</h1>
+                <h1 className="fp-title">Journeyman</h1>
                 <Rule />
                 <p className="fp-strap">A career, one club at a time</p>
             </header>
