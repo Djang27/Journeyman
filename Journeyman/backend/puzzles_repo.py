@@ -76,17 +76,35 @@ class PuzzlesRepo:
             on_conflict="game_slug,puzzle_date",
         ).execute()
 
+    PAGE_SIZE = 1000
+
     def scheduled_between(self, start, end):
-        """Existing rows in a date range, keyed by date."""
-        response = (
-            self._table()
-            .select("puzzle_date,player_id,payload")
-            .eq("game_slug", self._game_slug)
-            .gte("puzzle_date", str(start))
-            .lte("puzzle_date", str(end))
-            .execute()
-        )
-        return {row["puzzle_date"]: row for row in (response.data or [])}
+        """Existing rows in a date range, keyed by date.
+
+        Paged, because PostgREST caps a response at 1000 rows and says nothing
+        about it. The scheduler only ever asks for ninety days, but the archive
+        asks for launch-to-yesterday, which grows by one row a day -- so this
+        would have started silently losing the oldest puzzles somewhere around
+        the third year, with no error anywhere.
+        """
+        rows = {}
+        offset = 0
+        while True:
+            response = (
+                self._table()
+                .select("puzzle_date,player_id,payload")
+                .eq("game_slug", self._game_slug)
+                .gte("puzzle_date", str(start))
+                .lte("puzzle_date", str(end))
+                .order("puzzle_date")
+                .range(offset, offset + self.PAGE_SIZE - 1)
+                .execute()
+            )
+            page = response.data or []
+            rows.update({row["puzzle_date"]: row for row in page})
+            if len(page) < self.PAGE_SIZE:
+                return rows
+            offset += self.PAGE_SIZE
 
     def last_used(self, before, window_days=REPEAT_WINDOW_DAYS):
         """{player_id: most recent puzzle_date} within the look-back window.
