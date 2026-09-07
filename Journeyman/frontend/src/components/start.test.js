@@ -32,49 +32,49 @@ describe('when the quota does not apply', () => {
 
     test('unlimited stays playable', () => {
         show({ quota: null })
-        expect(screen.getByText('Unlimited')).toBeEnabled()
+        expect(screen.getByText('Play a career')).toBeEnabled()
     })
 })
 
 describe('while games remain', () => {
     test('it counts down', () => {
         show({ quota: { remaining: 3, limit: 5 } })
-        expect(screen.getByText('3 free games left today')).toBeInTheDocument()
+        expect(screen.getByText(/3 free journeys left today/i)).toBeInTheDocument()
     })
 
     test('the last one is singular', () => {
         show({ quota: { remaining: 1, limit: 5 } })
-        expect(screen.getByText('1 free game left today')).toBeInTheDocument()
+        expect(screen.getByText(/1 free journey left today/i)).toBeInTheDocument()
     })
 
     test('unlimited is still playable', () => {
         show({ quota: { remaining: 1, limit: 5 } })
-        expect(screen.getByText('Unlimited')).toBeEnabled()
+        expect(screen.getByText('Play a career')).toBeEnabled()
     })
 })
 
 describe('once they are gone', () => {
     test('unlimited is disabled', () => {
         show({ quota: { remaining: 0, limit: 5 } })
-        expect(screen.getByText('Unlimited')).toBeDisabled()
+        expect(screen.getByText('Play a career')).toBeDisabled()
     })
 
     test('it points at what is still free rather than only what is not', () => {
         show({ quota_gone: true })
-        expect(screen.getByText(/daily puzzle is always free/i)).toBeInTheDocument()
+        expect(screen.getByText(/daily is always free/i)).toBeInTheDocument()
         expect(screen.getByText(/tomorrow/i)).toBeInTheDocument()
     })
 
     test('the daily is never blocked by the unlimited quota', () => {
         show({ quota_gone: true })
-        expect(screen.getByText(/Daily Journey/)).toBeEnabled()
+        expect(screen.getByText('Play today')).toBeEnabled()
     })
 
     test('a refusal with no quota body still disables unlimited', () => {
         // quota_gone alone must be enough -- the server always sends the block,
         // but the UI should not depend on it to stop offering a game that fails.
         show({ quota_gone: true, quota: null })
-        expect(screen.getByText('Unlimited')).toBeDisabled()
+        expect(screen.getByText('Play a career')).toBeDisabled()
     })
 })
 
@@ -104,9 +104,10 @@ describe('the upgrade offer', () => {
         expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
     })
 
-    test('an owner is told they have access rather than being sold to', () => {
-        show({ billing: { ...available, owned: true } })
-        expect(screen.getByText(/Unlimited access/i)).toBeInTheDocument()
+    test('an owner is not offered the upgrade on the front page', () => {
+        // The receipt lives on the corner mark now -- see Upgrade.test.
+        show({ billing: { ...available, owned: true }, quota_gone: true, on_buy: () => {} })
+        expect(screen.queryByText(/Unlock unlimited/i)).not.toBeInTheDocument()
     })
 
     test('never appears from the URL alone', () => {
@@ -171,7 +172,95 @@ describe('resuming a game left behind', () => {
     test('the daily and unlimited buttons are still there', () => {
         // Resuming is offered, not forced.
         show({ resumable: 'daily', on_resume: () => {} })
-        expect(screen.getByText(/Daily Journey/)).toBeInTheDocument()
+        expect(screen.getByText(/Daily Journey No\./)).toBeInTheDocument()
         expect(screen.getByText('Unlimited')).toBeInTheDocument()
+    })
+})
+
+describe('the front page', () => {
+    // It was a logo and two buttons on an empty field. A front page carries the
+    // things somebody wants before they start: what today's puzzle is, who is
+    // ahead, how they have done, and what else there is to read.
+
+    test('the masthead carries the issue number', () => {
+        show({ day_number: 88 })
+        expect(screen.getByText('No. 88')).toBeInTheDocument()
+    })
+
+    test('today’s standing is shown', () => {
+        show({
+            standings: [
+                { id: 'a', display_name: 'Quick', score: 900 },
+                { id: 'b', display_name: 'Steady', score: 880 },
+            ],
+        })
+        expect(screen.getByText('Quick')).toBeInTheDocument()
+        expect(screen.getByText('900')).toBeInTheDocument()
+    })
+
+    test('an empty board invites you to go first rather than looking broken', () => {
+        show({ standings: [] })
+        expect(screen.getByText(/Go first/i)).toBeInTheDocument()
+    })
+
+    test('a board still loading says so', () => {
+        show({ standings: null })
+        expect(screen.getByText(/Loading/i)).toBeInTheDocument()
+    })
+
+    test('the standing never shows more than five', () => {
+        const many = Array.from({ length: 12 }, (_, i) => ({
+            id: `u${i}`, display_name: `Player ${i}`, score: 900 - i,
+        }))
+        show({ standings: many })
+        expect(screen.getByText('Player 0')).toBeInTheDocument()
+        expect(screen.queryByText('Player 6')).not.toBeInTheDocument()
+    })
+
+    test('your own record appears when there is one', () => {
+        show({ record: { played: 12, wins: 9, streak: 3 } })
+        expect(screen.getByText('Played')).toBeInTheDocument()
+        expect(screen.getByText('12')).toBeInTheDocument()
+    })
+
+    test('no record section for a signed-out visitor', () => {
+        show({ record: null })
+        expect(screen.queryByText('Played')).not.toBeInTheDocument()
+    })
+
+    test('the archive says how much is in it', () => {
+        show({ on_open_archive: () => {}, archive_count: 3 })
+        expect(screen.getByText(/3 back numbers/i)).toBeInTheDocument()
+    })
+
+    test('one back number is singular', () => {
+        show({ on_open_archive: () => {}, archive_count: 1 })
+        expect(screen.getByText(/1 back number$/i)).toBeInTheDocument()
+    })
+})
+
+describe('the rules, reachable from the front page', () => {
+    // Burying how to play in a sidebar tab means the people who most need it
+    // never open it.
+
+    test('an info button opens them', async () => {
+        show({})
+        await userEvent.click(screen.getByLabelText(/How to play/i))
+        expect(screen.getByText(/in the order he/i)).toBeInTheDocument()
+    })
+
+    test('the note explains all three marks', async () => {
+        show({})
+        await userEvent.click(screen.getByLabelText(/How to play/i))
+        expect(screen.getByText('Correct')).toBeInTheDocument()
+        expect(screen.getByText('Wrong stop')).toBeInTheDocument()
+        expect(screen.getByText('Never played there')).toBeInTheDocument()
+    })
+
+    test('it closes', async () => {
+        show({})
+        await userEvent.click(screen.getByLabelText(/How to play/i))
+        await userEvent.click(screen.getByLabelText('Close'))
+        expect(screen.queryByText(/in the order he/i)).not.toBeInTheDocument()
     })
 })

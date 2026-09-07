@@ -3,6 +3,7 @@ import TeamList from "./team_list"
 import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
+import { HowToPlayNote, InfoMark } from './start'
 
 // v2
 const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
@@ -99,6 +100,9 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
 
     const [hard_flash,    set_hard_flash]    = useState(false)
     const [show_results,  set_show_results]  = useState(false)
+    // Reachable mid-game: the moment somebody needs the rules is the moment
+    // they are stuck, and that is never on the start screen.
+    const [show_rules,    set_show_rules]    = useState(false)
     const [copied,        set_copied]        = useState(false)
 
     function handle_share(has_won) {
@@ -124,6 +128,8 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
 
     return (
         <div className={`game-screen ${hard_flash ? 'hard-flash' : ''}`}>
+            {show_rules && <HowToPlayNote onClose={() => set_show_rules(false)} />}
+
             <WinAnimation  active={has_won && show_results} />
             <LoseAnimation active={has_lost} />
 
@@ -145,6 +151,11 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                 <div className={`game-timer ${game_over ? 'done' : ''}`}>
                     {fmt_time(game_over && final_time !== null ? final_time : elapsed)}
                 </div>
+
+                <button className="game-info-btn" onClick={() => set_show_rules(true)} aria-label="How to play">
+                    <InfoMark />
+                    Rules
+                </button>
 
                 {hint_available && (
                     <button className="hint-btn" onClick={on_hint} title="Reveal which conference each team belongs to">
