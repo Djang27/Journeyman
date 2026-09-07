@@ -1,101 +1,134 @@
 # Journeyman
 
-Journeyman is an NBA career guessing game. Given a player's name, trace the roadmap of every team they played for throughout their career — in order.
+An NBA career-path guessing game. You are given a player's name and must name
+every club he turned out for, **in the order he played for them**.
 
-Each stop on the roadmap is one team in the player's career path. Guess the teams in order, from their first NBA team to their most recent. If a player returned to a previous team later in their career, that team appears again as a separate stop.
+Live at **[journeymannba.vercel.app](https://journeymannba.vercel.app)**.
 
-## Gameplay
+React frontend, Flask API, Supabase (Postgres + Auth), deployed on Vercel.
 
-- Start a new game to receive a random NBA player drawn from a real career database.
-- Select the team for each stop on their career roadmap.
-- **Green** — correct team in the correct position.
-- **Yellow** — team appears elsewhere in the player's career but not here.
-- **Gray** — team does not belong on the roadmap at all.
-- You get up to 5 wrong guesses before the journey ends.
+---
 
-### Hint System
+## The game
 
-After 2 wrong guesses, a hint button unlocks. Activating it reveals the NBA conference (East or West) for each remaining stop, at a score penalty.
+A daily puzzle everyone shares, and an unlimited mode for playing more.
 
-### Hard Mode
+Each stop on the road is one club. If a player returned to a club later, it
+appears again as a separate stop — the order is the puzzle, not the set.
 
-Toggle Hard Mode before your first guess. One wrong answer ends the game instantly. Successfully completing a journey in hard mode awards a **1.5× score multiplier**.
+### Reading a stop
+
+Colour is reinforcement, not the message. Each result says itself three ways,
+so it survives a colour-blind reader and a greyscale screenshot:
+
+| | Mark | Rule | Costs |
+|---|---|---|---|
+| **Correct** | tick | double rule, the way a ledger closes a settled line | — |
+| **Wrong stop** | dagger, the printer's mark for "belongs elsewhere" | dashed | 25 points |
+| **Never played there** | cross | struck through | one of three lives |
+
+Naming a club he really played for, one slot out, is **not** a wrong answer. It
+costs points rather than a life, because knowing a club is better play than not
+knowing it — but it is not free, or anyone who knew the clubs could permute them
+risk-free and the order would stop mattering.
 
 ### Scoring
 
-Your score is based on:
-- A base value that decreases with time elapsed
-- Penalties for wrong guesses and hint usage
-- Hard mode multiplier applied to the final total
+Starts at **1000**.
 
-Scores are saved to a persistent leaderboard after each completed game.
+- **Time** — 30 seconds free, then 1 point a second, capped at **600**. The clock
+  runs on the server and keeps running while you are away; what it can take is
+  bounded, so a puzzle finished hours later is worth much less rather than
+  nothing.
+- **Wrong club** — 100 each, and three ends the game
+- **Wrong stop** — 25 each
+- **Hint** — 150. Unlocks after two wrong clubs and reveals each remaining
+  stop's conference
+- **Floor** — no win scores below 100
+- **Hard mode** — one mistake ends it, and a win is multiplied by 1.5
 
-## Features
+### What costs money
 
-- **Results modal** — dismissible overlay after each game showing your final score, a score breakdown, and a full post-game career timeline with correct answers highlighted and wrong guesses shown struck through.
-- **Stats sidebar** — tracks win rate, best score, average score, best and average completion time, hint usage rate, current and best win streaks, and hard mode win rate across all your games.
-- **Leaderboard** — global high scores stored in Supabase with Row Level Security.
-- **Confetti** — fires on win, rendered above all UI layers.
-- **Historical team accuracy** — season-aware resolution of renamed franchises (e.g. Charlotte Bobcats vs. Charlotte Hornets, New Orleans Hornets vs. Pelicans).
+The daily puzzle is **free forever and needs no account**. Beyond it, five
+unlimited games a day are free.
 
-## Tech Stack
+**Full Access** is a one-time payment. It removes the daily cap and unlocks the
+archive of past dailies. It is not a subscription and does not renew.
 
-| Layer | Technology |
-|---|---|
-| Frontend | React |
-| Backend | Flask (Python) |
-| Database / Auth | Supabase (PostgreSQL) |
-| Player data | NBA Stats API |
-| Deployment | Vercel |
+---
 
-## Local Development
-
-Run the backend:
+## Running it
 
 ```bash
-cd Journeyman/backend
-python app.py
+pip install -r backend/requirements-dev.txt
+supabase start                 # local Postgres + auth, in Docker
+supabase db reset              # schema + seed
+python backend/app.py          # API on :5000
+
+cd frontend && npm install && npm start
 ```
 
-Run the frontend:
+The app runs without Supabase configured — it falls back to the bundled player
+file and an in-memory session store, which is enough to play but loses every
+game between requests.
+
+### Tests
 
 ```bash
-cd Journeyman/frontend
-npm install
-npm start
+pytest                         # backend
+ruff check . && ruff format .
+cd frontend && npm test
+python backend/smoke_test.py --url <deployment>
 ```
 
-The frontend proxies API requests to the Flask backend during local development. Database schema and RLS setup for Supabase is in `Journeyman/supabase_setup.sql`.
+Integration tests run against the local Supabase stack and **skip when it is not
+up** — which means CI skips them. A path exercised only against a fake is not
+really tested; this project has been bitten by that twice.
 
-## Player Database
+---
 
-Career paths are read from a committed static database:
+## How it is built
 
-```
-Journeyman/backend/nba_players.json
-```
-
-To refresh it from the NBA Stats API (filters to players with 2+ distinct teams and a career PPG above a minimum threshold):
-
-```bash
-cd Journeyman/backend
-python refresh_nba_players.py
-```
-
-To re-score and filter an existing database without re-fetching all players:
-
-```bash
-python refresh_nba_players.py --filter
-```
-
-## Deployment
-
-This project is configured for Vercel. Use `Journeyman` as the Vercel root directory.
-
-The GitHub Actions workflow deploys to Vercel on pushes to `main` when these repository secrets are configured:
+The answer never leaves the server while a game is running. `/api/game/start`
+returns how many stops there are, not what they are. Scoring happens server-side
+against the server clock, results are written by the service role, and identity
+comes from a verified token rather than a request body.
 
 ```
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
+backend/
+  app.py              routes
+  sessions.py         the game engine -- the answer lives here
+  scoring.py          scoring rules
+  quota.py            the free allowance
+  entitlements.py     what someone bought, provider-agnostic
+  stripe_billing.py   the only file that knows what Stripe is
+  payment_events.py   makes a webhook safe to receive twice
+  archive.py          past dailies
+  rate_limit.py       application-level limiting
+  observability.py    structured logging, Sentry
+  smoke_test.py       plays a real game against a deployment
+supabase/migrations/  applied by CI on merge to main
+docs/ROADMAP.md       the phased plan
+docs/nba-data.md      where the player data comes from
 ```
+
+`CLAUDE.md` carries the conventions and the gotchas that have already cost time.
+
+---
+
+## The data
+
+Careers are built from a public-domain dataset derived from
+Basketball-Reference — 2,582 careers, of which about 1,345 are used and about
+771 are recognisable enough for a daily.
+
+Season-granularity data cannot order a mid-season trade: both clubs sit against
+the same season with nothing saying which came first. Careers that cannot be
+ordered confidently are **held out of the rotation** rather than guessed at.
+
+## Not affiliated with the NBA
+
+An independent project, not affiliated with, endorsed by, or connected to the
+National Basketball Association, its teams, or its players. Club and player
+names are used to describe real careers. All trademarks belong to their owners;
+no logos or likenesses are used.

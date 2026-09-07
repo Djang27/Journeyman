@@ -8,11 +8,17 @@ on:
     paths:
       - "Journeyman/**"
       - ".github/workflows/journeyman-ci.yml"
+      # The root README is this project's README -- the repo is Journeyman.
+      # Without it, a docs-only PR runs no required check and waits forever for
+      # one, which is the failure this filter was supposed to prevent for
+      # *other* projects and accidentally caused for this one.
+      - "README.md"
   push:
     branches: [main]
     paths:
       - "Journeyman/**"
       - ".github/workflows/journeyman-ci.yml"
+      - "README.md"
 
 # A second push to the same branch cancels the first run still in flight.
 concurrency:
