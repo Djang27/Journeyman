@@ -821,17 +821,18 @@ body {
 }
 
 .results-modal {
+  /* No radius and a hard offset shadow: a card sitting on a page, matching
+     every other sheet. It kept a 16px radius and a soft glow through the
+     redesign because nothing on the front page reached it. */
   background: var(--paper-raised);
-  border: 1px solid rgba(35, 32, 27,0.1);
-  border-radius: 16px;
-  padding: 2rem;
-  width: 100%;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  box-shadow: 5px 5px 0 rgba(35, 32, 27, 0.16);
+  padding: 1.6rem 1.5rem 1.3rem;
   max-width: 420px;
-  max-height: 85vh;
-  overflow-y: auto;
+  width: 100%;
   position: relative;
-  text-align: center;
-  animation: modal-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheet-settle 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .results-close-btn {
@@ -3546,4 +3547,106 @@ body {
   line-height: 1.4;
   color: var(--ink-muted);
   margin-top: 2px;
+}
+
+
+/* ── STAMPS ────────────────────────────────────────────────────────────────
+   A rubber stamp pressed onto the page, replacing confetti on a win and a red
+   flash with falling ash on a loss. Both were screen effects; this is a record
+   book, and it stamps the entry.
+
+   The press is the effect: large and faint, landing hard and slightly askew.
+   Askew because a stamp pressed by hand never lands square, and that small
+   wrongness is what makes it read as pressed rather than drawn. */
+.stamp-stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 70;
+}
+
+.stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.7rem 1.6rem 0.8rem;
+  border: 3px solid currentColor;
+  /* Ink does not fully cover: a real stamp is patchy and never quite opaque. */
+  opacity: 0;
+  transform: scale(1.9) rotate(calc(var(--stamp-tilt) * 0.3));
+  transition: opacity 0.13s ease-out, transform 0.16s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.stamp.pressed {
+  opacity: 0.82;
+  transform: scale(1) rotate(var(--stamp-tilt));
+}
+
+.stamp-ink      { color: var(--ink); }
+.stamp-correct  { color: var(--green-correct); }
+.stamp-wrong    { color: var(--gray-wrong); }
+.stamp-accent   { color: var(--accent); }
+
+.stamp-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.9rem, 9vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  line-height: 1;
+  /* The letterspacing pads the right edge; pull it back so the word sits
+     centred inside the frame rather than shunted left. */
+  margin-right: -6px;
+}
+
+.stamp-sublabel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-right: -3px;
+}
+
+.stamp-rule {
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.65;
+}
+
+/* A ledger marks a line it could not close by striking it. */
+.stamp-strike {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  height: 3px;
+  background: var(--gray-wrong);
+  opacity: 0;
+  transform: rotate(-3deg) scaleX(0);
+  transform-origin: left center;
+  animation: strike-through 0.42s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes strike-through {
+  from { opacity: 0;    transform: rotate(-3deg) scaleX(0); }
+  to   { opacity: 0.55; transform: rotate(-3deg) scaleX(1); }
+}
+
+@keyframes sheet-settle {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Somebody who asked their system not to animate gets the stamp, placed, with
+   nothing moving. The information is in the word, not the press. */
+@media (prefers-reduced-motion: reduce) {
+  .stamp { transition: none; }
+  .stamp.still { opacity: 0.82; transform: rotate(var(--stamp-tilt)); }
+  .stamp-strike { animation: none; opacity: 0.55; transform: rotate(-3deg); }
+  .results-modal { animation: none; }
 }

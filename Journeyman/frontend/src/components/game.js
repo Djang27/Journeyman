@@ -4,6 +4,7 @@ import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
 import { HowToPlayNote, InfoMark } from './start'
+import Stamp from './Stamp'
 
 // v2
 const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
@@ -120,15 +121,24 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
     function handleHardModeToggle() {
         if (hard_mode_locked) return
         if (!hard_mode) {
+            // Stamped rather than flashed. A whole-screen colour wash is a
+            // videogame telling you something changed; a stamp is the page
+            // recording that it did.
             set_hard_flash(true)
-            setTimeout(() => set_hard_flash(false), 800)
+            setTimeout(() => set_hard_flash(false), 1400)
         }
         on_hard_mode_toggle()
     }
 
     return (
-        <div className={`game-screen ${hard_flash ? 'hard-flash' : ''}`}>
+        <div className="game-screen">
             {show_rules && <HowToPlayNote onClose={() => set_show_rules(false)} />}
+
+            {hard_flash && (
+                <div className="stamp-stage" aria-hidden="true">
+                    <Stamp label="Hard mode" sublabel="One mistake ends it" tone="accent" tilt={4} />
+                </div>
+            )}
 
             <WinAnimation  active={has_won && show_results} />
             <LoseAnimation active={has_lost} />
