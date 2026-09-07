@@ -1,5 +1,8 @@
 // The offer, kept out of the way until somebody asks what it is.
 //
+// Called Full Access rather than anything register-flavoured: the almanac is a
+// visual language, not a rename. The game is Journeyman.
+//
 // A corner mark rather than a banner: this is a game, and a permanent sales
 // strip across the top of one is how a free game starts feeling like a trial.
 // It says what you get, in the register's own voice, and nothing about it
@@ -40,11 +43,11 @@ export function UpgradeMark({ owned, onClick }) {
         <button
             className={`upgrade-mark ${owned ? 'owned' : ''}`}
             onClick={onClick}
-            aria-label={owned ? 'Your subscription' : 'What the full register includes'}
-            title={owned ? 'Full register' : 'What you get'}
+            aria-label={owned ? 'Your full access' : 'What full access includes'}
+            title={owned ? 'Full access' : 'What you get'}
         >
             <Seal filled={owned} />
-            <span className="upgrade-mark-label">{owned ? 'Full register' : 'Full register'}</span>
+            <span className="upgrade-mark-label">Full access</span>
         </button>
     )
 }
@@ -57,17 +60,17 @@ function Upgrade({ billing, buying, on_buy, on_close }) {
 
     return (
         <div className="upgrade-overlay" onClick={on_close}>
-            <div className="upgrade-sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label="The full register">
+            <div className="upgrade-sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label="Full access">
                 <button className="upgrade-close" onClick={on_close} aria-label="Close">✕</button>
 
                 <div className="upgrade-masthead">
-                    <span className="upgrade-kicker">Subscriber edition</span>
-                    <h2 className="upgrade-title">The Full Register</h2>
+                    <span className="upgrade-kicker">One-time unlock</span>
+                    <h2 className="upgrade-title">Full Access</h2>
                 </div>
 
                 <p className="upgrade-lede">
                     {owned
-                        ? 'You have the full register. Thank you — it is what keeps this going.'
+                        ? 'You have full access. Thank you — it is what keeps this going.'
                         : `The daily puzzle is free forever and always will be. Beyond it, ${free_per_day} journeys a day are on the house.`}
                 </p>
 

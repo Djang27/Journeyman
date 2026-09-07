@@ -115,6 +115,10 @@ function App() {
     const [archive, set_archive]             = useState(null)
     const [show_archive, set_show_archive]   = useState(false)
     const [show_upgrade, set_show_upgrade]   = useState(false)
+    // The front page carries today's board and the reader's own record, so both
+    // are fetched here rather than only inside the sidebar.
+    const [standings, set_standings]         = useState(null)
+    const [record, set_record]               = useState(null)
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -224,6 +228,42 @@ function App() {
     useEffect(() => {
         if (show_archive) load_archive()
     }, [show_archive, user, load_archive])
+
+    // Today's board and the reader's record, for the front page. Read directly
+    // through the same RPCs the sidebar uses -- the answer is public, and the
+    // shadowban filter lives in the function rather than in either caller.
+    useEffect(() => {
+        if (!authAvailable) { set_standings([]); return undefined }
+
+        let cancelled = false
+        const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
+            .format(new Date())
+
+        supabase.rpc('get_daily_leaderboard', { p_puzzle_date: today, limit_count: 5 })
+            .then(({ data }) => { if (!cancelled) set_standings(data || []) })
+            .catch(() => { if (!cancelled) set_standings([]) })
+
+        if (!user) { set_record(null); return () => { cancelled = true } }
+
+        supabase
+            .from('game_results')
+            .select('result,created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .then(({ data }) => {
+                if (cancelled || !data) return
+                const wins = data.filter(r => r.result === 'win').length
+                let streak = 0
+                for (const row of data) {
+                    if (row.result === 'win') streak++
+                    else break
+                }
+                set_record({ played: data.length, wins, streak })
+            })
+            .catch(() => { if (!cancelled) set_record(null) })
+
+        return () => { cancelled = true }
+    }, [user, game_start])
 
     // Live timer. Display only -- the score is timed by the server clock, so a
     // paused tab or a fiddled system clock changes what is shown and nothing else.
@@ -445,19 +485,23 @@ function App() {
                     Journeyman
                 </button>
             )}
-            {/* Corner mark, not a banner. A permanent sales strip across a free
-                game is how it starts feeling like a trial. */}
-            {billing && (
-                <UpgradeMark owned={Boolean(billing.owned)} onClick={() => set_show_upgrade(true)} />
-            )}
-            {user && (
-                <UserMenu
-                    user={user}
-                    onOpenStats={() => open_sidebar('stats')}
-                    onOpenHistory={() => open_sidebar('history')}
-                    onOpenAccount={() => open_sidebar('account')}
-                />
-            )}
+            {/* Both were pinned to the same corner and the account chip won
+                on z-index, which hid the offer entirely for anyone signed in.
+                A row fixes that structurally, rather than with an offset that
+                would be wrong again the moment either one changes. */}
+            <div className="top-right">
+                {billing && (
+                    <UpgradeMark owned={Boolean(billing.owned)} onClick={() => set_show_upgrade(true)} />
+                )}
+                {user && (
+                    <UserMenu
+                        user={user}
+                        onOpenStats={() => open_sidebar('stats')}
+                        onOpenHistory={() => open_sidebar('history')}
+                        onOpenAccount={() => open_sidebar('account')}
+                    />
+                )}
+            </div>
             {error && (
                 <div className="app-error" role="alert" onClick={() => set_error(null)}>
                     {error}
@@ -472,6 +516,9 @@ function App() {
                     day_number={day_number}
                     quota={quota}
                     quota_gone={quota_gone}
+                    standings={standings}
+                    record={record}
+                    archive_count={archive?.puzzles?.length ?? null}
                     // A game left behind, still playable. Only while it is
                     // unfinished -- a finished one has nothing to go back to.
                     resumable={game.session_id && !game_over ? game_mode : null}

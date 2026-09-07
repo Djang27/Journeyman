@@ -23,12 +23,12 @@ describe('the corner mark', () => {
 
     test('an owner gets a receipt, not an advert', () => {
         render(<UpgradeMark owned onClick={noop} />)
-        expect(screen.getByLabelText(/Your subscription/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/Your full access/i)).toBeInTheDocument()
     })
 
     test('a non-owner is offered the description', () => {
         render(<UpgradeMark owned={false} onClick={noop} />)
-        expect(screen.getByLabelText(/What the full register includes/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/What full access includes/i)).toBeInTheDocument()
     })
 })
 
@@ -91,7 +91,7 @@ describe('who sees a buy button', () => {
 
     test('an owner is thanked, not sold to', () => {
         sheet({ ...free, owned: true }, { on_buy: noop })
-        expect(screen.getByText(/You have the full register/i)).toBeInTheDocument()
+        expect(screen.getByText(/You have full access/i)).toBeInTheDocument()
         expect(screen.queryByText(/One payment/i)).not.toBeInTheDocument()
         expect(screen.queryByText(/does not renew/i)).not.toBeInTheDocument()
     })

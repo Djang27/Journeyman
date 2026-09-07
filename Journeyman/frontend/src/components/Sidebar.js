@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, authAvailable } from '../lib/supabase'
+import { VerdictKey } from './verdict'
 import { calculate_streaks } from '../lib/scoring'
 
 const TABS = [
@@ -28,42 +29,31 @@ function HowToPlayTab() {
                         <div className="info-marker correct">1</div>
                         <div className="info-card-mini correct">
                             <span>Los Angeles Lakers</span>
-                            <span className="info-badge correct">✓ Correct stop</span>
+                            <span className="info-badge correct">Correct</span>
                         </div>
                     </div>
                     <div className="info-road-stop">
                         <div className="info-marker close">2</div>
                         <div className="info-card-mini close">
                             <span>Chicago Bulls</span>
-                            <span className="info-badge close">↔ Wrong stop</span>
+                            <span className="info-badge close">Wrong stop</span>
                         </div>
                     </div>
                     <div className="info-road-stop">
                         <div className="info-marker wrong">3</div>
                         <div className="info-card-mini wrong">
                             <span>Boston Celtics</span>
-                            <span className="info-badge wrong">✗ Not in career</span>
+                            <span className="info-badge wrong">Never played there</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div className="info-section">
-                <span className="info-heading">Color Feedback</span>
-                <div className="info-legend">
-                    <div className="info-legend-row">
-                        <span className="info-dot correct" />
-                        <div className="info-legend-text"><strong>Green</strong> — Right team at the right stop. Locked in!</div>
-                    </div>
-                    <div className="info-legend-row">
-                        <span className="info-dot close" />
-                        <div className="info-legend-text"><strong>Yellow</strong> — This team is in the career, but at a different stop.</div>
-                    </div>
-                    <div className="info-legend-row">
-                        <span className="info-dot wrong" />
-                        <div className="info-legend-text"><strong>Red</strong> — This team is not in the player's career at all.</div>
-                    </div>
-                </div>
+                <span className="info-heading">Reading a stop</span>
+                {/* Colour is reinforcement, not the message: the mark and the
+                    rule under an entry each say the state on their own. */}
+                <VerdictKey />
             </div>
 
             <div className="info-section">
@@ -75,7 +65,7 @@ function HowToPlayTab() {
                     <span className="info-lives-label">3 chances</span>
                 </div>
                 <p className="info-body">
-                    Only <strong>red</strong> guesses cost a life. Yellow is free — use it as a clue. Lose all 3 and the correct career path is revealed.
+                    Only a club he <strong>never played for</strong> costs a life. Naming the right club at the wrong stop costs a few points instead — it is a clue worth having. Lose all 3 and the career is revealed.
                 </p>
             </div>
 
@@ -83,7 +73,7 @@ function HowToPlayTab() {
                 <span className="info-heading">Tips</span>
                 <ul className="info-tips">
                     <li>Type a city <em>("Los Angeles")</em> or nickname <em>("Lakers")</em> to search</li>
-                    <li>Yellow clues tell you the team exists — just at a different stop</li>
+                    <li>A wrong-stop mark tells you the club is right — try it elsewhere</li>
                     <li>Arrow keys navigate suggestions, Enter to select</li>
                 </ul>
             </div>
