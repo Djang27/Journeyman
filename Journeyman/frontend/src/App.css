@@ -2969,3 +2969,73 @@ body {
 }
 
 .home-wordmark:hover { color: var(--ink); }
+
+
+/* ── RESULT MARKS ──────────────────────────────────────────────────────────
+   The state said in words as well as colour, in the register's own voice.
+   Colour alone fails for anyone colour-blind and fails again the moment this
+   is screenshotted in grey -- and a printed table would have used a footnote
+   key anyway. */
+.stop-verdict {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.road-stop.bend-right .stop-verdict { justify-content: flex-end; }
+
+.stop-verdict.correct { color: var(--green-correct); }
+.stop-verdict.close   { color: var(--yellow-close); }
+.stop-verdict.wrong   { color: var(--gray-wrong); }
+
+.stop-verdict-mark { flex: 0 0 auto; }
+
+/* The legend, so the marks are learnable rather than guessable. */
+.verdict-key {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid var(--rule);
+  padding-top: 0.8rem;
+}
+
+.verdict-key-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.verdict-key-term {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 6.5rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.verdict-key-desc {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+
+/* A graded field keeps its state visible: the rule under the input says what
+   happened to what is written in it. */
+.stop-card.close .team-field { border-bottom: 1.5px dashed var(--yellow-close); }
+.stop-card.close .team-input { color: var(--yellow-close); }
+
+.stop-card.wrong .team-field { border-bottom: 1px solid var(--gray-wrong); }
+.stop-card.wrong .team-input { color: var(--gray-wrong); text-decoration: line-through; }

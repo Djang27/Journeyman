@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import Verdict from './verdict'
 
 const NBA_TEAMS = [
     "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte bobcats", "charlotte hornets",
@@ -223,11 +224,15 @@ function TeamList({ num_teams, hints, guesses, results, on_guess_change, on_subm
 
                             {isLocked ? (
                                 // Set like a line in a table once it is settled:
-                                // a club colour spine, the name, a rule under it.
-                                <div className="stop-solved">
-                                    <span className="stop-solved-spine"></span>
-                                    <span className="stop-solved-name">{toTitleCase(guesses[index] ?? "")}</span>
-                                </div>
+                                // a club colour spine, the name, a double rule
+                                // under it, and the verdict said in words.
+                                <>
+                                    <div className="stop-solved">
+                                        <span className="stop-solved-spine"></span>
+                                        <span className="stop-solved-name">{toTitleCase(guesses[index] ?? "")}</span>
+                                    </div>
+                                    <Verdict result={result} />
+                                </>
                             ) : (
                                 <>
                                     <TeamSearch
@@ -235,6 +240,11 @@ function TeamList({ num_teams, hints, guesses, results, on_guess_change, on_subm
                                         onChange={(val) => on_guess_change(index, val)}
                                         disabled={game_over}
                                     />
+                                    {/* The field already shows what they typed,
+                                        so only the verdict is added -- repeating
+                                        the guess under its own input reads as a
+                                        rendering bug. */}
+                                    {result && result !== 'green' && <Verdict result={result} />}
                                     <div className="stop-actions">
                                         {showClear && (
                                             <button
