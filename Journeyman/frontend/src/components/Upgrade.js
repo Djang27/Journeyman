@@ -102,6 +102,13 @@ function Upgrade({ billing, buying, on_buy, on_close }) {
                         {/* Said plainly. A one-time price that people expect to
                             renew is a support email every month. */}
                         <p className="upgrade-fine">Paid once. Not a subscription, and it does not renew.</p>
+                        {/* Before the money moves, not after. An opt-out
+                            somebody learns about by seeing their own name is
+                            not much of one. */}
+                        <p className="upgrade-fine">
+                            Supporters are named on the front page. You can turn that off any
+                            time in your account.
+                        </p>
                     </div>
                 )}
             </div>
