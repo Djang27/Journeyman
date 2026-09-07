@@ -119,6 +119,7 @@ function App() {
     // are fetched here rather than only inside the sidebar.
     const [standings, set_standings]         = useState(null)
     const [record, set_record]               = useState(null)
+    const [supporters, set_supporters]       = useState({ names: [], count: 0 })
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -242,6 +243,22 @@ function App() {
         supabase.rpc('get_daily_leaderboard', { p_puzzle_date: today, limit_count: 5 })
             .then(({ data }) => { if (!cancelled) set_standings(data || []) })
             .catch(() => { if (!cancelled) set_standings([]) })
+
+        // Names and total separately: the total counts people who opted out of
+        // being named, so it is the honest figure and the list is the polite
+        // one.
+        Promise.all([
+            supabase.rpc('supporters', { limit_count: 60 }),
+            supabase.rpc('supporter_count'),
+        ])
+            .then(([list, total]) => {
+                if (cancelled) return
+                set_supporters({
+                    names: (list.data || []).map(r => r.display_name),
+                    count: total.data ?? 0,
+                })
+            })
+            .catch(() => { if (!cancelled) set_supporters({ names: [], count: 0 }) })
 
         if (!user) { set_record(null); return () => { cancelled = true } }
 
@@ -519,6 +536,7 @@ function App() {
                     standings={standings}
                     record={record}
                     archive_count={archive?.puzzles?.length ?? null}
+                    supporters={supporters}
                     // A game left behind, still playable. Only while it is
                     // unfinished -- a finished one has nothing to go back to.
                     resumable={game.session_id && !game_over ? game_mode : null}

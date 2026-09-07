@@ -93,6 +93,8 @@ function AccountTab({ user, recoveryMode }) {
     const [message, setMessage]         = useState('')
     const [renaming, setRenaming]       = useState(false)
     const [newName, setNewName]         = useState('')
+    const [owned, setOwned]             = useState(false)
+    const [supporterPublic, setSupporterPublic] = useState(true)
 
     // Sync view with external auth state changes
     useEffect(() => {
@@ -220,6 +222,46 @@ function AccountTab({ user, recoveryMode }) {
     // The database constrains the shape -- migration 0019 -- so a name that
     // slips past this form is still refused. Checking here only makes the
     // refusal a sentence rather than a Postgres error.
+    // Whether they have bought, and whether they are currently named. Read
+    // once when the tab opens rather than kept in sync -- this changes about as
+    // often as somebody buys the game.
+    useEffect(() => {
+        if (!user || !authAvailable) return
+        let cancelled = false
+
+        Promise.all([
+            fetch('/api/billing/config').then(r => r.json()).catch(() => null),
+            supabase.from('profiles').select('supporter_public').eq('id', user.id).maybeSingle(),
+        ]).then(([billing, profile]) => {
+            if (cancelled) return
+            setOwned(Boolean(billing?.owned))
+            if (profile?.data) setSupporterPublic(profile.data.supporter_public !== false)
+        })
+
+        return () => { cancelled = true }
+    }, [user])
+
+    async function handleSupporterToggle(e) {
+        const next = e.target.checked
+        setSupporterPublic(next)
+        setLoading(true)
+
+        const { error: err } = await supabase
+            .from('profiles')
+            .update({ supporter_public: next })
+            .eq('id', user.id)
+
+        if (err) {
+            // Put the switch back rather than leaving it showing a state the
+            // database does not hold.
+            setSupporterPublic(!next)
+            setError('That could not be saved. Try again.')
+        } else {
+            setMessage(next ? 'Your name will appear.' : 'Your name has been removed.')
+        }
+        setLoading(false)
+    }
+
     async function handleRename(e) {
         e.preventDefault()
         const name = newName.trim()
@@ -327,6 +369,27 @@ function AccountTab({ user, recoveryMode }) {
                     )}
 
                     <p className="auth-profile-email">{user?.email}</p>
+
+                    {/* Only shown to somebody who has actually bought -- a
+                        toggle for a thing you do not have is noise. */}
+                    {owned && (
+                        <label className="supporter-toggle">
+                            <input
+                                type="checkbox"
+                                checked={supporterPublic}
+                                onChange={handleSupporterToggle}
+                                disabled={loading}
+                            />
+                            <span>
+                                Show my name among supporters
+                                <span className="supporter-toggle-note">
+                                    Turning this off removes your name from the front page. It does
+                                    not change anything else.
+                                </span>
+                            </span>
+                        </label>
+                    )}
+
                     {message && <p className="auth-success">{message}</p>}
                     <button className="auth-submit" onClick={handleSignOut} disabled={loading}>
                         {loading ? 'Signing out…' : 'Sign Out'}

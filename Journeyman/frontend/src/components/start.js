@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { VerdictKey } from './verdict'
 import { PrivacyPolicy, Attribution } from './Legal'
+import SupportersStrip from './Supporters'
 
 // The front page.
 //
@@ -87,6 +88,7 @@ function StartScreen({
     standings = null,
     record = null,
     archive_count = null,
+    supporters = null,
 }) {
     // Which sheet is open: 'rules', 'privacy', 'attribution', or none.
     const [sheet, setSheet] = useState(null)
@@ -212,6 +214,12 @@ function StartScreen({
                     How to play
                 </button>
             </footer>
+
+            {/* Named above the colophon: it is a credit, and credits sit with
+                the imprint rather than in the middle of the page. */}
+            {supporters && (
+                <SupportersStrip names={supporters.names} count={supporters.count} />
+            )}
 
             {/* The colophon, where a paper puts this. Small, present, not hidden
                 three clicks deep -- somebody looking for it is looking for a
