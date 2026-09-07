@@ -195,6 +195,24 @@ None of them counts *games*. That lives in `game_sessions` and `game_results`,
 and it is the number worth acting on: players a day, completion rate, daily
 versus unlimited. Nothing surfaces it yet.
 
+## Retention and scheduled work
+
+Four jobs run in Postgres via pg_cron (0007, 0010, 0021). `select jobname,
+schedule from cron.job` lists them:
+
+- `refresh-leaderboard` every 15 minutes. It was every minute, which is a full
+  aggregate over all of `game_results` 1,440 times a day and grows with the
+  table. The all-time board does not change in sixty seconds; the board people
+  watch during a day is the daily one, which is read live and is not a view.
+- `prune-rate-limits` hourly
+- `prune-sessions` nightly, which also prunes quota. Finished sessions are kept
+  30 days -- "why did this score happen" arrives days later, not minutes -- and
+  never-finished ones 90.
+
+`payment_events` is deliberately never pruned: it is a financial record, it is
+one row per purchase rather than per game, and the question it answers is asked
+years later.
+
 ## Operations
 
 All four deployment secrets are configured and each was verified by running the
