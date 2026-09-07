@@ -35,10 +35,21 @@
       package-lock that npm regenerated differently. The script is what the
       package injects anyway.
 
-      It is served by Vercel itself, so it is inert in local development and on
-      any other host -- no key, no account id, nothing to configure.
+      Served from /stats rather than /_vercel/insights, and reporting there too
+      via data-endpoint. Blocklists match that path by name, and this is
+      cookieless first-party analytics -- page views and referrers, no
+      cross-site tracking and no personal data -- so the block is a heuristic
+      about the URL rather than about what it does. Both have to move: leaving
+      either on the old path leaves that half blocked.
+
+      The script reads dataset.endpoint and appends the event name, so
+      data-endpoint="/stats" sends to /stats/view, which the rewrite in
+      vercel.json forwards. Undo by deleting data-endpoint and the two rewrites.
+
+      Vercel serves it, so it is inert locally and on any other host -- no key,
+      no account id, nothing to configure.
     -->
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/stats/script.js" data-endpoint="/stats"></script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
