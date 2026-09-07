@@ -171,6 +171,24 @@ Things that have already cost time:
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 
+## Measurement
+
+Four places, none of which need code:
+
+- **Vercel → Observability** — function invocations and bandwidth. This is API
+  traffic: every start, every guess.
+- **Vercel → Web Analytics** — page views, referrers, devices. Wired via the
+  `/_vercel/insights/script.js` tag in `public/index.html` rather than the
+  `@vercel/analytics` package, whose peer range wants a newer TypeScript than
+  react-scripts 5 pins.
+- **Sentry → Insights** — request throughput and latency, sampled at 10%, so
+  multiply by ten.
+- **Supabase → Reports** — database and PostgREST request counts.
+
+None of them counts *games*. That lives in `game_sessions` and `game_results`,
+and it is the number worth acting on: players a day, completion rate, daily
+versus unlimited. Nothing surfaces it yet.
+
 ## Operations
 
 All four deployment secrets are configured and each was verified by running the
