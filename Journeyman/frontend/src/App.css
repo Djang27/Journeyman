@@ -1031,12 +1031,24 @@ body {
   background: var(--accent);
 }
 
-/* USER MENU (top-right, signed-in only) */
-.user-menu {
+/* The top-right corner is a row, not two things pinned to the same point.
+   They were, and the account chip won on z-index -- which hid the offer from
+   exactly the people who could buy it. */
+.top-right {
   position: fixed;
   top: 1.1rem;
   right: 1.1rem;
   z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+/* USER MENU (in the row above, signed-in only) */
+.user-menu {
+  /* Positioned by .top-right now. Pinning it here is what put it on top of
+     the Full Access mark. */
+  position: static;
 }
 
 .user-avatar-btn {
@@ -2606,9 +2618,8 @@ body {
    banner: a permanent sales strip across a free game is how it starts feeling
    like a trial. */
 .upgrade-mark {
-  position: absolute;
-  top: 1.1rem;
-  right: 1rem;
+  /* Also positioned by .top-right. */
+  position: static;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2632,9 +2643,11 @@ body {
 
 /* On a phone the corner belongs to the account menu; the label goes and the
    seal alone carries it. */
+/* On a phone the label goes and the seal alone carries it. It stays in the
+   row -- moving it back to its own corner is what caused the overlap. */
 @media (max-width: 560px) {
   .upgrade-mark-label { display: none; }
-  .upgrade-mark { top: 1rem; right: 3.4rem; }
+  .top-right { gap: 0.7rem; }
 }
 
 .upgrade-overlay {
@@ -3327,3 +3340,137 @@ body {
 }
 
 .game-info-btn:hover { color: var(--accent); }
+
+/* ── CHANGING YOUR NAME ────────────────────────────────────────────────────*/
+.rename-link {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 0 1px;
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+}
+
+.rename-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+.rename-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  margin-bottom: 0.6rem;
+}
+
+.rename-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: left;
+}
+
+/* The database's rule, said before they submit rather than after it refuses. */
+.rename-hint {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  color: var(--ink-faint);
+  text-align: left;
+}
+
+.rename-actions { display: flex; align-items: center; gap: 0.7rem; }
+
+.rename-cancel {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.rename-cancel:hover { color: var(--accent); }
+
+/* ── THE COLOPHON ──────────────────────────────────────────────────────────
+   Where a paper puts this. Small and present rather than three clicks deep --
+   somebody looking for it is looking for a reason to trust the thing. */
+.fp-colophon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--rule);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.fp-colophon-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-muted);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.fp-colophon-link:hover { color: var(--accent); }
+.fp-colophon-sep { color: var(--rule); }
+
+/* ── LEGAL SHEETS ──────────────────────────────────────────────────────────*/
+.legal { text-align: left; }
+
+.legal-updated {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.9rem;
+}
+
+.legal-section { margin-bottom: 1rem; }
+
+.legal-heading {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 4px;
+  margin-bottom: 0.4rem;
+}
+
+.legal p {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.legal code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  background: var(--paper-sunk);
+  padding: 1px 4px;
+}

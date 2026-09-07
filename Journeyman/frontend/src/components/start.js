@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { VerdictKey } from './verdict'
+import { PrivacyPolicy, Attribution } from './Legal'
 
 // The front page.
 //
@@ -43,20 +44,30 @@ function InfoMark() {
     )
 }
 
-export function HowToPlayNote({ onClose }) {
+// One sheet shape, three kinds of note: the rules, the privacy page and the
+// attribution. Same furniture, so none of them needs its own chrome.
+export function Note({ kicker, title, onClose, children }) {
     return (
         <div className="fp-note-overlay" onClick={onClose}>
-            <div className="fp-note" onClick={e => e.stopPropagation()} role="dialog" aria-label="How to play">
+            <div className="fp-note" onClick={e => e.stopPropagation()} role="dialog" aria-label={title}>
                 <button className="fp-note-close" onClick={onClose} aria-label="Close">✕</button>
-                <span className="fp-kicker">The rules, briefly</span>
-                <h3 className="fp-note-title">How to play</h3>
-                <p className="fp-note-body">
-                    You are given a player. Name every club he turned out for, <em>in the order he
-                    played for them</em>. Three wrong clubs and the career is revealed.
-                </p>
-                <VerdictKey />
+                <span className="fp-kicker">{kicker}</span>
+                <h3 className="fp-note-title">{title}</h3>
+                {children}
             </div>
         </div>
+    )
+}
+
+export function HowToPlayNote({ onClose }) {
+    return (
+        <Note kicker="The rules, briefly" title="How to play" onClose={onClose}>
+            <p className="fp-note-body">
+                You are given a player. Name every club he turned out for, <em>in the order he
+                played for them</em>. Three wrong clubs and the career is revealed.
+            </p>
+            <VerdictKey />
+        </Note>
     )
 }
 
@@ -77,7 +88,8 @@ function StartScreen({
     record = null,
     archive_count = null,
 }) {
-    const [note, setNote] = useState(false)
+    // Which sheet is open: 'rules', 'privacy', 'attribution', or none.
+    const [sheet, setSheet] = useState(null)
 
     const remaining = quota?.remaining
     const out_of_games = quota_gone || remaining === 0
@@ -195,13 +207,34 @@ function StartScreen({
                         {archive_count ? <span className="fp-foot-count"> · {archive_count} back {archive_count === 1 ? 'number' : 'numbers'}</span> : null}
                     </button>
                 )}
-                <button className="fp-foot-link fp-info" onClick={() => setNote(true)} aria-label="How to play">
+                <button className="fp-foot-link fp-info" onClick={() => setSheet('rules')} aria-label="How to play">
                     <InfoMark />
                     How to play
                 </button>
             </footer>
 
-            {note && <HowToPlayNote onClose={() => setNote(false)} />}
+            {/* The colophon, where a paper puts this. Small, present, not hidden
+                three clicks deep -- somebody looking for it is looking for a
+                reason to trust the thing. */}
+            <div className="fp-colophon">
+                <button className="fp-colophon-link" onClick={() => setSheet('privacy')}>Privacy</button>
+                <span className="fp-colophon-sep">·</span>
+                <button className="fp-colophon-link" onClick={() => setSheet('attribution')}>About the data</button>
+                <span className="fp-colophon-sep">·</span>
+                <span className="fp-colophon-note">Not affiliated with the NBA</span>
+            </div>
+
+            {sheet === 'rules' && <HowToPlayNote onClose={() => setSheet(null)} />}
+            {sheet === 'privacy' && (
+                <Note kicker="What is kept, and what is not" title="Privacy" onClose={() => setSheet(null)}>
+                    <PrivacyPolicy />
+                </Note>
+            )}
+            {sheet === 'attribution' && (
+                <Note kicker="Independent, and where the facts come from" title="About the data" onClose={() => setSheet(null)}>
+                    <Attribution />
+                </Note>
+            )}
         </div>
     )
 }

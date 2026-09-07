@@ -264,3 +264,56 @@ describe('the rules, reachable from the front page', () => {
         expect(screen.queryByText(/in the order he/i)).not.toBeInTheDocument()
     })
 })
+
+describe('the colophon', () => {
+    // Where a paper puts this. Small and present rather than three clicks deep:
+    // somebody looking for it is looking for a reason to trust the thing.
+
+    test('the NBA disclaimer is on the page itself, not only behind a link', () => {
+        show({})
+        expect(screen.getByText(/Not affiliated with the NBA/i)).toBeInTheDocument()
+    })
+
+    test('privacy opens and says what is kept', async () => {
+        show({})
+        await userEvent.click(screen.getByText('Privacy'))
+        expect(screen.getByText(/no advertising, no third-party/i)).toBeInTheDocument()
+    })
+
+    test('privacy is honest about anonymous play', async () => {
+        // The claim has to match the code: rate_limit keeps 16 hex characters
+        // of a SHA-256 and never the address.
+        show({})
+        await userEvent.click(screen.getByText('Privacy'))
+        expect(screen.getByText(/never written down/i)).toBeInTheDocument()
+    })
+
+    test('privacy says card details never reach us', async () => {
+        show({})
+        await userEvent.click(screen.getByText('Privacy'))
+        expect(screen.getByText(/never reach Journeyman/i)).toBeInTheDocument()
+    })
+
+    test('attribution disclaims affiliation and names the source', async () => {
+        show({})
+        await userEvent.click(screen.getByText('About the data'))
+        expect(screen.getByText(/not affiliated with, endorsed by/i)).toBeInTheDocument()
+        expect(screen.getByText(/Basketball-Reference/i)).toBeInTheDocument()
+    })
+
+    test('a sheet closes', async () => {
+        show({})
+        await userEvent.click(screen.getByText('Privacy'))
+        await userEvent.click(screen.getByLabelText('Close'))
+        expect(screen.queryByText(/no advertising/i)).not.toBeInTheDocument()
+    })
+
+    test('only one sheet is open at a time', async () => {
+        show({})
+        await userEvent.click(screen.getByText('Privacy'))
+        await userEvent.click(screen.getByLabelText('Close'))
+        await userEvent.click(screen.getByText('About the data'))
+        expect(screen.queryByText(/no advertising/i)).not.toBeInTheDocument()
+        expect(screen.getByText(/Basketball-Reference/i)).toBeInTheDocument()
+    })
+})
