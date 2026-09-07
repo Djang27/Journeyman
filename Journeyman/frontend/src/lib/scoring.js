@@ -29,6 +29,11 @@ export function calculate_streaks(games) {
 export const BASE             = 1000
 export const TIME_GRACE       = 30    // free seconds before penalty starts
 export const TIME_RATE        = 1     // points lost per second after grace
+// The clock keeps running while somebody is away -- it runs on the server, and
+// a browser that could discount its own time could claim a perfect one. What is
+// bounded is the damage: time can take 600 of the 1000, reached at 10.5
+// minutes. A long clean game still scores 400 rather than the floor.
+export const MAX_TIME_PENALTY = 600
 export const HINT_PEN         = 150   // penalty for using the hint
 export const WRONG_PEN        = 100   // penalty per wrong guess
 // A misplacement is not a wrong answer -- right team, wrong slot -- so it costs
@@ -42,7 +47,7 @@ export const HARD_MULTIPLIER  = 1.5   // score multiplier for hard mode wins
 export function score_breakdown({ time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses = 0 }) {
     return {
         base:        BASE,
-        time_pen:    Math.max(0, time_seconds - TIME_GRACE) * TIME_RATE,
+        time_pen:    Math.min(Math.max(0, time_seconds - TIME_GRACE) * TIME_RATE, MAX_TIME_PENALTY),
         hint_pen:    hint_used ? HINT_PEN  : 0,
         wrong_pen:   wrong_guesses * WRONG_PEN,
         misplaced_pen: misplaced_guesses * MISPLACED_PEN,

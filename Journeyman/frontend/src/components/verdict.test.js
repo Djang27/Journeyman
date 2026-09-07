@@ -62,12 +62,15 @@ describe('the key', () => {
 })
 
 describe('the marks are drawn, not typed', () => {
-    test('each state renders an svg rather than a glyph', () => {
+    test('no state renders an emoji', () => {
         // An emoji renders as a different picture on every platform and none of
-        // them look printed.
+        // them look printed. Asserted on the text rather than by digging for an
+        // <svg>, so this checks what a reader actually gets.
         for (const result of ['green', 'yellow', 'gray']) {
-            const { container } = render(<Verdict result={result} />)
-            expect(container.querySelector('svg')).toBeInTheDocument()
+            const { unmount } = render(<Verdict result={result} />)
+            const text = screen.getByText(VERDICTS[result].label).textContent
+            expect(text).toMatch(/^[\x20-\x7E]*$/)
+            unmount()
         }
     })
 })

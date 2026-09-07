@@ -199,12 +199,29 @@ class TestScoringAndTime:
         # 45s elapsed, 15s past the 30s grace, so 1000 - 15.
         assert finished.score == 985
 
-    def test_a_slow_win_is_floored_not_negative(self, store):
+    def test_a_two_hour_clean_win_is_capped_not_floored(self, store):
+        # The clock keeps running while somebody is away -- it runs on the
+        # server so a browser cannot discount its own time -- but what it can
+        # take is bounded. A game played perfectly and finished hours later is
+        # worth a lot less, not nothing.
+        from scoring import BASE, MAX_TIME_PENALTY
+
         sid = new_game(store).id
         late = T0 + timedelta(hours=2)
         for position, team in enumerate(CAREER):
             session = submit_guess(store, sid, position, team, now=late)
-        assert session.score == 100
+        assert session.score == BASE - MAX_TIME_PENALTY
+
+    def test_the_floor_still_holds_once_everything_else_goes_wrong(self):
+        # Capping the clock must not mean nothing can reach the floor any more.
+        # Two hours, two wrong guesses and a hint is 950 of 1000, and the floor
+        # catches the rest.
+        from scoring import calculate_score
+
+        score = calculate_score(
+            result="win", time_seconds=7200, wrong_guesses=2, hint_used=True, hard_mode=False
+        )
+        assert score == 100
 
     def test_a_loss_scores_zero(self, store):
         sid = new_game(store).id

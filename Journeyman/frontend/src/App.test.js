@@ -76,7 +76,10 @@ describe('picking up a game that was in progress', () => {
         elapsed_seconds: 42,
     }
 
-    test('a stored session is restored from the server, not from localStorage', async () => {
+    test('a stored session is offered, not entered', async () => {
+        // Coming back to the site should land on the front door. Opening
+        // straight into a half-finished puzzle, with the clock already spent,
+        // before choosing to play anything, is the bug this replaced.
         localStorage.setItem(ACTIVE_KEY, JSON.stringify({ session_id: 'abc-123', mode: 'daily' }))
         serve(in_progress)
 
@@ -84,9 +87,22 @@ describe('picking up a game that was in progress', () => {
         const App = require('./App').default
         render(<App />)
 
-        await screen.findByText('Bob Lanier')
-        // The stored id is a handle; every field rendered came from the response.
+        expect(await screen.findByText(/Resume your daily/i)).toBeInTheDocument()
+        expect(screen.queryByText('Bob Lanier')).not.toBeInTheDocument()
+        // The stored id is a handle; every field came from the response.
         expect(global.fetch.mock.calls[0][0]).toContain('/api/game/abc-123')
+    })
+
+    test('the stored game can then be resumed in one click', async () => {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify({ session_id: 'abc-123', mode: 'daily' }))
+        serve(in_progress)
+
+        // eslint-disable-next-line global-require
+        const App = require('./App').default
+        render(<App />)
+
+        await userEvent.click(await screen.findByText(/Resume your daily/i))
+        expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
     })
 
     test('a session the server no longer has clears the key and shows the start screen', async () => {
@@ -143,7 +159,8 @@ describe('leaving a game and coming back', () => {
         const App = require('./App').default
         render(<App />)
 
-        // Rehydrates straight into the game.
+        // Resume in, so there is a game to leave.
+        await userEvent.click(await screen.findByText(/Resume your daily/i))
         expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
 
         await userEvent.click(screen.getByLabelText(/Back to the start screen/i))
@@ -163,7 +180,9 @@ describe('leaving a game and coming back', () => {
         const App = require('./App').default
         render(<App />)
 
+        await userEvent.click(await screen.findByText(/Resume your daily/i))
         expect(await screen.findByText('Bob Lanier')).toBeInTheDocument()
+
         await userEvent.click(screen.getByLabelText(/Back to the start screen/i))
         await userEvent.click(await screen.findByText(/Resume your daily/i))
 
