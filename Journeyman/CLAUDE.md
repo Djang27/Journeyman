@@ -157,6 +157,12 @@ Things that have already cost time:
   `revoke select (col) ... from anon` silently does nothing while the table
   grant stands. Revoke the table and grant the wanted columns back -- 0017 does
   this so `shadowbanned` stays invisible.
+- **You cannot rewrite *to* a `/_vercel/*` path.** Those are served by Vercel's
+  platform layer, which sits outside `vercel.json` rewrites, so
+  `/stats/script.js -> /_vercel/insights/script.js` falls through to the SPA
+  catch-all and returns `index.html` with a 200. The tell is the content type:
+  `text/html` where a script belongs. Analytics has to be loaded from its real
+  path, which means filter lists can block it.
 - **A quota is not a rate limit.** The limiter may be approximate — its worst
   case is 2x across a window boundary, which costs nothing. The quota is about
   money, so it consumes in one atomic statement. Do not merge the two.
@@ -177,13 +183,10 @@ Four places, none of which need code:
 
 - **Vercel → Observability** — function invocations and bandwidth. This is API
   traffic: every start, every guess.
-- **Vercel → Web Analytics** — page views, referrers, devices. Wired via a
-  script tag in `public/index.html` rather than the `@vercel/analytics`
-  package, whose peer range wants a newer TypeScript than react-scripts 5 pins.
-  Served from `/stats` and reporting there via `data-endpoint`, because filter
-  lists match `/_vercel/insights` by name. Both halves have to move: leaving
-  either on the old path leaves that half filtered. Undo by deleting
-  `data-endpoint` and the two rewrites in `vercel.json`.
+- **Vercel → Web Analytics** — page views, referrers, devices. Wired via the
+  `/_vercel/insights/script.js` tag in `public/index.html` rather than the
+  `@vercel/analytics` package, whose peer range wants a newer TypeScript than
+  react-scripts 5 pins.
 - **Sentry → Insights** — request throughput and latency, sampled at 10%, so
   multiply by ten.
 - **Supabase → Reports** — database and PostgREST request counts.
