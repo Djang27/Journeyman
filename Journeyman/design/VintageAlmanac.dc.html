@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #8c3a24; } a:hover { color: #6d2b19; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 600px; height: 1000px; background: #efe7d6; font-family: 'Barlow Condensed', system-ui, sans-serif; color: #23201b; overflow: hidden;">
+
+  <!-- newsprint grain -->
+  <svg width="600" height="1000" style="position: absolute; inset: 0; opacity: 0.14; mix-blend-mode: multiply;" aria-hidden="true">
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3"/></filter>
+    <rect width="600" height="1000" filter="url(#grain)"/>
+  </svg>
+
+  <!-- ── masthead ─────────────────────────────────────────────── -->
+  <div style="position: absolute; top: 34px; left: 44px; right: 44px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #23201b; padding-bottom: 6px;">
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase;">The Journeyman Register</span>
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 11px; letter-spacing: 2px;">No. 87</span>
+    </div>
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 16px;">
+      <div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #7a7264;">Trace the career of</div>
+        <div style="font-family: 'Bitter', Georgia, serif; font-size: 38px; font-weight: 700; line-height: 1.05; letter-spacing: -0.5px;">Bob Lanier</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #7a7264;">Elapsed</div>
+        <div style="font-family: 'Bitter', Georgia, serif; font-size: 24px; font-weight: 600; line-height: 1;">1:24</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #c4b9a3;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #7a7264;">Misses</span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #8c3a24; display: inline-block;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid #b6ab95; display: inline-block;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid #b6ab95; display: inline-block;"></span>
+    </div>
+  </div>
+
+  <!-- ── the road: a drawn route, double hairline ─────────────── -->
+  <svg width="600" height="1000" viewBox="0 0 600 1000" style="position: absolute; inset: 0;" aria-hidden="true">
+    <path d="M300 210 C300 272 172 282 172 348 C172 418 448 426 448 496 C448 566 172 576 172 646 C172 716 448 724 448 792 C448 848 386 886 306 896"
+          fill="none" stroke="#c4b9a3" stroke-width="11" stroke-linecap="round"/>
+    <path d="M300 210 C300 272 172 282 172 348 C172 418 448 426 448 496 C448 566 172 576 172 646 C172 716 448 724 448 792 C448 848 386 886 306 896"
+          fill="none" stroke="#efe7d6" stroke-width="6" stroke-linecap="round"/>
+    <path d="M300 210 C300 272 172 282 172 348 C172 418 448 426 448 496 C448 566 172 576 172 646 C172 716 448 724 448 792 C448 848 386 886 306 896"
+          fill="none" stroke="#8c8271" stroke-width="1.2" stroke-dasharray="7 7"/>
+  </svg>
+
+  <!-- ── stop 1: solved ───────────────────────────────────────── -->
+  <div style="position: absolute; left: 156px; top: 332px; width: 32px; height: 32px; border-radius: 50%; background: #23201b; color: #efe7d6; display: flex; align-items: center; justify-content: center; font-family: 'Bitter', Georgia, serif; font-size: 15px; font-weight: 700;">1</div>
+  <div style="position: absolute; left: 206px; top: 320px; width: 262px; border-bottom: 2px solid #23201b; padding-bottom: 6px;">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #7a7264;">First stop · 1970–1980</div>
+    <div style="display: flex; align-items: center; gap: 9px; margin-top: 3px;">
+      <span style="width: 5px; height: 22px; background: #1d428a; display: inline-block;"></span>
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 23px; font-weight: 700; line-height: 1.1;">Detroit Pistons</span>
+    </div>
+  </div>
+
+  <!-- ── stop 2: open pulldown ────────────────────────────────── -->
+  <div style="position: absolute; left: 432px; top: 480px; width: 32px; height: 32px; border-radius: 50%; background: #efe7d6; border: 2px solid #23201b; display: flex; align-items: center; justify-content: center; font-family: 'Bitter', Georgia, serif; font-size: 15px; font-weight: 700;">2</div>
+  <div style="position: absolute; left: 132px; top: 466px; width: 272px;">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #7a7264; margin-bottom: 4px;">Second stop</div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 2px solid #23201b; padding: 4px 2px 6px;">
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 20px; color: #9b9284;">Select a club</span>
+      <svg width="13" height="8" viewBox="0 0 13 8" aria-hidden="true"><path d="M1 1 L6.5 6.5 L12 1" fill="none" stroke="#23201b" stroke-width="1.8"/></svg>
+    </div>
+    <div style="background: #f6f0e3; border: 1px solid #23201b; border-top: none; box-shadow: 3px 3px 0 rgba(35,32,27,0.14);">
+      <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 12px; background: #e6dcc6;">
+          <span style="width: 4px; height: 16px; background: #1c5c3a; display: inline-block;"></span>
+          <span style="font-family: 'Bitter', Georgia, serif; font-size: 16px;">Milwaukee Bucks</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-top: 1px solid #ddd2ba;">
+          <span style="width: 4px; height: 16px; background: #8c3a24; display: inline-block;"></span>
+          <span style="font-family: 'Bitter', Georgia, serif; font-size: 16px; color: #4a453c;">Miami Heat</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-top: 1px solid #ddd2ba;">
+          <span style="width: 4px; height: 16px; background: #244a72; display: inline-block;"></span>
+          <span style="font-family: 'Bitter', Georgia, serif; font-size: 16px; color: #4a453c;">Minnesota Timberwolves</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-top: 1px solid #ddd2ba;">
+          <span style="width: 4px; height: 16px; background: #4a5f86; display: inline-block;"></span>
+          <span style="font-family: 'Bitter', Georgia, serif; font-size: 16px; color: #4a453c;">Memphis Grizzlies</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── stop 3 ───────────────────────────────────────────────── -->
+  <div style="position: absolute; left: 156px; top: 630px; width: 32px; height: 32px; border-radius: 50%; background: #efe7d6; border: 1.5px dashed #a89d88; display: flex; align-items: center; justify-content: center; font-family: 'Bitter', Georgia, serif; font-size: 15px; color: #a89d88;">3</div>
+  <div style="position: absolute; left: 206px; top: 634px; width: 262px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1.5px dashed #a89d88; padding: 4px 2px 6px;">
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 19px; color: #a89d88;">Select a club</span>
+      <svg width="13" height="8" viewBox="0 0 13 8" aria-hidden="true"><path d="M1 1 L6.5 6.5 L12 1" fill="none" stroke="#a89d88" stroke-width="1.8"/></svg>
+    </div>
+  </div>
+
+  <!-- ── stop 4 ───────────────────────────────────────────────── -->
+  <div style="position: absolute; left: 432px; top: 776px; width: 32px; height: 32px; border-radius: 50%; background: #efe7d6; border: 1.5px dashed #a89d88; display: flex; align-items: center; justify-content: center; font-family: 'Bitter', Georgia, serif; font-size: 15px; color: #a89d88;">4</div>
+  <div style="position: absolute; left: 132px; top: 780px; width: 272px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1.5px dashed #a89d88; padding: 4px 2px 6px;">
+      <span style="font-family: 'Bitter', Georgia, serif; font-size: 19px; color: #a89d88;">Select a club</span>
+      <svg width="13" height="8" viewBox="0 0 13 8" aria-hidden="true"><path d="M1 1 L6.5 6.5 L12 1" fill="none" stroke="#a89d88" stroke-width="1.8"/></svg>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 44px; right: 44px; bottom: 30px; border-top: 1px solid #c4b9a3; padding-top: 8px; display: flex; justify-content: space-between; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #9b9284;">
+    <span>Direction B · Vintage almanac</span>
+    <span>Four clubs</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

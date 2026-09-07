@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;900&family=Barlow:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #f5c518; } a:hover { color: #ffe066; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 600px; height: 1000px; background: #0b0b0d; font-family: 'Barlow', system-ui, sans-serif; color: #ffffff; overflow: hidden;">
+
+  <!-- ── lower-third style header ─────────────────────────────── -->
+  <div style="position: absolute; top: 0; left: 0; right: 0; background: #f5c518; height: 6px;"></div>
+
+  <div style="position: absolute; top: 30px; left: 0; display: flex; align-items: stretch;">
+    <div style="background: #f5c518; color: #0b0b0d; padding: 10px 16px 8px 32px; clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%);">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Daily 87</div>
+    </div>
+  </div>
+
+  <div style="position: absolute; top: 68px; left: 32px; right: 32px; display: flex; align-items: flex-end; justify-content: space-between;">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; line-height: 0.92;">Bob<br>Lanier</div>
+    <div style="text-align: right;">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #6e6e78;">Clock</div>
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 34px; font-weight: 900; line-height: 1; color: #f5c518;">1:24</div>
+      <div style="display: flex; gap: 5px; justify-content: flex-end; margin-top: 8px;">
+        <span style="width: 22px; height: 5px; background: #e03131; display: inline-block;"></span>
+        <span style="width: 22px; height: 5px; background: #2a2a30; display: inline-block;"></span>
+        <span style="width: 22px; height: 5px; background: #2a2a30; display: inline-block;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── the road ─────────────────────────────────────────────── -->
+  <svg width="600" height="1000" viewBox="0 0 600 1000" style="position: absolute; inset: 0;" aria-hidden="true">
+    <path d="M300 208 C300 270 176 280 176 346 C176 416 444 424 444 494 C444 564 176 574 176 644 C176 714 444 722 444 790 C444 846 384 884 306 894"
+          fill="none" stroke="#17171c" stroke-width="34" stroke-linecap="round"/>
+    <path d="M300 208 C300 270 176 280 176 346 C176 416 444 424 444 494 C444 564 176 574 176 644 C176 714 444 722 444 790 C444 846 384 884 306 894"
+          fill="none" stroke="#f5c518" stroke-width="2" stroke-dasharray="4 12" stroke-linecap="butt"/>
+  </svg>
+
+  <!-- ── stop 1: solved ───────────────────────────────────────── -->
+  <div style="position: absolute; left: 158px; top: 328px; width: 36px; height: 36px; background: #f5c518; color: #0b0b0d; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);">01</div>
+  <div style="position: absolute; left: 212px; top: 322px; width: 258px; background: #16161b; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);">
+    <div style="display: flex; align-items: stretch;">
+      <span style="width: 7px; background: #1d428a;"></span>
+      <div style="padding: 11px 14px 14px;">
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #6e6e78;">Locked</div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 25px; font-weight: 900; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.05;">Detroit Pistons</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── stop 2: open pulldown ────────────────────────────────── -->
+  <div style="position: absolute; left: 426px; top: 476px; width: 36px; height: 36px; background: #ffffff; color: #0b0b0d; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);">02</div>
+  <div style="position: absolute; left: 126px; top: 470px; width: 280px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #ffffff; color: #0b0b0d; padding: 11px 14px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Select team</span>
+      <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true"><path d="M1 1 L7.5 7.5 L14 1" fill="none" stroke="#0b0b0d" stroke-width="3" stroke-linecap="square"/></svg>
+    </div>
+    <div style="background: #16161b; margin-top: 3px;">
+      <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: stretch; background: #21212a;">
+          <span style="width: 5px; background: #1c5c3a;"></span>
+          <span style="padding: 9px 13px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">Milwaukee Bucks</span>
+        </div>
+        <div style="display: flex; align-items: stretch;">
+          <span style="width: 5px; background: #b23a2c;"></span>
+          <span style="padding: 9px 13px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #a8a8b2;">Miami Heat</span>
+        </div>
+        <div style="display: flex; align-items: stretch;">
+          <span style="width: 5px; background: #2a5b8c;"></span>
+          <span style="padding: 9px 13px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #a8a8b2;">Minnesota Timberwolves</span>
+        </div>
+        <div style="display: flex; align-items: stretch;">
+          <span style="width: 5px; background: #5c6f96;"></span>
+          <span style="padding: 9px 13px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #a8a8b2;">Memphis Grizzlies</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── stop 3 ───────────────────────────────────────────────── -->
+  <div style="position: absolute; left: 158px; top: 626px; width: 36px; height: 36px; background: #17171c; color: #55555f; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);">03</div>
+  <div style="position: absolute; left: 212px; top: 630px; width: 258px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #16161b; padding: 11px 14px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);">
+    <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #55555f;">Select team</span>
+    <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true"><path d="M1 1 L7.5 7.5 L14 1" fill="none" stroke="#55555f" stroke-width="3" stroke-linecap="square"/></svg>
+  </div>
+
+  <!-- ── stop 4 ───────────────────────────────────────────────── -->
+  <div style="position: absolute; left: 426px; top: 772px; width: 36px; height: 36px; background: #17171c; color: #55555f; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);">04</div>
+  <div style="position: absolute; left: 126px; top: 776px; width: 280px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #16161b; padding: 11px 14px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);">
+    <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #55555f;">Select team</span>
+    <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true"><path d="M1 1 L7.5 7.5 L14 1" fill="none" stroke="#55555f" stroke-width="3" stroke-linecap="square"/></svg>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #f5c518;"></div>
+  <div style="position: absolute; left: 32px; bottom: 22px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #45454f;">Direction C · Broadcast graphics</div>
+</div>
+</x-dc>
+</body>
+</html>
