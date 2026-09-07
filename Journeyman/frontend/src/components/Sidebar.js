@@ -91,6 +91,8 @@ function AccountTab({ user, recoveryMode }) {
     const [loading, setLoading]         = useState(false)
     const [error, setError]             = useState('')
     const [message, setMessage]         = useState('')
+    const [renaming, setRenaming]       = useState(false)
+    const [newName, setNewName]         = useState('')
 
     // Sync view with external auth state changes
     useEffect(() => {
@@ -211,6 +213,46 @@ function AccountTab({ user, recoveryMode }) {
     }
 
     // ── Sign out ───────────────────────────────────────
+    // Written to profiles, which is what every leaderboard reads. The auth
+    // metadata copy is updated too, because the header renders from it and a
+    // name that changed on the board but not in the corner looks broken.
+    //
+    // The database constrains the shape -- migration 0019 -- so a name that
+    // slips past this form is still refused. Checking here only makes the
+    // refusal a sentence rather than a Postgres error.
+    async function handleRename(e) {
+        e.preventDefault()
+        const name = newName.trim()
+
+        if (name.length < 2 || name.length > 24) {
+            setError('Between 2 and 24 characters.')
+            return
+        }
+        if (!/^[\p{L}\p{N} ._'-]+$/u.test(name)) {
+            setError("Letters, numbers, spaces and . _ ' - only.")
+            return
+        }
+
+        setLoading(true)
+        setError('')
+
+        const { error: err } = await supabase
+            .from('profiles')
+            .update({ display_name: name })
+            .eq('id', user.id)
+
+        if (err) {
+            setError('That name could not be saved. Try another.')
+            setLoading(false)
+            return
+        }
+
+        await supabase.auth.updateUser({ data: { display_name: name } })
+        setRenaming(false)
+        setMessage('Name changed.')
+        setLoading(false)
+    }
+
     async function handleSignOut() {
         setLoading(true)
         await supabase.auth.signOut()
@@ -242,7 +284,48 @@ function AccountTab({ user, recoveryMode }) {
             {view === 'profile' && (
                 <div className="auth-profile">
                     <div className="auth-avatar">{displayedName[0].toUpperCase()}</div>
-                    <p className="auth-profile-name">{displayedName}</p>
+
+                    {renaming ? (
+                        <form className="rename-form" onSubmit={handleRename}>
+                            <label className="rename-label" htmlFor="display-name">
+                                Name on the leaderboard
+                            </label>
+                            <input
+                                id="display-name"
+                                className="auth-input"
+                                value={newName}
+                                onChange={e => setNewName(e.target.value)}
+                                maxLength={24}
+                                autoFocus
+                            />
+                            {/* The same rule the database enforces, said before
+                                they submit rather than after it is refused. */}
+                            <span className="rename-hint">2&ndash;24 characters. Letters, numbers, spaces and . _ &apos; -</span>
+                            <div className="rename-actions">
+                                <button className="auth-submit" type="submit" disabled={loading}>
+                                    {loading ? 'Saving…' : 'Save'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="rename-cancel"
+                                    onClick={() => { setRenaming(false); setError('') }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <>
+                            <p className="auth-profile-name">{displayedName}</p>
+                            <button
+                                className="rename-link"
+                                onClick={() => { setNewName(displayedName); setRenaming(true); setMessage('') }}
+                            >
+                                Change name
+                            </button>
+                        </>
+                    )}
+
                     <p className="auth-profile-email">{user?.email}</p>
                     {message && <p className="auth-success">{message}</p>}
                     <button className="auth-submit" onClick={handleSignOut} disabled={loading}>
