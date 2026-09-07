@@ -1,0 +1,5 @@
+
+# Seeded design canvases are generated payloads (~2MB), not source.
+# The .dc.html artboards and canvas.json beside them are the source.
+design/*.html
+!design/*.dc.html

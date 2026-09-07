@@ -1,0 +1,14 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 600, "h": 1000, "title": "A · Highway signage" },
+    { "file": "VintageAlmanac.dc.html", "x": 700, "y": 0, "w": 600, "h": 1000, "title": "B · Vintage almanac" },
+    { "file": "BroadcastGraphics.dc.html", "x": 1400, "y": 0, "w": 600, "h": 1000, "title": "C · Broadcast graphics" }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 0, "y": -190, "w": 600, "text": "Same screen, three visual languages.\nAll keep the winding road and the pulldowns you asked for.\nPick one and I will build it into the real game." },
+    { "id": "note-a", "x": 0, "y": 1040, "w": 600, "text": "A · HIGHWAY SIGNAGE\nExtends what you already have: same navy, same yellow road line, same Barlow Condensed. Route shields mark each stop, a solved one becomes a green guide sign.\n\nFor: strongest fit with journeyman-as-traveller, and least work to build.\nAgainst: the most conservative of the three." },
+    { "id": "note-b", "x": 700, "y": 1040, "w": 600, "text": "B · VINTAGE ALMANAC\nCream stock, slab serif, newsprint grain, era-correct team colours as thin spine bars. Reads like a 1970s record book.\n\nFor: nothing else looks like this; warm and tactile.\nAgainst: light background is a full inversion, and needs care to stay readable on a phone at night." },
+    { "id": "note-c", "x": 1400, "y": 1040, "w": 600, "text": "C · BROADCAST GRAPHICS\nCut-corner panels, heavy condensed caps, hard team-colour bars, near-black with the yellow as the only accent.\n\nFor: loudest and most athletic; feels like game night.\nAgainst: the angular clipping is the most fragile at small widths." }
+  ],
+  "launch": { "view": "canvas" }
+}

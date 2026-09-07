@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #f5c518; } a:hover { color: #ffd84d; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 600px; height: 1000px; background: #14141f; font-family: 'Barlow', system-ui, sans-serif; color: #f0f0f0; overflow: hidden;">
+
+  <!-- asphalt tone: flat, no gradient -->
+  <div style="position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 2px, transparent 2px, transparent 5px);"></div>
+
+  <!-- ── header: route marker + prompt ───────────────────────── -->
+  <div style="position: absolute; top: 28px; left: 32px; right: 32px; display: flex; align-items: flex-start; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <svg width="42" height="46" viewBox="0 0 42 46" aria-hidden="true">
+        <path d="M21 1 L39 8 V27 C39 37 30 42 21 45 C12 42 3 37 3 27 V8 Z" fill="#f0f0f0" stroke="#14141f" stroke-width="2"/>
+        <text x="21" y="20" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="10" font-weight="700" fill="#14141f" letter-spacing="0.5">ROUTE</text>
+        <text x="21" y="36" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="18" font-weight="900" fill="#14141f">87</text>
+      </svg>
+      <div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #8d8d99;">Today's Journeyman</div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1; color: #f0f0f0;">Bob Lanier</div>
+      </div>
+    </div>
+
+    <!-- mile-marker timer -->
+    <div style="border: 2px solid #6d6d78; padding: 6px 10px 5px; text-align: center; background: #14141f;">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 2px; color: #8d8d99;">MILE</div>
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; line-height: 1; color: #f0f0f0;">1:24</div>
+    </div>
+  </div>
+
+  <!-- wrong guesses, as roadside reflectors -->
+  <div style="position: absolute; top: 104px; left: 32px; display: flex; align-items: center; gap: 9px;">
+    <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #8d8d99;">Wrong turns</span>
+    <span style="width: 13px; height: 13px; background: #c8102e; transform: rotate(45deg); display: inline-block;"></span>
+    <span style="width: 13px; height: 13px; border: 2px solid #45454f; transform: rotate(45deg); display: inline-block;"></span>
+    <span style="width: 13px; height: 13px; border: 2px solid #45454f; transform: rotate(45deg); display: inline-block;"></span>
+  </div>
+
+  <!-- ── the road ─────────────────────────────────────────────── -->
+  <svg width="600" height="1000" viewBox="0 0 600 1000" style="position: absolute; inset: 0;" aria-hidden="true">
+    <!-- asphalt -->
+    <path d="M300 150 C300 214 168 224 168 292 C168 364 452 372 452 444 C452 516 168 526 168 598 C168 670 452 680 452 752 C452 812 388 852 306 862"
+          fill="none" stroke="#26262f" stroke-width="46" stroke-linecap="round"/>
+    <!-- shoulder edge lines -->
+    <path d="M300 150 C300 214 168 224 168 292 C168 364 452 372 452 444 C452 516 168 526 168 598 C168 670 452 680 452 752 C452 812 388 852 306 862"
+          fill="none" stroke="#3a3a45" stroke-width="42" stroke-linecap="round"/>
+    <!-- centre line, reflective yellow -->
+    <path d="M300 150 C300 214 168 224 168 292 C168 364 452 372 452 444 C452 516 168 526 168 598 C168 670 452 680 452 752 C452 812 388 852 306 862"
+          fill="none" stroke="#f5c518" stroke-width="3" stroke-dasharray="16 14" stroke-linecap="butt"/>
+  </svg>
+
+  <!-- ── stop 1: solved · guide-sign green ────────────────────── -->
+  <svg width="46" height="50" viewBox="0 0 42 46" style="position: absolute; left: 145px; top: 267px;" aria-hidden="true">
+    <path d="M21 1 L39 8 V27 C39 37 30 42 21 45 C12 42 3 37 3 27 V8 Z" fill="#1c6b3a" stroke="#f0f0f0" stroke-width="2.5"/>
+    <text x="21" y="30" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="20" font-weight="900" fill="#ffffff">1</text>
+  </svg>
+  <div style="position: absolute; left: 208px; top: 258px; width: 262px; background: #1c6b3a; border: 2px solid #ffffff; padding: 3px;">
+    <div style="border: 1px solid rgba(255,255,255,0.55); padding: 10px 12px 9px;">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; color: rgba(255,255,255,0.8);">STOP 1</div>
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.05; color: #ffffff;">Detroit Pistons</div>
+    </div>
+  </div>
+
+  <!-- ── stop 2: open pulldown ────────────────────────────────── -->
+  <svg width="46" height="50" viewBox="0 0 42 46" style="position: absolute; left: 429px; top: 419px;" aria-hidden="true">
+    <path d="M21 1 L39 8 V27 C39 37 30 42 21 45 C12 42 3 37 3 27 V8 Z" fill="#f5c518" stroke="#14141f" stroke-width="2.5"/>
+    <text x="21" y="30" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="20" font-weight="900" fill="#14141f">2</text>
+  </svg>
+
+  <div style="position: absolute; left: 128px; top: 410px; width: 274px;">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; color: #8d8d99; margin-bottom: 5px;">STOP 2</div>
+    <!-- closed field -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #14141f; border: 2px solid #f5c518; padding: 10px 12px;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #6d6d78;">Choose a team</span>
+      <svg width="14" height="9" viewBox="0 0 14 9" aria-hidden="true"><path d="M1 1 L7 7 L13 1" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linecap="square"/></svg>
+    </div>
+    <!-- open list -->
+    <div style="border: 2px solid #f5c518; border-top: none; background: #1b1b26;">
+      <div style="display: flex; flex-direction: column;">
+        <div style="padding: 9px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 0.6px; text-transform: uppercase; color: #f0f0f0; background: #2a2a38; border-left: 4px solid #f5c518;">Milwaukee Bucks</div>
+        <div style="padding: 9px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 0.6px; text-transform: uppercase; color: #c9c9d2; border-left: 4px solid transparent;">Miami Heat</div>
+        <div style="padding: 9px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 0.6px; text-transform: uppercase; color: #c9c9d2; border-left: 4px solid transparent;">Minnesota Timberwolves</div>
+        <div style="padding: 9px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 0.6px; text-transform: uppercase; color: #c9c9d2; border-left: 4px solid transparent;">Memphis Grizzlies</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── stop 3: empty ────────────────────────────────────────── -->
+  <svg width="46" height="50" viewBox="0 0 42 46" style="position: absolute; left: 145px; top: 573px;" aria-hidden="true">
+    <path d="M21 1 L39 8 V27 C39 37 30 42 21 45 C12 42 3 37 3 27 V8 Z" fill="#14141f" stroke="#5a5a66" stroke-width="2.5"/>
+    <text x="21" y="30" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="20" font-weight="900" fill="#5a5a66">3</text>
+  </svg>
+  <div style="position: absolute; left: 208px; top: 578px; width: 262px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #14141f; border: 2px solid #45454f; padding: 10px 12px;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #5a5a66;">Choose a team</span>
+      <svg width="14" height="9" viewBox="0 0 14 9" aria-hidden="true"><path d="M1 1 L7 7 L13 1" fill="none" stroke="#5a5a66" stroke-width="2.5" stroke-linecap="square"/></svg>
+    </div>
+  </div>
+
+  <!-- ── stop 4: empty ────────────────────────────────────────── -->
+  <svg width="46" height="50" viewBox="0 0 42 46" style="position: absolute; left: 429px; top: 727px;" aria-hidden="true">
+    <path d="M21 1 L39 8 V27 C39 37 30 42 21 45 C12 42 3 37 3 27 V8 Z" fill="#14141f" stroke="#5a5a66" stroke-width="2.5"/>
+    <text x="21" y="30" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="20" font-weight="900" fill="#5a5a66">4</text>
+  </svg>
+  <div style="position: absolute; left: 128px; top: 732px; width: 274px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #14141f; border: 2px solid #45454f; padding: 10px 12px;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #5a5a66;">Choose a team</span>
+      <svg width="14" height="9" viewBox="0 0 14 9" aria-hidden="true"><path d="M1 1 L7 7 L13 1" fill="none" stroke="#5a5a66" stroke-width="2.5" stroke-linecap="square"/></svg>
+    </div>
+  </div>
+
+  <!-- end of route -->
+  <div style="position: absolute; left: 0; right: 0; top: 890px; text-align: center; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: #45454f;">End of route</div>
+
+  <div style="position: absolute; left: 32px; bottom: 22px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #45454f;">Direction A · Highway signage</div>
+</div>
+</x-dc>
+</body>
+</html>

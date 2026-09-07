@@ -1,3 +1,5 @@
+import { VerdictKey } from './verdict'
+
 function HowToPlay({ open, onClose }) {
     return (
         <>
@@ -45,27 +47,11 @@ function HowToPlay({ open, onClose }) {
                 </div>
 
                 <div className="info-section">
-                    <p className="info-heading">Color Feedback</p>
-                    <div className="info-legend">
-                        <div className="info-legend-row">
-                            <span className="info-dot correct" />
-                            <div className="info-legend-text">
-                                <strong>Green</strong> — Right team at the right stop. Locked in!
-                            </div>
-                        </div>
-                        <div className="info-legend-row">
-                            <span className="info-dot close" />
-                            <div className="info-legend-text">
-                                <strong>Yellow</strong> — This team is in the career, but belongs at a different stop.
-                            </div>
-                        </div>
-                        <div className="info-legend-row">
-                            <span className="info-dot wrong" />
-                            <div className="info-legend-text">
-                                <strong>Red</strong> — This team is not in the player's career at all.
-                            </div>
-                        </div>
-                    </div>
+                    <p className="info-heading">Reading a stop</p>
+                    {/* The key, so the marks are learnable. Colour is
+                        reinforcement here, not the message -- the mark and the
+                        rule under an entry each say the state on their own. */}
+                    <VerdictKey />
                 </div>
 
                 <div className="info-section">
@@ -77,7 +63,7 @@ function HowToPlay({ open, onClose }) {
                         <span className="info-lives-label">3 chances</span>
                     </div>
                     <p className="info-body">
-                        Only <strong>red</strong> guesses cost a life. Yellow is free — use it as a clue. Lose all 3 and the correct career path is revealed.
+                        Only a club he <strong>never played for</strong> costs a life. Naming the right club at the wrong stop costs a few points instead — it is a clue worth having. Lose all 3 and the career is revealed.
                     </p>
                 </div>
 

@@ -4,6 +4,7 @@ import GameScreen from "./components/game"
 import Sidebar from "./components/Sidebar"
 import UserMenu from "./components/UserMenu"
 import Archive from "./components/Archive"
+import Upgrade, { UpgradeMark } from "./components/Upgrade"
 import { supabase, authAvailable } from './lib/supabase'
 import * as api from './lib/api'
 import './App.css'
@@ -113,6 +114,7 @@ function App() {
     const [buying, set_buying]               = useState(false)
     const [archive, set_archive]             = useState(null)
     const [show_archive, set_show_archive]   = useState(false)
+    const [show_upgrade, set_show_upgrade]   = useState(false)
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -436,6 +438,11 @@ function App() {
                     Journeyman
                 </button>
             )}
+            {/* Corner mark, not a banner. A permanent sales strip across a free
+                game is how it starts feeling like a trial. */}
+            {billing && (
+                <UpgradeMark owned={Boolean(billing.owned)} onClick={() => set_show_upgrade(true)} />
+            )}
             {user && (
                 <UserMenu
                     user={user}
@@ -465,6 +472,14 @@ function App() {
                     billing={billing}
                     buying={buying}
                     on_buy={buy}
+                />
+            )}
+            {show_upgrade && (
+                <Upgrade
+                    billing={billing}
+                    buying={buying}
+                    on_buy={billing?.available && !billing?.owned ? buy : null}
+                    on_close={() => set_show_upgrade(false)}
                 />
             )}
             {show_archive && (
