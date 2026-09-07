@@ -20,7 +20,7 @@ function prefersReducedMotion() {
     }
 }
 
-function Stamp({ label, sublabel, tone = 'ink', tilt = -7, active = true }) {
+function Stamp({ label, sublabel, tone = 'ink', tilt = -7, active = true, receded = false }) {
     const [pressed, setPressed] = useState(false)
     const still = prefersReducedMotion()
 
@@ -36,7 +36,7 @@ function Stamp({ label, sublabel, tone = 'ink', tilt = -7, active = true }) {
 
     return (
         <div
-            className={`stamp stamp-${tone} ${pressed ? 'pressed' : ''} ${still ? 'still' : ''}`}
+            className={`stamp stamp-${tone} ${pressed ? 'pressed' : ''} ${still ? 'still' : ''} ${receded ? 'receded' : ''}`}
             style={{ '--stamp-tilt': `${tilt}deg` }}
             aria-hidden="true"
         >

@@ -75,3 +75,28 @@ describe('reduced motion', () => {
         expect(screen.getByText('Filed')).toBeInTheDocument()
     })
 })
+
+describe('the stamp is not buried by the results sheet', () => {
+    // The bug: the win stamp was gated on show_results, so it was created at
+    // the same moment the sheet appeared -- and the sheet is z-index 150
+    // against the stamp's 70. It rendered underneath the thing covering it and
+    // was never seen.
+    //
+    // Raising the stamp above the sheet would have shown it *through* the
+    // results, which is worse. The ordering was what was wrong: the stamp
+    // lands on the board, then the sheet rises over it.
+
+    test('a win stamps without waiting for the sheet', () => {
+        // The regression, named. It must not depend on show_results at all.
+        render(<WinAnimation active />)
+        expect(screen.getByText('Filed')).toBeInTheDocument()
+    })
+
+    test('it is still there once the sheet is up, rather than unmounted', () => {
+        // It recedes visually behind the sheet -- a mark on the page
+        // underneath, not a second dialog. Whether it is dimmed is a CSS
+        // detail; that it survives is the behaviour.
+        render(<WinAnimation active receded />)
+        expect(screen.getByText('Filed')).toBeInTheDocument()
+    })
+})

@@ -9,12 +9,12 @@ import Stamp from './Stamp'
 //
 // The dependency went with it.
 
-function WinAnimation({ active }) {
+function WinAnimation({ active, receded = false }) {
     if (!active) return null
 
     return (
         <div className="stamp-stage" aria-hidden="true">
-            <Stamp label="Filed" sublabel="Career complete" tone="correct" tilt={-8} />
+            <Stamp label="Filed" sublabel="Career complete" tone="correct" tilt={-8} receded={receded} />
         </div>
     )
 }

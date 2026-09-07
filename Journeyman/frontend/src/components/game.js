@@ -94,6 +94,10 @@ function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_act
     )
 }
 
+// Long enough to read a word pressed onto a page, short enough that nobody
+// waiting for their score notices waiting.
+const STAMP_HOLD_MS = 1150
+
 function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
@@ -114,8 +118,18 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
         })
     }
 
+    // The stamp lands on the board first, then the sheet rises over it.
+    //
+    // These used to fire together, and the sheet is z-index 150 against the
+    // stamp's 70 -- so the win stamp was created underneath the thing covering
+    // it and never seen. Raising the stamp above the sheet would have shown it
+    // *through* the results, which is worse; the ordering is what was wrong.
     useEffect(() => {
-        if (game_over) set_show_results(true)
+        if (game_over) {
+            const hold = setTimeout(() => set_show_results(true), STAMP_HOLD_MS)
+            return () => clearTimeout(hold)
+        }
+        return undefined
     }, [game_over])
 
     function handleHardModeToggle() {
@@ -140,8 +154,8 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                 </div>
             )}
 
-            <WinAnimation  active={has_won && show_results} />
-            <LoseAnimation active={has_lost} />
+            <WinAnimation  active={has_won} receded={show_results} />
+            <LoseAnimation active={has_lost} receded={show_results} />
 
             <div className="player-header">
                 <div className="player-label">Today's Journeyman</div>

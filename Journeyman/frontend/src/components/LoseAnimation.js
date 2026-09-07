@@ -9,13 +9,13 @@ import Stamp from './Stamp'
 // The strike is drawn behind the stamp, so the two land together: the rule goes
 // through the page, the stamp lands on top of it.
 
-function LoseAnimation({ active }) {
+function LoseAnimation({ active, receded = false }) {
     if (!active) return null
 
     return (
         <div className="stamp-stage" aria-hidden="true">
             <span className="stamp-strike" />
-            <Stamp label="Unfinished" sublabel="The career is revealed" tone="wrong" tilt={6} />
+            <Stamp label="Unfinished" sublabel="The career is revealed" tone="wrong" tilt={6} receded={receded} />
         </div>
     )
 }

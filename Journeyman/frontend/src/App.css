@@ -3650,3 +3650,13 @@ body {
   .stamp-strike { animation: none; opacity: 0.55; transform: rotate(-3deg); }
   .results-modal { animation: none; }
 }
+
+
+/* The stamp is pressed onto the board and stays there. Once the results sheet
+   is over it, it recedes rather than competing with the sheet -- it is a mark
+   on the page underneath, not a second dialog.
+
+   Driven by a prop rather than a :has() selector: the state is already in
+   React, and a rule that depends on DOM order breaks the first time somebody
+   moves a line in the JSX. */
+.stamp.receded { opacity: 0.24; transition: opacity 0.5s ease 0.1s; }
