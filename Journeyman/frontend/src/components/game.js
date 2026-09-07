@@ -4,6 +4,7 @@ import WinAnimation from "./WinAnimation"
 import LoseAnimation from "./LoseAnimation"
 import { score_breakdown, SCORE_FLOOR, HARD_MULTIPLIER } from "../lib/scoring"
 import { HowToPlayNote, InfoMark } from './start'
+import Stamp from './Stamp'
 
 // v2
 const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
@@ -93,6 +94,10 @@ function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_act
     )
 }
 
+// Long enough to read a word pressed onto a page, short enough that nobody
+// waiting for their score notices waiting.
+const STAMP_HOLD_MS = 1150
+
 function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
@@ -113,25 +118,44 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
         })
     }
 
+    // The stamp lands on the board first, then the sheet rises over it.
+    //
+    // These used to fire together, and the sheet is z-index 150 against the
+    // stamp's 70 -- so the win stamp was created underneath the thing covering
+    // it and never seen. Raising the stamp above the sheet would have shown it
+    // *through* the results, which is worse; the ordering is what was wrong.
     useEffect(() => {
-        if (game_over) set_show_results(true)
+        if (game_over) {
+            const hold = setTimeout(() => set_show_results(true), STAMP_HOLD_MS)
+            return () => clearTimeout(hold)
+        }
+        return undefined
     }, [game_over])
 
     function handleHardModeToggle() {
         if (hard_mode_locked) return
         if (!hard_mode) {
+            // Stamped rather than flashed. A whole-screen colour wash is a
+            // videogame telling you something changed; a stamp is the page
+            // recording that it did.
             set_hard_flash(true)
-            setTimeout(() => set_hard_flash(false), 800)
+            setTimeout(() => set_hard_flash(false), 1400)
         }
         on_hard_mode_toggle()
     }
 
     return (
-        <div className={`game-screen ${hard_flash ? 'hard-flash' : ''}`}>
+        <div className="game-screen">
             {show_rules && <HowToPlayNote onClose={() => set_show_rules(false)} />}
 
-            <WinAnimation  active={has_won && show_results} />
-            <LoseAnimation active={has_lost} />
+            {hard_flash && (
+                <div className="stamp-stage" aria-hidden="true">
+                    <Stamp label="Hard mode" sublabel="One mistake ends it" tone="accent" tilt={4} />
+                </div>
+            )}
+
+            <WinAnimation  active={has_won} receded={show_results} />
+            <LoseAnimation active={has_lost} receded={show_results} />
 
             <div className="player-header">
                 <div className="player-label">Today's Journeyman</div>

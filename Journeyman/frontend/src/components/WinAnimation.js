@@ -1,46 +1,21 @@
-import { useEffect, useRef } from 'react'
-import confetti from 'canvas-confetti'
+import Stamp from './Stamp'
 
-const GOLD  = '#f5c518'
-const GREEN = '#538d4e'
-const WHITE = '#ffffff'
+// A finished career gets stamped, not celebrated with confetti.
+//
+// This was canvas-confetti in #f5c518 and #538d4e — the pre-redesign gold and
+// green, fired from both corners for three seconds. Confetti is the default
+// celebration for anything on a screen, which is exactly why it does not belong
+// on a page that is trying not to look like everything else.
+//
+// The dependency went with it.
 
-function WinAnimation({ active }) {
-    const canvasRef = useRef(null)
-
-    useEffect(() => {
-        if (!active || !canvasRef.current) return
-
-        const fire = confetti.create(canvasRef.current, { resize: true })
-
-        fire({ particleCount: 60, angle: 60,  spread: 70, origin: { x: 0, y: 0.6 }, colors: [GOLD, GREEN, WHITE], scalar: 1.1, gravity: 0.9 })
-        fire({ particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.6 }, colors: [GOLD, GREEN, WHITE], scalar: 1.1, gravity: 0.9 })
-
-        const end = Date.now() + 3000
-        let frame
-
-        const shower = () => {
-            fire({ particleCount: 4, angle: 60,  spread: 55, origin: { x: 0, y: 0.5 }, colors: [GOLD, GREEN, WHITE], gravity: 1 })
-            fire({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.5 }, colors: [GOLD, GREEN, WHITE], gravity: 1 })
-            if (Date.now() < end) frame = requestAnimationFrame(shower)
-        }
-
-        shower()
-        return () => cancelAnimationFrame(frame)
-    }, [active])
+function WinAnimation({ active, receded = false }) {
+    if (!active) return null
 
     return (
-        <canvas
-            ref={canvasRef}
-            style={{
-                position: 'fixed',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none',
-                zIndex: 999,
-            }}
-        />
+        <div className="stamp-stage" aria-hidden="true">
+            <Stamp label="Filed" sublabel="Career complete" tone="correct" tilt={-8} receded={receded} />
+        </div>
     )
 }
 
