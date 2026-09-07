@@ -177,10 +177,13 @@ Four places, none of which need code:
 
 - **Vercel → Observability** — function invocations and bandwidth. This is API
   traffic: every start, every guess.
-- **Vercel → Web Analytics** — page views, referrers, devices. Wired via the
-  `/_vercel/insights/script.js` tag in `public/index.html` rather than the
-  `@vercel/analytics` package, whose peer range wants a newer TypeScript than
-  react-scripts 5 pins.
+- **Vercel → Web Analytics** — page views, referrers, devices. Wired via a
+  script tag in `public/index.html` rather than the `@vercel/analytics`
+  package, whose peer range wants a newer TypeScript than react-scripts 5 pins.
+  Served from `/stats` and reporting there via `data-endpoint`, because filter
+  lists match `/_vercel/insights` by name. Both halves have to move: leaving
+  either on the old path leaves that half filtered. Undo by deleting
+  `data-endpoint` and the two rewrites in `vercel.json`.
 - **Sentry → Insights** — request throughput and latency, sampled at 10%, so
   multiply by ten.
 - **Supabase → Reports** — database and PostgREST request counts.
