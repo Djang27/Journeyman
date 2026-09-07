@@ -1002,6 +1002,55 @@ def api_admin_swap_puzzle(puzzle_date):
     return jsonify({**result, "effective_within_seconds": DEFAULT_TTL_SECONDS})
 
 
+@app.route("/api/admin/players", methods=["GET"])
+def api_admin_find_players():
+    """Search accounts by display name, so a report can be acted on."""
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"error": "q is required"}), 400
+
+    return jsonify({"players": admin_ops.find_players(query)})
+
+
+@app.route("/api/admin/players/<user_id>/shadowban", methods=["POST"])
+def api_admin_shadowban(user_id):
+    """Hide or unhide an account from every leaderboard.
+
+    Their own history is untouched and they are told nothing, which is the
+    point: a cheater who knows makes another account.
+    """
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    body = request.get_json(silent=True) or {}
+    banned = bool(body.get("banned", True))
+
+    try:
+        result = admin_ops.set_shadowbanned(user_id, banned, body.get("reason"))
+    except AdminError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    logger.warning(
+        "shadowban %s",
+        "set" if banned else "cleared",
+        extra={"target_user": str(user_id), "changed": result["changed"]},
+    )
+    return jsonify(result)
+
+
+@app.route("/api/admin/players/shadowbanned", methods=["GET"])
+def api_admin_shadowbanned():
+    denied = _require_admin()
+    if denied:
+        return denied
+    return jsonify({"players": admin_ops.shadowbanned_players()})
+
+
 @app.route("/api/admin/results/<puzzle_date>/void", methods=["POST"])
 def api_admin_void_day(puzzle_date):
     denied = _require_admin()
