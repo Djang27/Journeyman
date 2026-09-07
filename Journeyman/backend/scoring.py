@@ -17,6 +17,18 @@ deletes the JS copy.
 BASE = 1000
 TIME_GRACE = 30  # free seconds before the time penalty starts
 TIME_RATE = 1  # points lost per second after the grace period
+# The clock runs on the server and keeps running while somebody is away -- it
+# has to, because a browser that could say "do not count that" is a browser that
+# can claim a perfect time, which is the trust Phase 0 removed.
+#
+# What is bounded instead is the damage. Time can take 600 of the 1000, which is
+# a lot: a clean game that took a long while still scores 400, and speed is
+# still worth more than anything else on this list. But a daily started at
+# breakfast and finished at lunch is no longer worth the same as a daily
+# abandoned, which is what an uncapped clock made it.
+#
+# 600 is reached at 10.5 minutes of play. Past that the clock is cosmetic.
+MAX_TIME_PENALTY = 600
 HINT_PEN = 150
 WRONG_PEN = 100
 # A misplacement is not a wrong answer -- the team is right, the slot is not --
@@ -33,7 +45,7 @@ def calculate_score(result, time_seconds, wrong_guesses, hint_used, hard_mode, m
     if result != "win":
         return 0
 
-    time_pen = max(0, time_seconds - TIME_GRACE) * TIME_RATE
+    time_pen = min(max(0, time_seconds - TIME_GRACE) * TIME_RATE, MAX_TIME_PENALTY)
     hint_pen = HINT_PEN if hint_used else 0
     wrong_pen = wrong_guesses * WRONG_PEN
     misplaced_pen = misplaced_guesses * MISPLACED_PEN
@@ -63,7 +75,7 @@ def score_breakdown(time_seconds, wrong_guesses, hint_used, hard_mode, misplaced
     """The parts of the score, for display. Does not apply the floor."""
     return {
         "base": BASE,
-        "time_pen": max(0, time_seconds - TIME_GRACE) * TIME_RATE,
+        "time_pen": min(max(0, time_seconds - TIME_GRACE) * TIME_RATE, MAX_TIME_PENALTY),
         "hint_pen": HINT_PEN if hint_used else 0,
         "wrong_pen": wrong_guesses * WRONG_PEN,
         "misplaced_pen": misplaced_guesses * MISPLACED_PEN,

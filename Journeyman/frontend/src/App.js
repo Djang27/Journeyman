@@ -143,9 +143,17 @@ function App() {
         return () => subscription.unsubscribe()
     }, [])
 
-    // Pick up a game that was in progress. The server is the record, so this
-    // asks it rather than trusting anything stored locally; a session that is
-    // gone, finished, or someone else's just clears the key.
+    // Pick up a game that was in progress -- but land on the start screen, not
+    // in it.
+    //
+    // This used to open straight into the game, which is right after a refresh
+    // and wrong every other time: coming back to the site hours later dropped
+    // you into a half-finished puzzle with the clock already spent, before you
+    // had chosen to play anything. The front door should be the front door.
+    //
+    // The session is still loaded, so Resume is one click away. The server is
+    // the record, so this asks it rather than trusting anything stored locally;
+    // a session that is gone, finished, or someone else's just clears the key.
     useEffect(() => {
         const stored = get_active_session()
         if (!stored) return
@@ -161,12 +169,11 @@ function App() {
                 set_game({ ...BLANK, ...session })
                 set_guesses(Array(session.num_teams).fill(""))
                 set_game_mode(stored.mode || 'unlimited')
-                // Rebuild the timer's origin from the server's elapsed count so
-                // the display continues rather than restarting at zero.
+                // The timer's origin comes from the server's count, so resuming
+                // continues rather than restarting at zero.
                 const elapsed_so_far = session.elapsed_seconds || 0
                 start_time_ref.current = Date.now() - elapsed_so_far * 1000
                 set_elapsed(elapsed_so_far)
-                set_game_status(true)
             })
             .catch(() => clear_active_session())
 
