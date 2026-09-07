@@ -129,6 +129,78 @@ class AdminOperations:
         ).execute()
         return {"puzzle_date": str(puzzle_date), "restored": response.data or 0}
 
+    # -- players -----------------------------------------------------------
+    #
+    # Shadowbanning rather than banning: a cheater told they are banned makes
+    # another account. One who quietly stops appearing usually does not, and
+    # their own history and stats are untouched, so nothing about their
+    # experience changes. That only holds while they cannot detect it, which is
+    # why the flag is unreadable by clients -- migration 0017.
+
+    def find_players(self, query, limit=20):
+        """Search by display name, because nobody reports a cheater by uuid.
+
+        Reports games played, which is the number that makes an account worth a
+        second look, and whether they are already hidden -- so an operator
+        acting on a second report does not ban twice and wonder why nothing
+        changed.
+        """
+        response = self._client.rpc(
+            "find_players", {"p_query": query or "", "p_limit": int(limit)}
+        ).execute()
+        return [
+            {
+                "id": row["id"],
+                "display_name": row["display_name"],
+                "shadowbanned": bool(row["shadowbanned"]),
+                "games_played": row["games_played"],
+            }
+            for row in (response.data or [])
+        ]
+
+    def set_shadowbanned(self, user_id, banned, reason=None):
+        """Hide or unhide an account, with the reason attached.
+
+        A reason is required to ban and refused on unban. Requiring it is the
+        cheap way to stop a flag nobody can explain in three months; refusing it
+        on the way out is because a reason that outlives its ban is a note
+        nobody can interpret.
+        """
+        if banned and not (reason or "").strip():
+            raise AdminError("a reason is required to shadowban somebody")
+
+        response = self._client.rpc(
+            "set_shadowbanned",
+            {
+                "p_user_id": str(user_id),
+                "p_banned": bool(banned),
+                "p_reason": (reason or "").strip() or None if banned else None,
+            },
+        ).execute()
+
+        return {
+            "user_id": str(user_id),
+            "shadowbanned": bool(banned),
+            # False means it was already in that state. Worth reporting rather
+            # than swallowing: it is the difference between "done" and "that was
+            # already true", and an operator acting on a duplicate report should
+            # know which.
+            "changed": bool(response.data),
+        }
+
+    def shadowbanned_players(self):
+        """Who is hidden, and why."""
+        response = self._client.rpc("shadowbanned_players").execute()
+        return [
+            {
+                "id": row["id"],
+                "display_name": row["display_name"],
+                "banned_at": row["banned_at"],
+                "reason": row["reason"],
+            }
+            for row in (response.data or [])
+        ]
+
     def upcoming_puzzles(self, start, days=7):
         """What is scheduled, so a swap can be aimed at the right date."""
         from datetime import timedelta

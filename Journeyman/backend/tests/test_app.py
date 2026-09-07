@@ -1198,6 +1198,157 @@ class TestTheArchive:
         )
 
 
+class TestShadowbanAdmin:
+    """Hiding a cheater, and being able to say why three months later."""
+
+    @pytest.fixture(autouse=True)
+    def _admin(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module.config, "admin_token", "s3cret")
+
+        class Ops:
+            def __init__(self):
+                self.banned = {}
+                self.calls = []
+
+            def find_players(self, query, limit=20):
+                self.calls.append(("find", query))
+                return [
+                    {
+                        "id": "u1",
+                        "display_name": "Cheater",
+                        "shadowbanned": "u1" in self.banned,
+                        "games_played": 400,
+                    }
+                ]
+
+            def set_shadowbanned(self, user_id, banned, reason=None):
+                from admin import AdminError
+
+                if banned and not (reason or "").strip():
+                    raise AdminError("a reason is required to shadowban somebody")
+                changed = (user_id in self.banned) != banned
+                if banned:
+                    self.banned[user_id] = reason
+                else:
+                    self.banned.pop(user_id, None)
+                return {"user_id": user_id, "shadowbanned": banned, "changed": changed}
+
+            def shadowbanned_players(self):
+                return [
+                    {"id": uid, "display_name": "Cheater", "banned_at": "2026-09-06", "reason": r}
+                    for uid, r in self.banned.items()
+                ]
+
+        self.ops = Ops()
+        monkeypatch.setattr(app_module, "admin_ops", self.ops)
+        self.auth = {"X-Admin-Token": "s3cret"}
+
+    # -- the credential ---------------------------------------------------
+
+    def test_searching_needs_the_token(self, client):
+        assert client.get("/api/admin/players?q=x").status_code == 401
+
+    def test_banning_needs_the_token(self, client):
+        assert client.post("/api/admin/players/u1/shadowban", json={}).status_code == 401
+
+    def test_listing_needs_the_token(self, client):
+        assert client.get("/api/admin/players/shadowbanned").status_code == 401
+
+    def test_a_wrong_token_is_refused(self, client):
+        response = client.get("/api/admin/players?q=x", headers={"X-Admin-Token": "guess"})
+        assert response.status_code == 401
+
+    # -- searching --------------------------------------------------------
+
+    def test_a_search_needs_a_query(self, client):
+        # Otherwise the first mistyped request lists every account.
+        assert client.get("/api/admin/players", headers=self.auth).status_code == 400
+
+    def test_a_search_reports_games_and_whether_already_hidden(self, client):
+        # Already-hidden matters: an operator acting on a second report should
+        # not ban twice and wonder why nothing changed.
+        body = client.get("/api/admin/players?q=cheat", headers=self.auth).get_json()
+        assert body["players"][0]["games_played"] == 400
+        assert body["players"][0]["shadowbanned"] is False
+
+    # -- banning ----------------------------------------------------------
+
+    def test_a_reason_is_required(self, client):
+        # The cheap way to stop a flag nobody can explain in three months.
+        response = client.post(
+            "/api/admin/players/u1/shadowban", json={"banned": True}, headers=self.auth
+        )
+        assert response.status_code == 400
+        assert "reason" in response.get_json()["error"]
+
+    def test_a_blank_reason_is_not_a_reason(self, client):
+        response = client.post(
+            "/api/admin/players/u1/shadowban",
+            json={"banned": True, "reason": "   "},
+            headers=self.auth,
+        )
+        assert response.status_code == 400
+
+    def test_banning_with_a_reason_works(self, client):
+        response = client.post(
+            "/api/admin/players/u1/shadowban",
+            json={"banned": True, "reason": "impossible times"},
+            headers=self.auth,
+        )
+        assert response.status_code == 200
+        assert response.get_json() == {
+            "user_id": "u1",
+            "shadowbanned": True,
+            "changed": True,
+        }
+
+    def test_banning_twice_reports_that_nothing_changed(self, client):
+        # "Done" and "that was already true" are different answers, and an
+        # operator acting on a duplicate report should know which.
+        for _ in range(2):
+            response = client.post(
+                "/api/admin/players/u1/shadowban",
+                json={"banned": True, "reason": "impossible times"},
+                headers=self.auth,
+            )
+        assert response.get_json()["changed"] is False
+
+    def test_unbanning_needs_no_reason(self, client):
+        client.post(
+            "/api/admin/players/u1/shadowban",
+            json={"banned": True, "reason": "wrong call"},
+            headers=self.auth,
+        )
+        response = client.post(
+            "/api/admin/players/u1/shadowban", json={"banned": False}, headers=self.auth
+        )
+        assert response.status_code == 200
+        assert response.get_json()["shadowbanned"] is False
+
+    def test_the_listing_shows_who_and_why(self, client):
+        client.post(
+            "/api/admin/players/u1/shadowban",
+            json={"banned": True, "reason": "impossible times"},
+            headers=self.auth,
+        )
+        body = client.get("/api/admin/players/shadowbanned", headers=self.auth).get_json()
+        assert body["players"][0]["reason"] == "impossible times"
+
+    # -- routing ----------------------------------------------------------
+
+    def test_the_listing_path_is_not_swallowed_by_the_ban_path(self, client):
+        """/players/shadowbanned must not be read as a user id.
+
+        Two routes share a prefix and one has a variable segment, which is
+        exactly the shape that silently routes to the wrong handler.
+        """
+        response = client.get("/api/admin/players/shadowbanned", headers=self.auth)
+        assert response.status_code == 200
+        assert "players" in response.get_json()
+
+
 class TestApiErrorsAreJson:
     """The client parses `error` from the body, so an HTML 500 tells it nothing."""
 

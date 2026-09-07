@@ -198,5 +198,11 @@ Payments need four more, and checkout is not offered without them:
 optionally `PUBLIC_URL`. A deployment missing them shows no buy button rather
 than a broken one.
 
-`ADMIN_TOKEN` is deliberately unset. The admin routes are closed when it is
-missing rather than open, so leaving it unset disables them.
+`ADMIN_TOKEN` gates every admin route, and they are closed when it is missing
+rather than open. Set it and the operator tools work: swap a bad puzzle, void
+or restore a day, search accounts, and shadowban with a reason.
+
+Shadowbanning hides an account from every leaderboard and tells it nothing --
+a cheater who knows makes another account. Their own history and stats are
+untouched. A reason is required to ban and cleared on unban, because a reason
+that outlives its ban is a note nobody can interpret.
