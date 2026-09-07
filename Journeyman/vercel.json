@@ -24,14 +24,6 @@
       "destination": "/api/app"
     },
     {
-      "source": "/stats/script.js",
-      "destination": "/_vercel/insights/script.js"
-    },
-    {
-      "source": "/stats/:event",
-      "destination": "/_vercel/insights/:event"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
