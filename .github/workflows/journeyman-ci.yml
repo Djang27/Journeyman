@@ -7,7 +7,11 @@ on:
   pull_request:
     paths:
       - "Journeyman/**"
-      - ".github/workflows/journeyman-ci.yml"
+      # Every Journeyman workflow, not just this one. A PR touching only the
+      # schedule or migrations workflow ran no required check and waited
+      # forever -- the same failure the README line below was added for, one
+      # directory over.
+      - ".github/workflows/journeyman-*.yml"
       # The root README is this project's README -- the repo is Journeyman.
       # Without it, a docs-only PR runs no required check and waits forever for
       # one, which is the failure this filter was supposed to prevent for
@@ -17,7 +21,7 @@ on:
     branches: [main]
     paths:
       - "Journeyman/**"
-      - ".github/workflows/journeyman-ci.yml"
+      - ".github/workflows/journeyman-*.yml"
       - "README.md"
 
 # A second push to the same branch cancels the first run still in flight.

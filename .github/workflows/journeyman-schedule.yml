@@ -17,6 +17,14 @@ on:
         description: "How far ahead to fill"
         required: false
         default: "90"
+      redo_future:
+        description: >-
+          Delete every puzzle after today and choose again. For applying changed
+          scheduling rules to a calendar already filled. Today and the archive
+          are never touched.
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   # Two runs filling the same dates would race for the same players.
@@ -65,7 +73,11 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
         # Logged before writing, so the run always records what it decided --
         # which matters when someone asks why a particular day got that player.
-        run: python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }} --dry-run
+        # The dry run carries the same flag, so when a redo is requested the log
+        # says how many puzzles would be deleted *before* any of them are.
+        run: >-
+          python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }} --dry-run
+          ${{ inputs.redo_future && '--redo-future' || '' }}
 
       - name: Fill the calendar
         if: steps.configured.outputs.ready == 'true'
@@ -74,4 +86,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PRODUCTION_SERVICE_ROLE_KEY }}
         # Existing dates are never overwritten, so this is safe to re-run and a
         # missed week self-heals on the next one.
-        run: python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }}
+        run: >-
+          python backend/schedule_puzzles.py --days ${{ inputs.days || 90 }}
+          ${{ inputs.redo_future && '--redo-future' || '' }}
