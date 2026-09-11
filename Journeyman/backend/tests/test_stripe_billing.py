@@ -17,11 +17,19 @@ import stripe_billing
 class Config:
     """The four settings billing reads."""
 
-    def __init__(self, secret="sk_test_x", webhook="whsec_test", price="price_x", public=""):
+    def __init__(
+        self,
+        secret="sk_test_x",
+        webhook="whsec_test",
+        price="price_x",
+        public="",
+        automatic_tax=False,
+    ):
         self.stripe_secret_key = secret
         self.stripe_webhook_secret = webhook
         self.stripe_price_id = price
         self.public_url = public
+        self.stripe_automatic_tax = automatic_tax
 
 
 def signed(payload: bytes, secret: str, timestamp=None) -> str:
@@ -197,6 +205,24 @@ class TestIdentity:
         assert stripe_billing.user_id_from_event({"data": {"object": {}}}) is None
 
 
+def _capture_session(config):
+    """Start a checkout against a fake Stripe and return what it was sent."""
+    captured = {}
+
+    class FakeStripe:
+        class checkout:
+            class Session:
+                @staticmethod
+                def create(**kwargs):
+                    captured.update(kwargs)
+                    return type("S", (), {"id": "cs_1", "url": "https://stripe/x"})()
+
+    stripe_billing.create_checkout_session(
+        config, "u1", "https://x/ok", "https://x/no", client=FakeStripe
+    )
+    return captured
+
+
 class TestCheckout:
     def test_an_anonymous_caller_cannot_buy(self):
         # There would be nothing to attach the purchase to.
@@ -228,3 +254,18 @@ class TestCheckout:
         # The charge needs it too: a refund event is a charge, not a session.
         assert captured["payment_intent_data"]["metadata"]["user_id"] == "u1"
         assert captured["mode"] == "payment"
+
+    def test_tax_is_not_calculated_unless_it_is_switched_on(self):
+        # Asking Stripe for automatic tax before Stripe Tax is set up in the
+        # dashboard fails the whole session, so the default has to be off. A
+        # deployment that has not thought about tax still sells.
+        captured = _capture_session(Config())
+        assert "automatic_tax" not in captured
+
+    def test_switching_tax_on_asks_stripe_to_calculate_it(self):
+        # And collects the address it needs to, since tax is owed where the
+        # buyer is. Enabling Stripe Tax in the dashboard alone does nothing --
+        # the session has to ask, which is the half that is easy to miss.
+        captured = _capture_session(Config(automatic_tax=True))
+        assert captured["automatic_tax"] == {"enabled": True}
+        assert captured["billing_address_collection"] == "required"

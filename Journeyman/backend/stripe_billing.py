@@ -124,7 +124,7 @@ def create_checkout_session(config, user_id, success_url, cancel_url, client=Non
         raise BillingError("payments are not configured")
 
     stripe = client or _stripe(config)
-    session = stripe.checkout.Session.create(
+    params = dict(
         mode=CHECKOUT_MODE,
         line_items=[{"price": config.stripe_price_id, "quantity": 1}],
         success_url=success_url,
@@ -135,6 +135,14 @@ def create_checkout_session(config, user_id, success_url, cancel_url, client=Non
         metadata={"user_id": str(user_id)},
         payment_intent_data={"metadata": {"user_id": str(user_id)}},
     )
+    if getattr(config, "stripe_automatic_tax", False):
+        # Tax is owed where the buyer is, not where we are, and the buyer's
+        # location is a thing only they can tell us. Checkout asks for an
+        # address when automatic tax is on; requiring it is explicit about
+        # why the extra field appeared.
+        params["automatic_tax"] = {"enabled": True}
+        params["billing_address_collection"] = "required"
+    session = stripe.checkout.Session.create(**params)
     return {"id": session.id, "url": session.url}
 
 

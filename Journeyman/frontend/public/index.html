@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#efe7d6" />
     <meta
       name="description"
-      content="Journeyman — trace an NBA player's career from team to team, in order."
+      content="One player, one career. Name every team he played for, in order. A new NBA career puzzle every day, free, no account needed."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -24,7 +24,42 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Journeyman</title>
+    <title>Journeyman — the daily NBA career puzzle</title>
+
+    <!--
+      The link preview.
+
+      The share grid carries a link now, and a link with no preview is a bare
+      URL in somebody's group chat -- the one place where the whole share loop
+      is either worth something or isn't. These tags are what Discord, iMessage,
+      Slack, WhatsApp, Twitter and Facebook read to turn it into a card.
+
+      og:image is absolute on purpose. Most scrapers will not resolve a relative
+      one, and a card with a broken image is worse than no card. That means a
+      preview deployment advertises production's image, which is the harmless
+      direction of that trade.
+
+      og:url is deliberately absent: fixing it to the production URL makes every
+      share of a preview or a future custom domain claim to be this one.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Journeyman" />
+    <meta property="og:title" content="Journeyman — the daily NBA career puzzle" />
+    <meta
+      property="og:description"
+      content="One player, one career. Name every team he played for, in order. A new one every day, free, no account needed."
+    />
+    <meta property="og:image" content="https://journeymannba.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Journeyman — a career, one club at a time." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Journeyman — the daily NBA career puzzle" />
+    <meta
+      name="twitter:description"
+      content="One player, one career. Name every team he played for, in order. A new one every day, free, no account needed."
+    />
+    <meta name="twitter:image" content="https://journeymannba.vercel.app/og.png" />
     <!--
       Vercel Web Analytics.
 
