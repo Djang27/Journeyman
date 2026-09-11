@@ -327,3 +327,59 @@ class TestShortAndOldCareers:
         long_ago = D.fame_for(12.0, 900, 0, last_season=1985)
         brief_ago = D.fame_for(12.0, 200, 0, last_season=1985)
         assert long_ago < brief_ago
+
+
+class TestLongevityCannotMakeAStar:
+    """Tier 0 is where Durant and Rodman sit, and games played is not a ticket.
+
+    The -2 for a long career could carry anybody there. Caldwell Jones reached
+    the most recognisable tier on 6.2 points a game, and Dave Greenwood on 10.2
+    -- both purely for having turned out eight hundred times.
+    """
+
+    def test_a_long_quiet_career_is_recognisable_but_not_a_star(self):
+        """Dave Greenwood's shape: 10.2 a game over 823 games, no All-Star.
+
+        Dated modern so the era nudge is out of the way and the cap is the only
+        thing under test. Without it this scores 2 and the -2 for a long career
+        takes it to 0 -- the tier Durant and Rodman are in.
+
+        The first version of this test used Caldwell Jones at 6.2 a game, which
+        lands on 1 with or without the cap, so it asserted nothing. The mutation
+        check caught that.
+        """
+        assert D.fame_for(10.2, 823, 0, last_season=2010) == 1
+
+    def test_even_a_thousand_quiet_games_stays_out_of_the_top_tier(self):
+        # Caldwell Jones: 6.2 a game over 1,068 games.
+        assert D.fame_for(6.2, 1068, 0, last_season=2010) >= 1
+
+    def test_star_level_scoring_still_reaches_the_top_tier(self):
+        # The cap needs direct evidence, and a scoring average nobody achieves
+        # quietly is evidence.
+        assert D.fame_for(24.6, 1000, 0, last_season=2010) == 0
+
+    def test_all_star_selections_bypass_the_cap(self):
+        assert D.fame_for(7.3, 911, 2, last_season=2000) == 0
+
+    def test_an_early_nineties_career_is_not_treated_as_recent(self):
+        # The two that were reported. The cutoff was 1990, which both slipped
+        # past -- and to somebody playing today the early nineties is not
+        # meaningfully nearer than the eighties.
+        greenwood = D.fame_for(10.2, 823, 0, last_season=1991)
+        higgins = D.fame_for(9.0, 779, 0, last_season=1995)
+        assert not D.in_pool(greenwood, D.POOL_BIG_NAMES)
+        assert not D.in_pool(higgins, D.POOL_BIG_NAMES)
+        assert D.in_pool(greenwood, D.POOL_MIXED)
+        assert D.in_pool(higgins, D.POOL_MIXED)
+
+    def test_the_greats_of_that_era_survive_on_their_selections(self):
+        # Kareem, Gervin, Frazier: exempt because an All-Star selection is
+        # direct evidence, which is what everything else here approximates.
+        assert D.in_pool(D.fame_for(24.6, 1560, 17, last_season=1989), D.POOL_BIG_NAMES)
+        assert D.in_pool(D.fame_for(18.9, 825, 7, last_season=1980), D.POOL_BIG_NAMES)
+
+    def test_a_modern_long_career_is_unaffected(self):
+        # Horry, Fisher, Bowen, Battier: none an All-Star, none obscure.
+        for ppg, games in ((7.0, 1107), (8.3, 1287), (6.1, 873), (8.6, 977)):
+            assert D.in_pool(D.fame_for(ppg, games, 0, last_season=2010), D.POOL_BIG_NAMES)

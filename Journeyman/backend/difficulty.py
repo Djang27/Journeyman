@@ -77,7 +77,13 @@ STILL_RECENT_SEASON = 2022
 # A one-tier nudge rather than an exclusion: the game is about careers, plenty
 # of the good ones are old, and an All-Star selection exempts a player from this
 # entirely because it is direct evidence people knew the name at the time.
-DISTANT_ERA_SEASON = 1990
+#
+# This was 1990 and did not hold. Dave Greenwood last played in 1991 and Rod
+# Higgins in 1995, so both slipped past a cutoff drawn a year or five too early
+# -- and to somebody playing today the early nineties is not meaningfully nearer
+# than the eighties. Drawn at 2000 it catches them and still leaves Kareem,
+# Gervin, Frazier, Cowens and Gilmore, who are exempt on their selections.
+DISTANT_ERA_SEASON = 2000
 
 # Whether a low scorer has played enough to be worth serving at all. Separate
 # from the fame threshold above and deliberately still 400: these decide
@@ -140,6 +146,16 @@ def fame_for(career_ppg, career_games=None, all_star_selections=0, last_season=N
         scoring = max(0, scoring - 1)
     elif career_games < BRIEF_CAREER_GAMES and not _still_recent(last_season):
         scoring = min(4, scoring + 1)
+
+    # Longevity can make somebody recognisable. It cannot make them a star.
+    #
+    # The -2 for a long career could carry a player all the way to tier 0, which
+    # is where Kevin Durant and Dennis Rodman sit. That is how Caldwell Jones
+    # reached the most recognisable tier on 6.2 points a game, and Dave
+    # Greenwood on 10.2. Tier 0 now needs direct evidence of stardom -- All-Star
+    # selections, handled above, or a scoring average nobody achieves quietly.
+    if (career_ppg or 0.0) < STAR_PPG:
+        scoring = max(1, scoring)
 
     # Applied after the longevity adjustments, not instead of them: a long
     # career from the seventies is still better known than a short one, just
