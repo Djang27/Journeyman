@@ -7,7 +7,25 @@ import { HowToPlayNote, InfoMark } from './start'
 import Stamp from './Stamp'
 
 // v2
+//
+// The grid keeps Wordle's squares rather than the almanac's palette. Everywhere
+// else in the game the state marks were made colour-independent on purpose, but
+// a share grid is pasted into somebody else's chat window, where the only thing
+// that survives is the emoji, and these three are read at a glance by people who
+// have never seen this game. Legibility to a stranger beats house style here.
 const EMOJI = { green: '🟩', yellow: '🟨', gray: '⬛' }
+
+// Where the grid was posted, a reader needs somewhere to go. A share with no
+// link is a screenshot: it travels and converts nobody. Read from the running
+// origin rather than hardcoded, so a preview deployment links to itself instead
+// of sending its testers to production.
+function share_link() {
+    try {
+        return window.location.origin
+    } catch {
+        return ''
+    }
+}
 
 function build_share_text({ results, final_score, final_time, game_mode, day_number, hard_mode, has_won }) {
     const grid = results.map(r => EMOJI[r] ?? '⬜').join('')
@@ -19,7 +37,8 @@ function build_share_text({ results, final_score, final_time, game_mode, day_num
     const time_str  = final_time != null ? fmt_time(final_time) : ''
     const hard_str  = hard_mode ? ' 🔥' : ''
     const details   = [outcome, score_str, time_str].filter(Boolean).join(' · ')
-    return `${header}${hard_str}\n${grid}\n${details}`
+    const link      = share_link()
+    return [`${header}${hard_str}`, grid, details, link].filter(Boolean).join('\n')
 }
 
 

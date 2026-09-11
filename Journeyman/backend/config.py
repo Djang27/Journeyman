@@ -74,6 +74,21 @@ class Config:
         # Where Checkout sends the browser back to. Defaults to the deployment
         # itself; set explicitly when the app is not at the domain root.
         self.public_url = (env.get("PUBLIC_URL") or "").rstrip("/")
+        # Whether Checkout should calculate sales tax and VAT.
+        #
+        # Off by default, and deliberately a separate switch from the keys.
+        # Enabling Stripe Tax in the dashboard does not make Checkout charge
+        # tax -- the session has to ask for it -- but asking for it before the
+        # dashboard side is set up makes every checkout fail outright. So the
+        # order is: turn it on in Stripe, set the price's tax behaviour, then
+        # set this. One without the other is either silently untaxed or loudly
+        # broken, and both are worth being able to fix independently.
+        self.stripe_automatic_tax = (env.get("STRIPE_AUTOMATIC_TAX") or "").lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
 
         # Deliberate downtime. Since Phase 0 every game start writes a session
         # row, so Postgres being unreachable means the game is unplayable -- this
