@@ -125,3 +125,78 @@ class TestPaging:
     def test_an_empty_range_is_no_rows_rather_than_an_error(self):
         repo = PuzzlesRepo(FakeClient(dated_rows(100)))
         assert repo.scheduled_between("2030-01-01", "2030-12-31") == {}
+
+
+class DeletingTable:
+    """Enough PostgREST to answer a bounded delete."""
+
+    def __init__(self, rows):
+        self.rows = rows
+        self._after = None
+        self._through = None
+
+    def delete(self):
+        return self
+
+    def eq(self, *_):
+        return self
+
+    def gt(self, _, value):
+        self._after = value
+        return self
+
+    def lte(self, _, value):
+        self._through = value
+        return self
+
+    def execute(self):
+        gone = [
+            r
+            for r in self.rows
+            if r["puzzle_date"] > self._after
+            and (self._through is None or r["puzzle_date"] <= self._through)
+        ]
+        self.rows = [r for r in self.rows if r not in gone]
+        return type("R", (), {"data": gone})()
+
+
+class DeletingClient:
+    def __init__(self, rows):
+        self.table_obj = DeletingTable(rows)
+
+    def table(self, _):
+        return self.table_obj
+
+
+class TestUnschedule:
+    """Redoing a calendar must not leave it shorter than it found it.
+
+    The first version had no upper bound, so it deleted 115 rows where the
+    refill wrote 114 -- and the dry run, which counted inside the window,
+    reported 114. The two disagreeing is how the missing day went unnoticed.
+    """
+
+    def _rows(self):
+        return dated_rows(10)  # 2020-01-02 .. 2020-01-11
+
+    def test_the_past_and_today_are_untouched(self):
+        client = DeletingClient(self._rows())
+        removed = PuzzlesRepo(client).unschedule_between("2020-01-05", "2020-01-11")
+        assert removed == 6
+        kept = [r["puzzle_date"] for r in client.table_obj.rows]
+        assert kept == ["2020-01-02", "2020-01-03", "2020-01-04", "2020-01-05"]
+
+    def test_nothing_beyond_the_refill_window_is_deleted(self):
+        # The defect. 2020-01-11 sits past the window and would never be
+        # rewritten, so deleting it silently shortens the calendar.
+        client = DeletingClient(self._rows())
+        removed = PuzzlesRepo(client).unschedule_between("2020-01-05", "2020-01-10")
+        assert removed == 5
+        assert "2020-01-11" in [r["puzzle_date"] for r in client.table_obj.rows]
+
+    def test_the_count_matches_what_a_dry_run_would_report(self):
+        # Both read the same window, so the preview and the write agree.
+        rows = self._rows()
+        after, through = "2020-01-05", "2020-01-10"
+        predicted = sum(1 for r in rows if after < r["puzzle_date"] <= through)
+        assert PuzzlesRepo(DeletingClient(rows)).unschedule_between(after, through) == predicted

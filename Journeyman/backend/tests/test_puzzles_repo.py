@@ -283,6 +283,26 @@ class TestWeeklyCurve:
         chosen = plan(pool, date(2026, 10, 5), 1, fit=daily_fit)
         assert chosen[0][1]["name"] == "Undated"
 
+    def test_the_same_window_plans_the_same_calendar(self):
+        """A dry run has to show the calendar the next run will write.
+
+        Unseeded, the preview and the write shuffled differently and named
+        different players, so reading the dry run before trusting it checked
+        the shape and nothing else. `schedule_puzzles` seeds from the window
+        for exactly this; the property is that a seed determines the plan.
+        """
+        pool = self._pool()
+        preview = plan(pool, date(2026, 10, 5), 21, fit=daily_fit, rng=random.Random("w"))
+        written = plan(pool, date(2026, 10, 5), 21, fit=daily_fit, rng=random.Random("w"))
+        assert [(d, p["id"]) for d, p in preview] == [(d, p["id"]) for d, p in written]
+
+    def test_a_different_window_plans_differently(self):
+        # The seed must not be so stable that every window gets one calendar.
+        pool = self._pool()
+        one = plan(pool, date(2026, 10, 5), 21, fit=daily_fit, rng=random.Random("a"))
+        two = plan(pool, date(2026, 10, 5), 21, fit=daily_fit, rng=random.Random("b"))
+        assert [p["id"] for _, p in one] != [p["id"] for _, p in two]
+
     def test_recency_breaks_ties_within_a_tier(self):
         # Two equally good fits for Monday; the one used longer ago wins.
         pool = [

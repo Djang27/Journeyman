@@ -106,23 +106,28 @@ class PuzzlesRepo:
                 return rows
             offset += self.PAGE_SIZE
 
-    def unschedule_after(self, day):
-        """Delete every puzzle scheduled strictly after `day`. Returns the count.
+    def unschedule_between(self, after, through):
+        """Delete puzzles scheduled after `after` and up to `through`.
 
-        For redoing a calendar that was filled under rules since changed. The
-        cutoff is strict, and the caller is expected to pass today: a future
-        puzzle is a promise nobody has been shown, while today's may be halfway
-        through being played and the past is the archive, which people have
-        paid for.
+        For redoing a calendar that was filled under rules since changed. Both
+        bounds earn their place:
 
-        Deliberately not a general delete. The one dangerous version of this
-        operation is the one that takes an arbitrary range.
+        `after` is strict, and the caller passes today: a future puzzle is a
+        promise nobody has been shown, while today's may be halfway through
+        being played and the past is the archive, which people have paid for.
+
+        `through` is the end of the window about to be refilled, and without it
+        this deletes puzzles the caller will not replace. That happened: an
+        unbounded delete took 115 rows where the refill wrote 114, quietly
+        leaving the calendar a day shorter than it found it, and the dry run
+        reported the bounded count so the two disagreed.
         """
         response = (
             self._table()
             .delete()
             .eq("game_slug", self._game_slug)
-            .gt("puzzle_date", str(day))
+            .gt("puzzle_date", str(after))
+            .lte("puzzle_date", str(through))
             .execute()
         )
         return len(response.data or [])
