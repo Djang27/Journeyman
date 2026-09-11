@@ -197,6 +197,22 @@ Things that have already cost time:
   pool once, which cannot say "Monday and Saturday want different players".
   `fit(player, date)` grades each pairing instead, and dates are filled greedily
   with recency as the tie-break.
+- **Longevity is evidence of fame, not a substitute for it.** The middle
+  games threshold was 400 -- about five seasons -- which let it carry a player
+  into the most recognisable tier on no other evidence. Terry Dehere averaged
+  exactly 8.0 over exactly 402 games with no All-Star selection, cleared both
+  boundaries by a hair, and came out rated alongside Mitch Richmond. It is 600
+  now, and `PROMOTION_CAREER_GAMES` is a separate constant at 400 -- the two
+  decide different things, and moving them together would have dropped
+  forty-five careers out of the playable pool as a side effect.
+- **Do not read `players.difficulty` to choose a puzzle.** It is written at
+  import, so it is a snapshot of the rules on the day that import ran, and
+  retuning them leaves every stored value stale -- silently, because a stale
+  tier is still a valid tier. `difficulty.rate(row)` derives both halves; the
+  column is for reporting.
+- **Clear `__pycache__` between mutation checks.** Restoring a file with `cp`
+  can leave bytecode that pytest still imports, so a "restored" run reports
+  failures that are not there -- or worse, a mutated run reports passes.
 - **Fame is not recognisability for old careers.** It is computed from scoring,
   longevity and All-Star selections, all of which a 1960s journeyman can clear
   while being a name almost nobody can place. Roughly one daily a week landed
