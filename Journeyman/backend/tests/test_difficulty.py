@@ -268,3 +268,62 @@ class TestRate:
         )
         from_file = D.rate({"ppg": 8.0, "games": 402, "teams": ["a", "b"]})
         assert from_db == from_file
+
+
+class TestShortAndOldCareers:
+    """Two ways a good scoring average overstated how known somebody is.
+
+    Fourteen per cent of Big names got there on scoring alone with no career
+    length behind it, and the longevity rescue promoted players nobody has
+    watched in forty years into the same tier as Kevin Durant.
+    """
+
+    def test_a_good_average_over_two_seasons_is_not_a_big_name(self):
+        """Walter Berry's shape: 14.1 a game over 205 games, no All-Star.
+
+        Dated to 2015 on purpose -- after the era cutoff and before the still-
+        recent one -- so the only rule that can exclude him is the career-length
+        floor. The first version of this test used Berry's real 1989 and passed
+        on the era nudge alone, which meant the floor itself was untested and a
+        mutation check caught it.
+        """
+        fame = D.fame_for(14.1, 205, 0, last_season=2015)
+        assert not D.in_pool(fame, D.POOL_BIG_NAMES)
+        assert D.in_pool(fame, D.POOL_MIXED)
+
+    def test_the_real_walter_berry_is_excluded_twice_over(self):
+        # Short and long gone: both rules apply, and they stack.
+        assert D.fame_for(14.1, 205, 0, last_season=1989) == 3
+
+    def test_a_short_career_that_is_still_going_is_not_penalised(self):
+        # Jaden Ivey has played no longer than Walter Berry and is perfectly
+        # recognisable, because he is playing now. Being current is its own
+        # kind of fame and the only kind this data can see directly.
+        fame = D.fame_for(14.8, 218, 0, last_season=2026)
+        assert D.in_pool(fame, D.POOL_BIG_NAMES)
+
+    def test_a_long_career_from_a_distant_era_is_nudged_down(self):
+        # Billy Paultz: 8.5 a game, 637 games, last seen in 1985. The longevity
+        # rescue had him level with Kevin Durant.
+        assert not D.in_pool(D.fame_for(8.5, 637, 0, last_season=1985), D.POOL_BIG_NAMES)
+        assert D.in_pool(D.fame_for(8.5, 637, 0, last_season=1985), D.POOL_MIXED)
+
+    def test_the_same_career_today_is_not_nudged(self):
+        assert D.in_pool(D.fame_for(8.5, 637, 0, last_season=2024), D.POOL_BIG_NAMES)
+
+    def test_an_all_star_is_exempt_from_the_era_nudge(self):
+        # Direct evidence people knew the name at the time, which is exactly
+        # what the nudge is guessing at in its absence.
+        assert D.fame_for(7.3, 911, 2, last_season=1985) == 0
+        assert D.fame_for(10.0, 500, 1, last_season=1975) == 1
+
+    def test_an_unknown_season_is_not_treated_as_old(self):
+        # Absent is not ancient. Penalising it would quietly demote every
+        # career the source could not date.
+        assert D.fame_for(12.0, 700, 0, last_season=None) == D.fame_for(12.0, 700, 0)
+
+    def test_the_era_nudge_stacks_with_longevity_rather_than_replacing_it(self):
+        # A long old career should still beat a short old one.
+        long_ago = D.fame_for(12.0, 900, 0, last_season=1985)
+        brief_ago = D.fame_for(12.0, 200, 0, last_season=1985)
+        assert long_ago < brief_ago

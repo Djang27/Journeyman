@@ -51,7 +51,33 @@ ROLE_PPG = 6.0  # a role player a keen fan might place
 # out rated as well known. Eight seasons is a career; five is a stint.
 LONG_CAREER_GAMES = 800
 SOLID_CAREER_GAMES = 600
-BRIEF_CAREER_GAMES = 150
+
+# Below this, scoring alone is not enough.
+#
+# It was 150 -- under two seasons -- which left a hole the size of fourteen per
+# cent of the most recognisable tier: anything averaging eleven points landed
+# there on scoring alone, however briefly. Walter Berry scored 14.1 over 205
+# games, Billy Ray Bates 11.7 over 187, and both came out rated as names a fan
+# would place. Roughly four seasons is the line where a good average starts
+# meaning a career rather than a spell.
+BRIEF_CAREER_GAMES = 300
+
+# A short career is only forgettable once it is over.
+#
+# The same rule that catches Walter Berry would catch Jaden Ivey and Jonathan
+# Kuminga, who have played no longer and are perfectly recognisable because
+# they are playing now. Being current is its own kind of fame, and it is the
+# only kind this data can see directly.
+STILL_RECENT_SEASON = 2022
+
+# Never an All-Star, and long enough ago that nobody watched it.
+#
+# Longevity rescues a low scorer, which is right -- but it rescued Billy Paultz,
+# 8.5 points a game and last seen in 1985, into the same tier as Kevin Durant.
+# A one-tier nudge rather than an exclusion: the game is about careers, plenty
+# of the good ones are old, and an All-Star selection exempts a player from this
+# entirely because it is direct evidence people knew the name at the time.
+DISTANT_ERA_SEASON = 1990
 
 # Whether a low scorer has played enough to be worth serving at all. Separate
 # from the fame threshold above and deliberately still 400: these decide
@@ -74,7 +100,7 @@ MIN_PROMOTABLE_PPG = 5.0
 MAX_PROMOTABLE_STINTS = 9
 
 
-def fame_for(career_ppg, career_games=None, all_star_selections=0):
+def fame_for(career_ppg, career_games=None, all_star_selections=0, last_season=None):
     """0 for a star, 4 for a name nobody will place.
 
     Public because it is the axis a player actually asks about. `difficulty_for`
@@ -109,12 +135,24 @@ def fame_for(career_ppg, career_games=None, all_star_selections=0):
     # Longevity pulls a low scorer back toward recognisable, and a short career
     # pushes a decent average away from it.
     if career_games >= LONG_CAREER_GAMES:
-        return max(0, scoring - 2)
-    if career_games >= SOLID_CAREER_GAMES:
-        return max(0, scoring - 1)
-    if career_games < BRIEF_CAREER_GAMES:
-        return min(4, scoring + 1)
+        scoring = max(0, scoring - 2)
+    elif career_games >= SOLID_CAREER_GAMES:
+        scoring = max(0, scoring - 1)
+    elif career_games < BRIEF_CAREER_GAMES and not _still_recent(last_season):
+        scoring = min(4, scoring + 1)
+
+    # Applied after the longevity adjustments, not instead of them: a long
+    # career from the seventies is still better known than a short one, just
+    # not as well known as the same career today.
+    if last_season is not None and last_season < DISTANT_ERA_SEASON:
+        scoring = min(4, scoring + 1)
+
     return scoring
+
+
+def _still_recent(last_season):
+    """Whether a career is current enough that its brevity is not yet a problem."""
+    return last_season is not None and last_season >= STILL_RECENT_SEASON
 
 
 def _path_cost(stint_count):
@@ -126,12 +164,16 @@ def _path_cost(stint_count):
     return 2
 
 
-def difficulty_for(career_ppg, stint_count, career_games=None, all_star_selections=0):
+def difficulty_for(
+    career_ppg, stint_count, career_games=None, all_star_selections=0, last_season=None
+):
     """A 1-5 tier. 1 is a household name with a short path, 5 is neither."""
     # Obscurity dominates: a name you do not know cannot be reasoned out, while a
     # long path at least rewards knowing the player. Hence the heavier weight.
     raw = (
-        1 + fame_for(career_ppg, career_games, all_star_selections) + _path_cost(stint_count) * 0.5
+        1
+        + fame_for(career_ppg, career_games, all_star_selections, last_season)
+        + _path_cost(stint_count) * 0.5
     )
     return max(1, min(5, round(raw)))
 
@@ -331,8 +373,14 @@ def rate(row):
     all_star = row.get("all_star_selections") or 0
     stints = row.get("stints") or []
     teams = row.get("teams") or [stint["team"] for stint in stints]
-    fame = fame_for(ppg, games, all_star)
-    return fame, difficulty_for(ppg, len(teams), games, all_star)
+    # The database stores last_season directly; the pool file carries it as the
+    # end of the final stint. Both matter now that when a career happened is
+    # part of how recognisable it is.
+    last_season = row.get("last_season")
+    if last_season is None and stints:
+        last_season = stints[-1].get("to_season")
+    fame = fame_for(ppg, games, all_star, last_season)
+    return fame, difficulty_for(ppg, len(teams), games, all_star, last_season)
 
 
 def week_shape():
