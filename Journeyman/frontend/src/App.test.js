@@ -90,7 +90,10 @@ describe('picking up a game that was in progress', () => {
         expect(await screen.findByText(/Resume your daily/i)).toBeInTheDocument()
         expect(screen.queryByText('Bob Lanier')).not.toBeInTheDocument()
         // The stored id is a handle; every field came from the response.
-        expect(global.fetch.mock.calls[0][0]).toContain('/api/game/abc-123')
+        // Found rather than indexed: the mount also fetches other things, and
+        // pinning this to call zero made it a test of fetch ordering.
+        const urls = global.fetch.mock.calls.map(call => String(call[0]))
+        expect(urls.some(url => url.includes('/api/game/abc-123'))).toBe(true)
     })
 
     test('the stored game can then be resumed in one click', async () => {

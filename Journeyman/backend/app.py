@@ -1,6 +1,7 @@
 import logging
 
 import archive
+import difficulty
 import stripe_billing
 from admin import AdminError, AdminOperations, is_authorised, token_from_headers
 from auth import AuthError, user_id_from_headers
@@ -140,6 +141,7 @@ def _wire_player_pool(config):
     if not config.use_database:
         return None
 
+    from difficulty import fame_for
     from players_repo import PlayersRepo, teams_of
 
     from supabase import create_client
@@ -147,8 +149,21 @@ def _wire_player_pool(config):
     repo = PlayersRepo(create_client(config.supabase_url, config.supabase_service_key))
 
     def fetch():
+        # `fame` is computed here rather than stored: it is derived from three
+        # columns the row already carries, and a stored copy is one more thing
+        # to migrate when the rating changes. The file pool computes the same
+        # field the same way, so the two sources stay interchangeable.
         return [
-            {"id": row["id"], "name": row["name"], "teams": teams_of(row)}
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "teams": teams_of(row),
+                "fame": fame_for(
+                    row.get("career_ppg"),
+                    row.get("career_games"),
+                    row.get("all_star_selections") or 0,
+                ),
+            }
             for row in repo.active_pool()
         ]
 
@@ -609,7 +624,12 @@ def api_game_start():
 
         exclude = body.get("exclude") or []
         exclude_ids = {int(x) for x in exclude if str(x).strip().lstrip("-").isdigit()}
-        player_name, teams, player_id = randomPlayer(exclude_ids=exclude_ids)
+        # Unlimited only. The daily is the same puzzle for everybody, so a
+        # per-player pool setting would make the leaderboard meaningless, and
+        # the archive is a fixed list of past dailies.
+        player_name, teams, player_id = randomPlayer(
+            exclude_ids=exclude_ids, pool=body.get("pool") or difficulty.DEFAULT_POOL
+        )
 
     try:
         session = start_session(
@@ -626,6 +646,20 @@ def api_game_start():
         return _session_error(exc, 409 if "already played" in str(exc) else 400)
 
     return jsonify(_with_quota(public_view(session), quota)), 201
+
+
+@app.route("/api/game/pools", methods=["GET"])
+def api_game_pools():
+    """Which pools unlimited mode offers, and what each one promises.
+
+    Served rather than hardcoded in the frontend so the boundary and the
+    sentence describing it cannot drift apart -- "you will know almost all of
+    them" is a claim, and the code that makes it true lives here.
+
+    Covered by the existing /api/game/(.*) rewrite; a new route without one
+    falls through to the SPA and returns index.html with a 200.
+    """
+    return jsonify({"pools": difficulty.pool_choices(), "default": difficulty.DEFAULT_POOL})
 
 
 @app.route("/api/game/archive", methods=["GET"])

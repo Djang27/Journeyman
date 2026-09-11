@@ -174,6 +174,16 @@ Things that have already cost time:
   `index.js -> App.js -> lib/supabase`. Anything thrown at module scope there
   happens before React mounts and shows a blank page, not an error. It returns
   a null client and `authAvailable: false` instead; guard new call sites.
+- **`difficulty` and fame are different axes, and selection wants fame.**
+  `difficulty_for` is fame plus path length, so a one-time All-Star with eight
+  clubs rates a 3 -- and that is the best puzzle this game has, not the worst.
+  Narrowing the pool on the composite drops exactly those. `fame_for` is the
+  axis a player means when they say "I don't know any of these".
+- **A computed column nobody reads is worth checking for.** `difficulty` was
+  rated at import, stored, used by the daily scheduler, and silently ignored by
+  `randomPlayer`, which drew uniformly over everything promoted. Roughly 44% of
+  that pool is rated obscure, so most unlimited games served a name the player
+  could not place. Nothing failed; the game was just not fun.
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 

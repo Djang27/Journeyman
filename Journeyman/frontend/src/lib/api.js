@@ -83,11 +83,18 @@ async function request(path, { method = 'GET', body } = {}) {
     return payload
 }
 
-export function start_game({ mode = 'unlimited', hard_mode = false, exclude = [] } = {}) {
-    return request('/api/game/start', {
-        method: 'POST',
-        body: { mode, hard_mode, exclude },
-    })
+export function start_game({ mode = 'unlimited', hard_mode = false, exclude = [], pool = null } = {}) {
+    // `pool` is only meaningful for unlimited. The daily is the same puzzle for
+    // everybody -- a per-player pool would make the leaderboard meaningless --
+    // and the archive is a fixed list of past dailies. The server ignores it in
+    // both cases; not sending it keeps that obvious from the network tab.
+    const body = { mode, hard_mode, exclude }
+    if (pool && mode === 'unlimited') body.pool = pool
+    return request('/api/game/start', { method: 'POST', body })
+}
+
+export function game_pools() {
+    return request('/api/game/pools')
 }
 
 export function get_game(session_id) {

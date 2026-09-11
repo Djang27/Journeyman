@@ -19,8 +19,23 @@ import './App.css'
 // whom the database cannot identify.
 
 const PLAYED_KEY = "journeyman_played"
+// Which pool unlimited draws from. A per-browser preference, not a rule the
+// server owes anybody -- it is sent with each start and validated there.
+const POOL_KEY   = "journeyman_pool"
 const today_str  = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date())
 const DAILY_KEY  = `journeyman_daily_${today_str}`
+
+function get_pool() {
+    try {
+        return localStorage.getItem(POOL_KEY) || null
+    } catch {
+        return null
+    }
+}
+
+function save_pool(pool) {
+    try { localStorage.setItem(POOL_KEY, pool) } catch {}
+}
 
 function get_played_ids() {
     try {
@@ -120,6 +135,29 @@ function App() {
     const [standings, set_standings]         = useState(null)
     const [record, set_record]               = useState(null)
     const [supporters, set_supporters]       = useState({ names: [], count: 0 })
+    // Which pools exist and what each promises. Served rather than hardcoded so
+    // the label and the rule behind it cannot drift apart.
+    const [pools, set_pools]                 = useState(null)
+    const [pool, set_pool]                   = useState(get_pool)
+
+    // Once, on mount. A failure leaves `pools` null and the picker simply does
+    // not render -- the game still starts, on the server's default.
+    useEffect(() => {
+        let cancelled = false
+        api.game_pools()
+            .then(body => {
+                if (cancelled) return
+                set_pools(body.pools || [])
+                set_pool(current => current || body.default || null)
+            })
+            .catch(() => { if (!cancelled) set_pools([]) })
+        return () => { cancelled = true }
+    }, [])
+
+    const choose_pool = (next) => {
+        set_pool(next)
+        save_pool(next)
+    }
 
     const start_time_ref = useRef(null)
     const timer_ref      = useRef(null)
@@ -322,6 +360,7 @@ function App() {
             const session = await api.start_game({
                 mode,
                 exclude: mode === 'daily' ? [] : get_played_ids(),
+                pool,
             })
 
             set_game({ ...BLANK, ...session })
@@ -537,6 +576,9 @@ function App() {
                     record={record}
                     archive_count={archive?.puzzles?.length ?? null}
                     supporters={supporters}
+                    pools={pools}
+                    pool={pool}
+                    on_choose_pool={choose_pool}
                     // A game left behind, still playable. Only while it is
                     // unfinished -- a finished one has nothing to go back to.
                     resumable={game.session_id && !game_over ? game_mode : null}

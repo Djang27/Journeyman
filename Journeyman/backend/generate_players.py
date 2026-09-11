@@ -19,6 +19,9 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import difficulty
+from difficulty import fame_for
+
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 
 # How long a fetched pool is reused. Short enough that promoting a player takes
@@ -59,6 +62,17 @@ def _load_from_file():
 
     if not players:
         raise RuntimeError("The NBA player database is empty.")
+
+    # The file carries the raw signals; the pool filter wants the rating. Done
+    # here so both sources of the pool -- file and database -- hand back the
+    # same shape and nothing downstream has to know which it got.
+    for player in players:
+        if "fame" not in player:
+            player["fame"] = fame_for(
+                player.get("ppg"),
+                player.get("games"),
+                player.get("all_star_selections") or 0,
+            )
 
     return players
 
@@ -104,13 +118,31 @@ def day_number():
     return (_eastern_today() - LAUNCH_DATE).days + 1
 
 
-def randomPlayer(exclude_ids=None):
+def randomPlayer(exclude_ids=None, pool=None):
+    """A random career, drawn from the pool the player asked for.
+
+    This used to be a uniform draw over everything promoted, which meant most
+    games served a name the player had never heard of. An unknown name is not a
+    hard puzzle -- there is nothing to reason from -- so the game read as broken
+    rather than difficult. `difficulty` was being computed and stored for every
+    player and then never read here.
+
+    The narrowing is on fame alone, not on the composite difficulty: a famous
+    player with seven clubs rates as hard and is the best puzzle in the set.
+    """
     players = _load_players()
 
     available = players
+    if pool is not None:
+        in_pool = [p for p in players if difficulty.in_pool(p.get("fame"), pool)]
+        # A pool that matches nobody falls back rather than failing. The
+        # database pool is curated by hand and could in principle contain
+        # nothing famous; a player pressing the button deserves a game.
+        available = in_pool or players
+
     if exclude_ids:
-        filtered = [p for p in players if p["id"] not in exclude_ids]
-        available = filtered if filtered else players  # reset when all have been seen
+        filtered = [p for p in available if p["id"] not in exclude_ids]
+        available = filtered if filtered else available  # reset when all have been seen
 
     player = random.choice(available)
     return player["name"], player["teams"], player["id"]
