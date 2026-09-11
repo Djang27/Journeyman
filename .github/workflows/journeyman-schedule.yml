@@ -17,11 +17,16 @@ on:
         description: "How far ahead to fill"
         required: false
         default: "90"
+      # A checkbox's description is its whole label in the Actions form, so it
+      # has to read as one. The first version was three sentences and did not
+      # look like a control at all.
+      #
+      # In full: deletes every puzzle scheduled after today and chooses again,
+      # for applying changed scheduling rules to a calendar already filled.
+      # Today is left alone because it may be halfway through being played, and
+      # the past is the archive people have paid for.
       redo_future:
-        description: >-
-          Delete every puzzle after today and choose again. For applying changed
-          scheduling rules to a calendar already filled. Today and the archive
-          are never touched.
+        description: "Redo the calendar after today (applies changed rules)"
         required: false
         type: boolean
         default: false
