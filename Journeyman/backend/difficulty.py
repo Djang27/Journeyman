@@ -60,8 +60,15 @@ MIN_PROMOTABLE_PPG = 5.0
 MAX_PROMOTABLE_STINTS = 9
 
 
-def _obscurity(career_ppg, career_games=None, all_star_selections=0):
-    """0 for a star, 4 for a name nobody will place."""
+def fame_for(career_ppg, career_games=None, all_star_selections=0):
+    """0 for a star, 4 for a name nobody will place.
+
+    Public because it is the axis a player actually asks about. `difficulty_for`
+    folds this together with path length, which is the right measure of how hard
+    a puzzle is and the wrong one for choosing a pool: a famous player with seven
+    clubs scores as difficult and is the single best kind of puzzle this game
+    has. Selecting on the composite would throw exactly those away.
+    """
     # An All-Star was, by definition, famous that season. Two or more is a name
     # that outlived the career.
     if all_star_selections >= 2:
@@ -110,9 +117,7 @@ def difficulty_for(career_ppg, stint_count, career_games=None, all_star_selectio
     # Obscurity dominates: a name you do not know cannot be reasoned out, while a
     # long path at least rewards knowing the player. Hence the heavier weight.
     raw = (
-        1
-        + _obscurity(career_ppg, career_games, all_star_selections)
-        + _path_cost(stint_count) * 0.5
+        1 + fame_for(career_ppg, career_games, all_star_selections) + _path_cost(stint_count) * 0.5
     )
     return max(1, min(5, round(raw)))
 
@@ -146,3 +151,62 @@ def describe(difficulty):
         4: "obscure",
         5: "obscure and long",
     }.get(difficulty, "unrated")
+
+
+# How well known a pool is, as something a player chooses.
+#
+# The complaint this answers: a uniform draw over the promoted pool serves a
+# name nobody knows more often than not, and an unrecognisable name is not a
+# hard puzzle -- it is a lookup, and it reads as a broken game.
+#
+# Named by what you get rather than by a difficulty number, because "level 3"
+# tells nobody anything and these are not a difficulty ladder. Path length is
+# deliberately left free inside every one of them.
+POOL_BIG_NAMES = "big_names"
+POOL_MIXED = "mixed"
+POOL_DEEP_CUTS = "deep_cuts"
+
+DEFAULT_POOL = POOL_MIXED
+
+# The most obscure a player may be and still appear. Cumulative, so a wider
+# pool always contains everything a narrower one did -- somebody loosening the
+# setting should see more, never different.
+POOLS = {
+    POOL_BIG_NAMES: 1,
+    POOL_MIXED: 2,
+    POOL_DEEP_CUTS: 4,
+}
+
+# Shown to the player. Kept here rather than in the frontend so the boundary and
+# the promise about it cannot drift apart.
+POOL_LABELS = {
+    POOL_BIG_NAMES: ("Big names", "Stars and All-Stars. You will know almost all of them."),
+    POOL_MIXED: ("Mixed", "Stars, starters and the better-known role players."),
+    POOL_DEEP_CUTS: (
+        "Deep cuts",
+        "The whole register, including players only a devotee will place.",
+    ),
+}
+
+
+def pool_choices():
+    """Every pool, in order, as the frontend renders them."""
+    return [
+        {"id": name, "label": POOL_LABELS[name][0], "note": POOL_LABELS[name][1]}
+        for name in (POOL_BIG_NAMES, POOL_MIXED, POOL_DEEP_CUTS)
+    ]
+
+
+def max_fame(pool):
+    """The obscurity ceiling for a named pool, falling back to the default.
+
+    An unknown name falls back rather than raising: this arrives from a request
+    body, and a stale client asking for a pool that no longer exists should get
+    a game rather than an error.
+    """
+    return POOLS.get(pool, POOLS[DEFAULT_POOL])
+
+
+def in_pool(fame, pool):
+    """Whether a player of this fame belongs in the chosen pool."""
+    return fame is not None and fame <= max_fame(pool)

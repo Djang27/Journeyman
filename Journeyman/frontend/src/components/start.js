@@ -72,6 +72,41 @@ export function HowToPlayNote({ onClose }) {
     )
 }
 
+// Who unlimited draws from.
+//
+// The pool was a uniform draw over everything promoted, and most of that is
+// players a fan has never heard of. An unrecognisable name is not a hard
+// puzzle -- there is nothing to reason from -- so it read as a broken game
+// rather than a difficult one.
+//
+// Rendered as a set of tabs rather than a dropdown: there are three, the
+// difference between them is the thing being chosen, and a dropdown hides two
+// of the three behind a click. The note under them is the promise each makes.
+function PoolPicker({ pools, pool, onChoose }) {
+    if (!pools || pools.length === 0) return null
+    const chosen = pools.find(p => p.id === pool) || pools[0]
+
+    return (
+        <div className="pool-picker">
+            <span className="pool-kicker">Who you get</span>
+            <div className="pool-tabs" role="group" aria-label="How well known the players are">
+                {pools.map(option => (
+                    <button
+                        key={option.id}
+                        type="button"
+                        className={`pool-tab ${option.id === chosen.id ? 'chosen' : ''}`}
+                        aria-pressed={option.id === chosen.id}
+                        onClick={() => onChoose(option.id)}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+            <p className="pool-note">{chosen.note}</p>
+        </div>
+    )
+}
+
 function StartScreen({
     on_start_daily,
     on_start_unlimited,
@@ -89,6 +124,9 @@ function StartScreen({
     record = null,
     archive_count = null,
     supporters = null,
+    pools = null,
+    pool = null,
+    on_choose_pool = null,
 }) {
     // Which sheet is open: 'rules', 'privacy', 'attribution', or none.
     const [sheet, setSheet] = useState(null)
@@ -152,6 +190,9 @@ function StartScreen({
                                     ? `${remaining} free ${remaining === 1 ? 'journey' : 'journeys'} left today.`
                                     : 'Careers drawn at random, as many as you like.'}
                         </p>
+                        {on_choose_pool && (
+                            <PoolPicker pools={pools} pool={pool} onChoose={on_choose_pool} />
+                        )}
                         <button className="fp-play" onClick={on_start_unlimited} disabled={out_of_games}>
                             Play a career
                         </button>

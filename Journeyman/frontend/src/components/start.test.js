@@ -317,3 +317,54 @@ describe('the colophon', () => {
         expect(screen.getByText(/Basketball-Reference/i)).toBeInTheDocument()
     })
 })
+
+// -- the pool picker -------------------------------------------------------
+//
+// The complaint it answers: unlimited drew uniformly from everything promoted,
+// most of which is players a fan has never heard of, and an unrecognisable
+// name is a lookup rather than a puzzle.
+
+const POOLS = [
+    { id: 'big_names', label: 'Big names', note: 'Stars and All-Stars.' },
+    { id: 'mixed', label: 'Mixed', note: 'Stars, starters and role players.' },
+    { id: 'deep_cuts', label: 'Deep cuts', note: 'The whole register.' },
+]
+
+describe('choosing who you get', () => {
+    test('every pool is offered without opening anything', () => {
+        show({ pools: POOLS, pool: 'mixed', on_choose_pool: noop })
+        POOLS.forEach(p => expect(screen.getByRole('button', { name: p.label })).toBeInTheDocument())
+    })
+
+    test('the promise for the chosen pool is shown', () => {
+        show({ pools: POOLS, pool: 'big_names', on_choose_pool: noop })
+        expect(screen.getByText('Stars and All-Stars.')).toBeInTheDocument()
+    })
+
+    test('the chosen one is marked for assistive tech, not only by colour', () => {
+        show({ pools: POOLS, pool: 'deep_cuts', on_choose_pool: noop })
+        expect(screen.getByRole('button', { name: 'Deep cuts' })).toHaveAttribute('aria-pressed', 'true')
+        expect(screen.getByRole('button', { name: 'Mixed' })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    test('picking one reports the id, not the label', async () => {
+        const chosen = []
+        show({ pools: POOLS, pool: 'mixed', on_choose_pool: id => chosen.push(id) })
+        await userEvent.click(screen.getByRole('button', { name: 'Big names' }))
+        expect(chosen).toEqual(['big_names'])
+    })
+
+    test('an unknown stored choice falls back rather than showing nothing', () => {
+        // Someone whose browser remembers a pool that has since been renamed
+        // must still see a picker and a note.
+        show({ pools: POOLS, pool: 'a_pool_that_went_away', on_choose_pool: noop })
+        expect(screen.getByText('Stars and All-Stars.')).toBeInTheDocument()
+    })
+
+    test('nothing is rendered when the pools could not be fetched', () => {
+        // The picker is an enhancement; losing it must not cost the button.
+        show({ pools: [], on_choose_pool: noop })
+        expect(screen.queryByText(/who you get/i)).not.toBeInTheDocument()
+        expect(screen.getByText('Play a career')).toBeEnabled()
+    })
+})

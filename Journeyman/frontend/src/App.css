@@ -3178,6 +3178,60 @@ body {
 
 .fp-entry .upgrade-btn { margin-left: 0.5rem; }
 
+/* The pool picker: who unlimited draws from.
+   Set as a printed index tab rather than a control -- a hairline box, the
+   chosen one inked solid. Nothing glows and nothing is rounded, because the
+   rest of this page is set in lead. */
+.pool-picker { margin: 0 0 0.85rem; }
+
+.pool-kicker {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 0.32rem;
+}
+
+.pool-tabs { display: flex; border: 1px solid var(--rule); width: fit-content; max-width: 100%; }
+
+.pool-tab {
+  background: none;
+  border: none;
+  border-right: 1px solid var(--rule);
+  padding: 6px 13px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pool-tab:last-child { border-right: none; }
+.pool-tab:hover:not(.chosen) { color: var(--ink); background: var(--paper-sunk); }
+
+/* Inked solid, so which one is chosen survives being read in greyscale or by
+   somebody who does not separate these two browns. */
+.pool-tab.chosen { background: var(--ink); color: var(--paper); }
+
+.pool-note {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-muted);
+  margin: 0.34rem 0 0;
+}
+
+@media (max-width: 420px) {
+  .pool-tabs { width: 100%; }
+  .pool-tab { flex: 1; padding: 6px 4px; font-size: 0.65rem; letter-spacing: 1px; }
+}
+
 /* Standings: a table, tabular figures, no fills. */
 .fp-standings { list-style: none; margin: 0.4rem 0 0; padding: 0; }
 

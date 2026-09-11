@@ -97,6 +97,56 @@ class TestRandomPlayer:
         assert player_id in {p["id"] for p in sample_players}
 
 
+class TestPoolSelection:
+    """Which players a draw is allowed to serve.
+
+    The fixture's fame ratings, derived from its scoring averages:
+    id 2 is a 0, ids 1 and 4 are 1s, id 3 is a 2. So "big names" must never
+    serve id 3, and "deep cuts" must be able to serve all four.
+    """
+
+    BIG_NAMES = {1, 2, 4}
+
+    def test_a_narrow_pool_never_serves_an_obscure_player(self, player_db):
+        # 60 draws over a four-player pool: if the filter were not applied, the
+        # chance of never seeing id 3 by luck is under one in ten thousand.
+        seen = {player_db.randomPlayer(pool="big_names")[2] for _ in range(60)}
+        assert 3 not in seen
+        assert seen <= self.BIG_NAMES
+
+    def test_a_narrow_pool_still_serves_variety(self, player_db):
+        # A filter that narrowed to a single player would pass the test above
+        # and make the game worse than it was.
+        seen = {player_db.randomPlayer(pool="big_names")[2] for _ in range(60)}
+        assert len(seen) > 1
+
+    def test_the_widest_pool_serves_everybody(self, player_db, sample_players):
+        seen = {player_db.randomPlayer(pool="deep_cuts")[2] for _ in range(60)}
+        assert seen == {p["id"] for p in sample_players}
+
+    def test_no_pool_asked_for_means_no_filtering(self, player_db, sample_players):
+        # Every existing caller passes nothing, and must keep behaving as it did.
+        seen = {player_db.randomPlayer()[2] for _ in range(60)}
+        assert seen == {p["id"] for p in sample_players}
+
+    def test_exclusion_still_applies_inside_a_pool(self, player_db):
+        # The two filters compose: seen players are skipped within the pool,
+        # rather than one quietly resetting the other.
+        for _ in range(20):
+            assert player_db.randomPlayer(pool="big_names", exclude_ids={1, 4})[2] == 2
+
+    def test_exhausting_a_pool_resets_within_it_rather_than_widening(self, player_db):
+        # Running out must not silently start serving players the setting
+        # excluded -- that is the complaint this feature exists to fix.
+        for _ in range(30):
+            picked = player_db.randomPlayer(pool="big_names", exclude_ids={1, 2, 4})[2]
+            assert picked in self.BIG_NAMES
+
+    def test_an_unknown_pool_name_still_returns_a_game(self, player_db, sample_players):
+        _, _, player_id = player_db.randomPlayer(pool="nonsense")
+        assert player_id in {p["id"] for p in sample_players}
+
+
 class TestLoadPlayers:
     def test_raises_on_an_empty_database(self, player_db, tmp_path):
         empty = tmp_path / "empty.json"

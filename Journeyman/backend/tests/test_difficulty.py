@@ -8,6 +8,7 @@ star is never rated hard, that the daily stays recognisable.
 import json
 from pathlib import Path
 
+import difficulty as D
 import pytest
 from difficulty import (
     MAX_DAILY_DIFFICULTY,
@@ -154,3 +155,55 @@ class TestAgainstTheShippedPool:
             rodman["ppg"], len(rodman["teams"]), rodman["games"], rodman["all_star_selections"]
         )
         assert tier <= 2, tier
+
+
+class TestPools:
+    """Choosing a pool is choosing how famous the players are, and nothing else.
+
+    The distinction that matters: `difficulty_for` folds fame together with path
+    length, so selecting on it would drop a famous player with seven clubs --
+    which is the best puzzle this game has, not the worst.
+    """
+
+    def test_pools_are_cumulative(self):
+        # Loosening the setting must only ever add players. Somebody who widens
+        # the pool and stops seeing names they had before would reasonably call
+        # that a bug.
+        ceilings = [
+            D.max_fame(D.POOL_BIG_NAMES),
+            D.max_fame(D.POOL_MIXED),
+            D.max_fame(D.POOL_DEEP_CUTS),
+        ]
+        assert ceilings == sorted(ceilings)
+
+    def test_a_star_is_in_every_pool(self):
+        star = D.fame_for(24.0, 1100, 8)
+        assert all(D.in_pool(star, name) for name in D.POOLS)
+
+    def test_an_unknown_is_only_in_the_widest_pool(self):
+        unknown = D.fame_for(5.2, 166, 0)
+        assert D.in_pool(unknown, D.POOL_DEEP_CUTS)
+        assert not D.in_pool(unknown, D.POOL_MIXED)
+        assert not D.in_pool(unknown, D.POOL_BIG_NAMES)
+
+    def test_a_famous_player_with_a_long_path_stays_in_the_narrow_pool(self):
+        # The whole reason selection is on fame rather than difficulty: a
+        # one-time All-Star who played for eight clubs rates a 3 on the
+        # composite, so a difficulty<=2 filter would drop him -- and he is
+        # precisely the puzzle this game is for.
+        assert D.difficulty_for(14.0, 8, 700, 1) == 3
+        assert D.in_pool(D.fame_for(14.0, 700, 1), D.POOL_BIG_NAMES)
+
+    def test_an_unknown_pool_name_falls_back_rather_than_raising(self):
+        # It arrives from a request body. A stale client should get a game.
+        assert D.max_fame("nonsense") == D.POOLS[D.DEFAULT_POOL]
+
+    def test_every_pool_has_a_label_and_a_note(self):
+        choices = D.pool_choices()
+        assert {c["id"] for c in choices} == set(D.POOLS)
+        assert all(c["label"] and c["note"] for c in choices)
+
+    def test_missing_fame_is_not_silently_included(self):
+        # A player the pool could not rate is excluded rather than treated as a
+        # star, which is the direction that cannot disappoint anybody.
+        assert not D.in_pool(None, D.POOL_BIG_NAMES)

@@ -855,6 +855,23 @@ class TestBilling:
 
     # -- who may buy ------------------------------------------------------
 
+    def test_pools_are_served_with_labels(self, client):
+        body = client.get("/api/game/pools").get_json()
+        ids = [p["id"] for p in body["pools"]]
+        assert ids == ["big_names", "mixed", "deep_cuts"]
+        assert body["default"] in ids
+        assert all(p["label"] and p["note"] for p in body["pools"])
+
+    def test_starting_unlimited_accepts_a_pool(self, client):
+        response = client.post("/api/game/start", json={"mode": "unlimited", "pool": "big_names"})
+        assert response.status_code == 201
+
+    def test_a_nonsense_pool_still_starts_a_game(self, client):
+        # It arrives from a request body, so it is attacker-controlled and also
+        # stale-client-controlled. Neither should be a 500.
+        response = client.post("/api/game/start", json={"mode": "unlimited", "pool": "../../etc"})
+        assert response.status_code == 201
+
     def test_an_anonymous_caller_cannot_check_out(self, client):
         assert client.post("/api/billing/checkout").status_code == 401
 
