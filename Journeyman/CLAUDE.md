@@ -101,6 +101,15 @@ is `402`, not `429`: a rate limit resolves itself in seconds, this does not.
 `quota.Entitlements` is the seam `feat/stripe-entitlements` fills; today
 `FreeTierOnly` always returns False.
 
+**The daily has a shape.** Every date is scored against a curve rather than
+taken from one ranking of the pool: Monday targets difficulty 1 and Saturday 4,
+with a hard floor on fame every day of the week and a gentle tilt toward careers
+that ended after 1990. The fame floor is what makes a daily fair -- a name
+nobody knows is a lookup, not a hard puzzle -- and it excludes difficulty 5
+entirely without naming it, because every rating of 5 requires fame 3 or worse.
+`schedule_puzzles.py --redo-future` reapplies the rules to a calendar already
+filled; it never touches today or the archive.
+
 **Phase 4 is in progress.** The headline leaderboard ranks *today's puzzle*,
 not all-time totals: summing scores measures volume, and with unlimited mode the
 all-time winner is whoever played most. Ties break on time. `shadowbanned` on
@@ -184,6 +193,15 @@ Things that have already cost time:
   `randomPlayer`, which drew uniformly over everything promoted. Roughly 44% of
   that pool is rated obscure, so most unlimited games served a name the player
   could not place. Nothing failed; the game was just not fun.
+- **A soft preference cannot express a curve.** `plan(prefer=...)` sorted the
+  pool once, which cannot say "Monday and Saturday want different players".
+  `fit(player, date)` grades each pairing instead, and dates are filled greedily
+  with recency as the tie-break.
+- **Fame is not recognisability for old careers.** It is computed from scoring,
+  longevity and All-Star selections, all of which a 1960s journeyman can clear
+  while being a name almost nobody can place. Roughly one daily a week landed
+  there. Hence the era tilt -- weighted *below* a tier mismatch, so an exactly
+  right older career still beats a modern one from the wrong tier.
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 
