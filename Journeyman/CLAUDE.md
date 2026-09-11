@@ -211,9 +211,14 @@ Things that have already cost time:
   four seasons, with an exception for players still active: a short career is
   only forgettable once it is over, which is why Jaden Ivey belongs there and
   Berry does not.
+- **Longevity can make somebody recognisable; it cannot make them a star.**
+  The -2 for a long career could reach tier 0, where Durant and Rodman sit --
+  Caldwell Jones got there on 6.2 points a game and Dave Greenwood on 10.2, for
+  turning out eight hundred times. Tier 0 needs direct evidence now: All-Star
+  selections, or a scoring average nobody achieves quietly.
 - **Longevity rescues a low scorer into the wrong era.** Billy Paultz, 8.5 a
   game and last seen in 1985, rated level with Kevin Durant. Careers ending
-  before 1990 take a one-tier nudge unless the player was an All-Star -- a
+  before 2000 take a one-tier nudge unless the player was an All-Star -- a
   selection is direct evidence people knew the name, which is what the nudge is
   guessing at in its absence.
 - **Do not read `players.difficulty` to choose a puzzle.** It is written at
