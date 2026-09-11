@@ -210,3 +210,89 @@ def max_fame(pool):
 def in_pool(fame, pool):
     """Whether a player of this fame belongs in the chosen pool."""
     return fame is not None and fame <= max_fame(pool)
+
+
+# The shape of a week.
+#
+# Every daily is the same puzzle for everybody, so it has to be fair before it
+# is interesting -- but a calendar of uniformly easy puzzles is boring, and one
+# of uniformly hard ones drives away the people who arrived on Monday. The
+# crossword answer is a ramp: start the week gently, end it hard, and let people
+# find the day that suits them.
+#
+# Two rules do the work, and they are separate on purpose:
+#
+#   * A floor on fame, applied every day of the week. A name nobody knows is not
+#     a hard puzzle, it is a lookup, and no amount of "it is Saturday" makes that
+#     fair. This is the rule that answers "the dailies are too niche".
+#   * A target difficulty per weekday, which moves with the path length rather
+#     than with obscurity -- so Saturday is a well-known player who turned out
+#     for eight clubs, not an unknown one who turned out for two.
+#
+# The two together are why difficulty 5 can never be a daily: every rating of 5
+# requires fame 3 or worse, so the fame floor excludes the whole tier without
+# having to name it.
+DAILY_MAX_FAME = 2
+
+# Monday easiest, Saturday hardest, Sunday a shade back. Indexed by
+# `date.weekday()`, where Monday is 0.
+WEEKDAY_TARGET = {
+    0: 1,  # Monday
+    1: 2,  # Tuesday
+    2: 2,  # Wednesday
+    3: 3,  # Thursday
+    4: 3,  # Friday
+    5: 4,  # Saturday
+    6: 3,  # Sunday
+}
+
+# How much worse than the target an over-famous pick is treated as being. Large
+# enough that a player below the fame floor is never chosen while any eligible
+# player remains, small enough that the calendar still fills if they run out --
+# the scheduler's standing rule is that widening beats failing.
+FAME_FLOOR_PENALTY = 100
+
+# Careers that ended before this are preferred against, gently.
+#
+# Fame is measured from scoring, longevity and All-Star selections, all of which
+# a 1960s journeyman can clear while being a name almost nobody alive can place
+# -- Wilbur Holland and Leonard Gray rate as fit and are not. Roughly one day a
+# week landed there, and on the daily that is everybody's day, not one player's.
+#
+# A tilt rather than a cutoff, and deliberately weighted below a tier mismatch:
+# an exactly-right older career still beats a modern one from the wrong tier.
+# The game is about careers, plenty of the good ones are old, and a calendar
+# that began in 1990 would be a worse game as well as a less accurate one.
+MODERN_ERA = 1990
+OLD_ERA_PENALTY = 0.5
+
+
+def daily_target(day):
+    """The difficulty this weekday is aiming at."""
+    return WEEKDAY_TARGET[day.weekday()]
+
+
+def daily_fit(player, day):
+    """How well a player suits a given date. Lower is better, 0 is exact.
+
+    A ranking rather than a filter, so scarcity degrades gracefully: when
+    Monday's tier runs dry the next-closest tier is chosen, rather than the
+    calendar failing or silently reaching for whatever is left.
+    """
+    fame = player.get("fame")
+    tier = player.get("difficulty")
+    # An unrated player is treated as failing the fame floor rather than as a
+    # star -- the direction that cannot put an unknown on the front page.
+    penalty = 0 if fame is not None and fame <= DAILY_MAX_FAME else FAME_FLOOR_PENALTY
+    if tier is None:
+        return penalty + FAME_FLOOR_PENALTY
+    last_season = player.get("last_season")
+    if last_season is not None and last_season < MODERN_ERA:
+        penalty += OLD_ERA_PENALTY
+    return penalty + abs(tier - daily_target(day))
+
+
+def week_shape():
+    """The curve, for printing. Monday first."""
+    names = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    return [(names[i], WEEKDAY_TARGET[i]) for i in range(7)]
