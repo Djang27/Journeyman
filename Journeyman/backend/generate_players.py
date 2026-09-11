@@ -20,7 +20,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import difficulty
-from difficulty import fame_for
 
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 
@@ -68,11 +67,7 @@ def _load_from_file():
     # same shape and nothing downstream has to know which it got.
     for player in players:
         if "fame" not in player:
-            player["fame"] = fame_for(
-                player.get("ppg"),
-                player.get("games"),
-                player.get("all_star_selections") or 0,
-            )
+            player["fame"] = difficulty.rate(player)[0]
 
     return players
 

@@ -205,6 +205,17 @@ Things that have already cost time:
   now, and `PROMOTION_CAREER_GAMES` is a separate constant at 400 -- the two
   decide different things, and moving them together would have dropped
   forty-five careers out of the playable pool as a side effect.
+- **A scoring average is not a career.** Anything over 11 points a game landed
+  in the most recognisable tier regardless of how briefly -- 14% of Big names,
+  including Walter Berry at 205 games. The career-length floor is 300, about
+  four seasons, with an exception for players still active: a short career is
+  only forgettable once it is over, which is why Jaden Ivey belongs there and
+  Berry does not.
+- **Longevity rescues a low scorer into the wrong era.** Billy Paultz, 8.5 a
+  game and last seen in 1985, rated level with Kevin Durant. Careers ending
+  before 1990 take a one-tier nudge unless the player was an All-Star -- a
+  selection is direct evidence people knew the name, which is what the nudge is
+  guessing at in its absence.
 - **Do not read `players.difficulty` to choose a puzzle.** It is written at
   import, so it is a snapshot of the rules on the day that import ran, and
   retuning them leaves every stored value stale -- silently, because a stale
