@@ -812,6 +812,13 @@ def api_billing_config():
             # id belonged -- something this endpoint knew and was not saying.
             # Names no secret, only which setting is missing or wrong.
             "status": stripe_billing.configuration_status(config),
+            # Live keys or sandbox keys. Every other signal here is identical
+            # across the two -- a healthy sandbox also reports `ready` -- so
+            # without this an operator who has just switched to live has no way
+            # to confirm it took. Names no secret: it is read from the first
+            # eight characters of the key, and Stripe's publishable key carries
+            # the same marker in public.
+            "mode": stripe_billing.mode(config),
             "owned": owned,
             # Stated rather than assumed by the client, so the copy and the
             # rule cannot drift apart.
@@ -1049,6 +1056,29 @@ def api_admin_shadowbanned():
     if denied:
         return denied
     return jsonify({"players": admin_ops.shadowbanned_players()})
+
+
+@app.route("/api/admin/billing/verify", methods=["GET"])
+def api_admin_verify_billing():
+    """Ask Stripe whether this deployment would actually take a payment.
+
+    Admin-only because it spends a round trip to Stripe and reports more about
+    the configuration than a buyer has any reason to see. This is the switchover
+    check: the public config endpoint reports `ready` for a configuration that
+    is internally consistent, which a live key aimed at a test price also is.
+    """
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    base = config.public_url or request.host_url.rstrip("/")
+    try:
+        report = stripe_billing.verify_configuration(
+            config, webhook_url=f"{base}/api/billing/webhook"
+        )
+    except stripe_billing.BillingError as exc:
+        return jsonify({"ok": False, "problems": [str(exc)], "details": {}}), 200
+    return jsonify(report)
 
 
 @app.route("/api/admin/results/<puzzle_date>/void", methods=["POST"])

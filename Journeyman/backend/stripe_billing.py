@@ -98,6 +98,35 @@ def configuration_status(config) -> str:
     return STRIPE_READY
 
 
+# Which set of keys is in use. Not a secret: the prefix is the first eight
+# characters of a key, Stripe's own publishable key carries the same marker in
+# public, and knowing a deployment is in test mode grants nobody anything.
+MODE_LIVE = "live"
+MODE_TEST = "test"
+MODE_UNKNOWN = "unknown"
+
+
+def mode(config) -> str:
+    """Live keys or sandbox keys.
+
+    Worth reporting because every other signal is identical across the two.
+    `configuration_status` returns `ready` for a perfectly healthy sandbox, so
+    an operator who has just switched to live has no way to confirm the switch
+    actually took -- and the failure it hides is the expensive direction: a
+    launched product quietly taking play money.
+
+    Read from the secret key alone. The price and webhook secret do not carry a
+    mode marker, so a mismatched set shows as live here and fails at checkout;
+    `live_configuration_is_consistent` is the check for that.
+    """
+    key = config.stripe_secret_key or ""
+    if key.startswith(("sk_live_", "rk_live_")):
+        return MODE_LIVE
+    if key.startswith(("sk_test_", "rk_test_")):
+        return MODE_TEST
+    return MODE_UNKNOWN
+
+
 def is_configured(config) -> bool:
     """Whether checkout can be offered at all.
 
@@ -107,6 +136,131 @@ def is_configured(config) -> bool:
     three.
     """
     return configuration_status(config) == STRIPE_READY
+
+
+def verify_configuration(config, webhook_url=None, client=None):
+    """Ask Stripe whether this configuration would actually take a payment.
+
+    Everything else about billing is checked without leaving the process, which
+    is why a sandbox and a live deployment look identical from outside: the key
+    prefix is a string, the price id is a string, and `ready` means "three
+    strings are present and shaped right". None of that notices a live key
+    pointed at a test price, which fails only when a real buyer presses the
+    button.
+
+    So this one call goes to Stripe. It is the check that would also have caught
+    a `prod_` pasted where a `price_` belonged, a price left inactive, a
+    recurring price on a one-time product, and a price whose tax behaviour is
+    unset -- the last of which breaks checkout the moment automatic tax is on.
+
+    Returns findings rather than raising: an operator wants the whole list, not
+    the first problem. `ok` is True only when nothing was found.
+    """
+    problems = []
+    details = {
+        "mode": mode(config),
+        "automatic_tax": bool(getattr(config, "stripe_automatic_tax", False)),
+    }
+
+    status = configuration_status(config)
+    if status != STRIPE_READY:
+        return {"ok": False, "problems": [f"configuration is {status}"], "details": details}
+
+    stripe = client or _stripe(config)
+    live = details["mode"] == MODE_LIVE
+
+    try:
+        price = stripe.Price.retrieve(config.stripe_price_id)
+    except Exception as exc:  # noqa: BLE001 -- any failure here is a finding
+        problems.append(f"the price could not be read with this key: {exc}")
+        return {"ok": False, "problems": problems, "details": details}
+
+    def field(name, default=None):
+        if isinstance(price, dict):
+            return price.get(name, default)
+        return getattr(price, name, default)
+
+    details["price"] = {
+        "amount": field("unit_amount"),
+        "currency": field("currency"),
+        "type": field("type"),
+        "active": field("active"),
+        "livemode": field("livemode"),
+        "tax_behavior": field("tax_behavior"),
+    }
+
+    if field("livemode") is not live:
+        # The mismatch this function exists for. A live key and a test price is
+        # a checkout that 500s for every real buyer and nobody else.
+        problems.append(
+            "the key and the price are from different modes -- "
+            f"key is {details['mode']}, price is {'live' if field('livemode') else 'test'}"
+        )
+    if field("active") is False:
+        problems.append("the price is archived, so checkout cannot use it")
+    if field("type") not in (None, "one_time"):
+        problems.append(
+            f"the price is {field('type')}, but this is sold once, not as a subscription"
+        )
+    if details["automatic_tax"] and field("tax_behavior") in (None, "unspecified"):
+        # Set at creation and never changeable. Worth naming precisely, because
+        # the fix is a new price rather than an edit.
+        problems.append(
+            "automatic tax is on but the price has no tax behaviour, which fails every "
+            "checkout -- tax behaviour cannot be edited, so this needs a new price"
+        )
+
+    if webhook_url:
+        try:
+            endpoints = stripe.WebhookEndpoint.list(limit=100)
+            listed = endpoints["data"] if isinstance(endpoints, dict) else endpoints.data
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"the webhook endpoints could not be listed: {exc}")
+            listed = None
+        if listed is not None:
+            details["webhooks"] = _webhook_findings(listed, webhook_url, live, problems)
+
+    return {"ok": not problems, "problems": problems, "details": details}
+
+
+def _webhook_findings(endpoints, webhook_url, live, problems):
+    """Whether a webhook for this deployment exists in the right mode.
+
+    The signing secret cannot be checked from here -- Stripe does not hand it
+    back -- so a matching endpoint is necessary and not sufficient. What this
+    does catch is the common half-switch: a live key with only the sandbox
+    webhook still configured, where every payment succeeds and nothing is ever
+    fulfilled. That is the worst failure in the system, because the money moves
+    and the buyer gets nothing.
+    """
+
+    def get(ep, name, default=None):
+        if isinstance(ep, dict):
+            return ep.get(name, default)
+        return getattr(ep, name, default)
+
+    matching = [
+        ep
+        for ep in endpoints
+        if (get(ep, "url") or "").rstrip("/") == webhook_url.rstrip("/")
+        and bool(get(ep, "livemode")) is live
+        and get(ep, "status") != "disabled"
+    ]
+    if not matching:
+        problems.append(
+            f"no enabled {'live' if live else 'test'} webhook points at {webhook_url}, "
+            "so payments would be taken and never fulfilled"
+        )
+        return []
+
+    found = []
+    for ep in matching:
+        enabled = set(get(ep, "enabled_events") or [])
+        missing = sorted(HANDLED_EVENTS - enabled) if "*" not in enabled else []
+        if missing:
+            problems.append(f"the webhook does not send {', '.join(missing)}")
+        found.append({"url": get(ep, "url"), "events": sorted(enabled), "missing": missing})
+    return found
 
 
 def create_checkout_session(config, user_id, success_url, cancel_url, client=None):

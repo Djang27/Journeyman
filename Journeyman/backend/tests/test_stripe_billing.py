@@ -269,3 +269,194 @@ class TestCheckout:
         captured = _capture_session(Config(automatic_tax=True))
         assert captured["automatic_tax"] == {"enabled": True}
         assert captured["billing_address_collection"] == "required"
+
+
+class TestMode:
+    """Live and sandbox are indistinguishable from every other signal.
+
+    `configuration_status` returns `ready` for a perfectly healthy sandbox, so
+    an operator switching to live had nothing to confirm the switch against.
+    """
+
+    def test_live_keys_report_live(self):
+        assert stripe_billing.mode(Config(secret="sk_live_abc")) == stripe_billing.MODE_LIVE
+
+    def test_test_keys_report_test(self):
+        assert stripe_billing.mode(Config(secret="sk_test_abc")) == stripe_billing.MODE_TEST
+
+    def test_restricted_keys_carry_the_marker_too(self):
+        assert stripe_billing.mode(Config(secret="rk_live_abc")) == stripe_billing.MODE_LIVE
+
+    def test_an_unset_key_is_unknown_rather_than_a_guess(self):
+        assert stripe_billing.mode(Config(secret="")) == stripe_billing.MODE_UNKNOWN
+
+
+def fake_stripe(price=None, endpoints=None, price_error=None):
+    """A Stripe that answers the two calls verification makes."""
+
+    class FakeStripe:
+        class Price:
+            @staticmethod
+            def retrieve(_price_id):
+                if price_error:
+                    raise price_error
+                return price
+
+        class WebhookEndpoint:
+            @staticmethod
+            def list(limit=100):
+                return {"data": endpoints or []}
+
+    return FakeStripe
+
+
+def a_price(**overrides):
+    base = {
+        "unit_amount": 999,
+        "currency": "usd",
+        "type": "one_time",
+        "active": True,
+        "livemode": True,
+        "tax_behavior": "exclusive",
+    }
+    base.update(overrides)
+    return base
+
+
+def an_endpoint(**overrides):
+    base = {
+        "url": "https://x.test/api/billing/webhook",
+        "livemode": True,
+        "status": "enabled",
+        "enabled_events": sorted(stripe_billing.HANDLED_EVENTS),
+    }
+    base.update(overrides)
+    return base
+
+
+LIVE = dict(secret="sk_live_abc")
+HOOK = "https://x.test/api/billing/webhook"
+
+
+class TestVerifyConfiguration:
+    """The checks that need Stripe to answer, not just string shapes."""
+
+    def test_a_good_live_configuration_passes(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(), endpoints=[an_endpoint()]),
+        )
+        assert report["ok"] is True
+        assert report["problems"] == []
+        assert report["details"]["mode"] == "live"
+        assert report["details"]["price"]["amount"] == 999
+
+    def test_a_live_key_with_a_test_price_is_caught(self):
+        # The failure this exists for: it looks ready, and 500s for every real
+        # buyer while working perfectly in the dashboard's test view.
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(livemode=False), endpoints=[an_endpoint()]),
+        )
+        assert report["ok"] is False
+        assert any("different modes" in p for p in report["problems"])
+
+    def test_an_archived_price_is_caught(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(active=False), endpoints=[an_endpoint()]),
+        )
+        assert any("archived" in p for p in report["problems"])
+
+    def test_a_recurring_price_is_caught(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(type="recurring"), endpoints=[an_endpoint()]),
+        )
+        assert any("sold once" in p for p in report["problems"])
+
+    def test_tax_on_without_a_tax_behaviour_is_caught(self):
+        report = stripe_billing.verify_configuration(
+            Config(automatic_tax=True, **LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(
+                price=a_price(tax_behavior="unspecified"), endpoints=[an_endpoint()]
+            ),
+        )
+        assert any("tax behaviour" in p for p in report["problems"])
+
+    def test_tax_behaviour_is_only_required_when_tax_is_on(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(
+                price=a_price(tax_behavior="unspecified"), endpoints=[an_endpoint()]
+            ),
+        )
+        assert report["ok"] is True
+
+    def test_only_a_sandbox_webhook_is_caught(self):
+        # The worst half-switch there is: payments succeed and nothing is ever
+        # fulfilled, because the live endpoint was never created.
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(), endpoints=[an_endpoint(livemode=False)]),
+        )
+        assert any("never fulfilled" in p for p in report["problems"])
+
+    def test_a_webhook_for_another_deployment_does_not_count(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(
+                price=a_price(),
+                endpoints=[an_endpoint(url="https://other.test/api/billing/webhook")],
+            ),
+        )
+        assert any("never fulfilled" in p for p in report["problems"])
+
+    def test_a_disabled_webhook_does_not_count(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(), endpoints=[an_endpoint(status="disabled")]),
+        )
+        assert any("never fulfilled" in p for p in report["problems"])
+
+    def test_a_webhook_missing_an_event_is_named(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(
+                price=a_price(),
+                endpoints=[an_endpoint(enabled_events=[stripe_billing.PAID])],
+            ),
+        )
+        assert any(stripe_billing.REFUNDED in p for p in report["problems"])
+
+    def test_a_wildcard_subscription_covers_every_event(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price=a_price(), endpoints=[an_endpoint(enabled_events=["*"])]),
+        )
+        assert report["ok"] is True
+
+    def test_an_unreadable_price_reports_rather_than_raises(self):
+        report = stripe_billing.verify_configuration(
+            Config(**LIVE),
+            webhook_url=HOOK,
+            client=fake_stripe(price_error=Exception("No such price: 'price_x'")),
+        )
+        assert report["ok"] is False
+        assert any("No such price" in p for p in report["problems"])
+
+    def test_an_incomplete_configuration_says_so_without_calling_stripe(self):
+        report = stripe_billing.verify_configuration(Config(secret=""), webhook_url=HOOK)
+        assert report["ok"] is False
+        assert report["problems"] == ["configuration is no_secret_key"]
