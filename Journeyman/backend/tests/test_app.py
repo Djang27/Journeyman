@@ -866,6 +866,13 @@ class TestBilling:
         assert body["signed_in"] is False
         assert body["free_games_per_day"] == 5
 
+    def test_config_names_which_keys_are_in_use(self, client):
+        # The switchover check. Every other field here reads the same on a
+        # sandbox as on a live deployment, so without this "did the key change
+        # take" has no answer short of spending real money.
+        body = client.get("/api/billing/config").get_json()
+        assert body["mode"] in ("live", "test", "unknown")
+
     def test_config_reports_no_buy_button_when_unconfigured(self, client, monkeypatch):
         import app as app_module
 
@@ -1248,6 +1255,7 @@ class TestShadowbanAdmin:
     # -- the credential ---------------------------------------------------
 
     def test_searching_needs_the_token(self, client):
+        assert client.get("/api/admin/billing/verify").status_code == 401
         assert client.get("/api/admin/players?q=x").status_code == 401
 
     def test_banning_needs_the_token(self, client):
