@@ -42,9 +42,23 @@ ROLE_PPG = 6.0  # a role player a keen fan might place
 
 # Longevity, as games played. A career past a thousand games belongs to someone
 # a fan will place; one under two hundred usually does not.
+#
+# The middle threshold was 400, which is about five seasons -- a journeyman, and
+# the journeyman is this game's subject rather than its headliner. It let
+# longevity alone carry a player all the way into the most recognisable tier on
+# no other evidence: Terry Dehere averaged exactly 8.0 points over exactly 402
+# games with no All-Star selection, cleared both boundaries by a hair, and came
+# out rated as well known. Eight seasons is a career; five is a stint.
 LONG_CAREER_GAMES = 800
-SOLID_CAREER_GAMES = 400
+SOLID_CAREER_GAMES = 600
 BRIEF_CAREER_GAMES = 150
+
+# Whether a low scorer has played enough to be worth serving at all. Separate
+# from the fame threshold above and deliberately still 400: these decide
+# different things, and quietly moving this one with the other would have
+# dropped forty-five careers -- Scalabrine, Cardinal, Gadzuric -- out of the
+# playable pool as a side effect of retuning what "well known" means.
+PROMOTION_CAREER_GAMES = 400
 
 SHORT_PATH = 3  # two or three stints: the path itself is not the obstacle
 MEDIUM_PATH = 5
@@ -137,7 +151,7 @@ def should_promote(career_ppg, stint_count, validation_status, career_games=None
         return False
     # A career long enough to be recognisable clears the scoring floor on its
     # own -- otherwise every defensive specialist is excluded by construction.
-    if (career_ppg or 0.0) < MIN_PROMOTABLE_PPG and (career_games or 0) < SOLID_CAREER_GAMES:
+    if (career_ppg or 0.0) < MIN_PROMOTABLE_PPG and (career_games or 0) < PROMOTION_CAREER_GAMES:
         return False
     distinct = stint_count if isinstance(stint_count, int) else 0
     return 2 <= distinct <= MAX_PROMOTABLE_STINTS
@@ -298,6 +312,27 @@ def daily_fit(player, day):
     if last_season is not None and last_season < MODERN_ERA:
         penalty += OLD_ERA_PENALTY
     return penalty + abs(tier - daily_target(day))
+
+
+def rate(row):
+    """Fame and difficulty for a players-table row, derived rather than read.
+
+    `players.difficulty` is written at import, which means it is a snapshot of
+    whatever the rules were on the day that import ran. Retuning those rules
+    then leaves every stored value stale until somebody remembers to re-import
+    -- and the failure is silent, because a stale tier is a perfectly valid
+    tier. Deriving costs three comparisons and removes the whole class.
+
+    The column stays for reporting and for a future hand override; nothing that
+    chooses a puzzle reads it any more.
+    """
+    ppg = row.get("career_ppg") if "career_ppg" in row else row.get("ppg")
+    games = row.get("career_games") if "career_games" in row else row.get("games")
+    all_star = row.get("all_star_selections") or 0
+    stints = row.get("stints") or []
+    teams = row.get("teams") or [stint["team"] for stint in stints]
+    fame = fame_for(ppg, games, all_star)
+    return fame, difficulty_for(ppg, len(teams), games, all_star)
 
 
 def week_shape():

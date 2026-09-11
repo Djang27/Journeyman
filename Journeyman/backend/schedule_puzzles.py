@@ -23,7 +23,7 @@ from difficulty import (  # noqa: E402
     daily_fit,
     daily_target,
     describe,
-    fame_for,
+    rate,
     week_shape,
 )
 from generate_players import today_eastern  # noqa: E402
@@ -70,15 +70,13 @@ def main(argv=None):
             "id": row["id"],
             "name": row["name"],
             "teams": teams_of(row),
-            "difficulty": row.get("difficulty"),
-            # The fame floor is the rule that keeps a daily fair, so the
-            # scheduler has to see it and not only the composite rating.
             "last_season": row.get("last_season"),
-            "fame": fame_for(
-                row.get("career_ppg"),
-                row.get("career_games"),
-                row.get("all_star_selections") or 0,
-            ),
+            # Derived, not read from players.difficulty. That column is written
+            # at import, so retuning the rating leaves every stored value stale
+            # until someone re-imports -- silently, because a stale tier is a
+            # valid tier. The fame floor is the rule that keeps a daily fair, so
+            # the scheduler needs both halves rather than the composite alone.
+            **dict(zip(("fame", "difficulty"), rate(row), strict=True)),
         }
         for row in PlayersRepo(client).active_pool()
     ]

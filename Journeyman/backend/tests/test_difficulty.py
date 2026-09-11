@@ -207,3 +207,64 @@ class TestPools:
         # A player the pool could not rate is excluded rather than treated as a
         # star, which is the direction that cannot disappoint anybody.
         assert not D.in_pool(None, D.POOL_BIG_NAMES)
+
+
+class TestLongevityIsNotFame:
+    """Games played is evidence of recognisability, not a substitute for it.
+
+    Terry Dehere averaged exactly 8.0 points over exactly 402 games with no
+    All-Star selection. Both thresholds were set at those numbers, he cleared
+    both by a hair, and the longevity rescue carried him into the most
+    recognisable tier -- alongside Mitch Richmond and Kevin Love.
+    """
+
+    def test_five_seasons_of_a_role_player_is_not_a_big_name(self):
+        fame = D.fame_for(8.0, 402, 0)
+        assert not D.in_pool(fame, D.POOL_BIG_NAMES)
+        assert D.in_pool(fame, D.POOL_MIXED)
+
+    def test_a_long_career_still_rescues_a_low_scorer(self):
+        # The rule longevity exists for. Robert Horry averaged 7.0 over 1,107
+        # games with no All-Star selection and is not obscure to anybody.
+        assert D.in_pool(D.fame_for(7.0, 1107, 0), D.POOL_BIG_NAMES)
+        assert D.in_pool(D.fame_for(8.3, 1287, 0), D.POOL_BIG_NAMES)  # Derek Fisher
+
+    def test_an_all_star_is_never_demoted_by_this(self):
+        # Rodman: 7.3 over 911 games, two selections. Scoring calls him
+        # obscure; anyone who watched basketball in the nineties does not.
+        assert D.fame_for(7.3, 911, 2) == 0
+
+    def test_the_promotion_rule_did_not_move_with_it(self):
+        # Forty-five careers sit between the two thresholds and are promoted
+        # only by the longevity rescue. Retuning what "well known" means must
+        # not quietly drop them out of the playable pool.
+        assert D.PROMOTION_CAREER_GAMES < D.SOLID_CAREER_GAMES
+        assert D.should_promote(4.6, 3, "ok", 456)  # Brian Cardinal
+        assert D.should_promote(3.1, 4, "ok", 520)  # Brian Scalabrine
+
+
+class TestRate:
+    """One derivation, used everywhere a pool is built."""
+
+    def test_it_ignores_a_stored_difficulty(self):
+        # players.difficulty is written at import, so it is a snapshot of the
+        # rules on the day that import ran. Reading it makes every retune
+        # silently stale, because a stale tier is still a valid tier.
+        row = {
+            "ppg": 8.0,
+            "games": 402,
+            "all_star_selections": 0,
+            "teams": ["a", "b"],
+            "difficulty": 1,
+        }
+        fame, tier = D.rate(row)
+        assert (fame, tier) == (2, 3)
+
+    def test_it_reads_either_column_naming(self):
+        # The database calls them career_ppg/career_games; the pool file calls
+        # them ppg/games. Both reach this.
+        from_db = D.rate(
+            {"career_ppg": 8.0, "career_games": 402, "stints": [{"team": "a"}, {"team": "b"}]}
+        )
+        from_file = D.rate({"ppg": 8.0, "games": 402, "teams": ["a", "b"]})
+        assert from_db == from_file

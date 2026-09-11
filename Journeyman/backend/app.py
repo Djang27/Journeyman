@@ -141,7 +141,7 @@ def _wire_player_pool(config):
     if not config.use_database:
         return None
 
-    from difficulty import fame_for
+    from difficulty import rate
     from players_repo import PlayersRepo, teams_of
 
     from supabase import create_client
@@ -158,11 +158,7 @@ def _wire_player_pool(config):
                 "id": row["id"],
                 "name": row["name"],
                 "teams": teams_of(row),
-                "fame": fame_for(
-                    row.get("career_ppg"),
-                    row.get("career_games"),
-                    row.get("all_star_selections") or 0,
-                ),
+                "fame": rate(row)[0],
             }
             for row in repo.active_pool()
         ]
