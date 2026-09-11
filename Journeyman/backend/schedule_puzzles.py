@@ -10,6 +10,7 @@ scheduled puzzle is a promise.
 """
 
 import argparse
+import random
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -102,7 +103,7 @@ def main(argv=None):
             }
             print(f"\ndry run: would delete {len(later)} scheduled puzzles after {start}")
         else:
-            removed = puzzles.unschedule_after(start)
+            removed = puzzles.unschedule_between(start, end)
             print(f"\ncleared {removed} scheduled puzzles after {start}")
 
     already = puzzles.scheduled_between(start, end)
@@ -117,6 +118,11 @@ def main(argv=None):
             already_scheduled=already,
             last_used=puzzles.last_used(start),
             fit=daily_fit,
+            # Seeded from the window, so --dry-run and the run that follows it
+            # choose the same players. Unseeded, the preview showed a different
+            # calendar from the one that got written -- which made "read the dry
+            # run before trusting it" a check on the shape and nothing more.
+            rng=random.Random(f"{start}:{args.days}"),
         )
     except NotEnoughPlayers as exc:
         print(f"cannot schedule: {exc}")

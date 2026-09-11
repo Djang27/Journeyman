@@ -144,12 +144,20 @@ def should_promote(career_ppg, stint_count, validation_status, career_games=None
 
 
 def describe(difficulty):
+    """What a rating means, said in terms of the two things it is made of.
+
+    "obscure" was wrong for anything the daily schedules: the fame floor
+    guarantees a scheduled tier 4 is a known player with a long path, so the
+    log was calling Chris Duhon obscure on the strength of his having played
+    for five clubs. A rating is a pair -- how well known, how long the path --
+    and collapsing it to one word lost the half that was doing the work.
+    """
     return {
         1: "household name, short path",
         2: "well known",
-        3: "recognisable, or a long path",
-        4: "obscure",
-        5: "obscure and long",
+        3: "recognisable, or a longer path",
+        4: "a long path, or a lesser name",
+        5: "hard to place, and long",
     }.get(difficulty, "unrated")
 
 
