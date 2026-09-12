@@ -234,6 +234,13 @@ Things that have already cost time:
   while being a name almost nobody can place. Roughly one daily a week landed
   there. Hence the era tilt -- weighted *below* a tier mismatch, so an exactly
   right older career still beats a modern one from the wrong tier.
+- **Do not wait for a deploy by polling the broken path.** Every poll before
+  the new build lands hits the old code, so verifying a fix that way fills the
+  error tracker with the bug being fixed and then reports it as still
+  happening. Both of the `api_game_get` alarms were this, not a regression.
+  Poll something harmless that changes with the deploy -- `/api/health`, a
+  bundle hash, a new route returning 200 -- and probe the error path once,
+  afterwards.
 - **A path parameter that reaches Postgres must be validated first.**
   `game_sessions.id` is a uuid column, so PostgREST answers anything else with
   a 400 that the client library raises -- which arrived as an unhandled
