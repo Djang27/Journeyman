@@ -3,7 +3,7 @@
 An NBA career-path guessing game. You are given a player's name and must name
 every club he turned out for, **in the order he played for them**.
 
-Live at **[journeymannba.vercel.app](https://journeymannba.vercel.app)**.
+Live at **[journeymannba.com](https://www.journeymannba.com)**.
 
 React frontend, Flask API, Supabase (Postgres + Auth), deployed on Vercel.
 
