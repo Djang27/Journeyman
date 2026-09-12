@@ -266,3 +266,54 @@ class TestAgainstLocalSupabase:
             )
         )
         assert first.id != second.id
+
+
+class ExplodingClient:
+    """A client that fails the test if anything reaches the database.
+
+    The point of the guard is that a malformed id never becomes a query, and
+    the only way to assert that is to make a query impossible to ignore.
+    """
+
+    def table(self, _name):
+        raise AssertionError("the database was queried for an id that cannot be a session")
+
+
+class TestMalformedSessionIds:
+    """A malformed id is a 404, not a 500.
+
+    `game_sessions.id` is a uuid column, so PostgREST answers anything else
+    with a 400 that the client library raises. That reached the error handler
+    as an unhandled exception: the wrong status code, and a Sentry event for
+    every crawler probing /api/game/<anything> -- which is also a way for
+    anyone to burn the error budget real faults are reported against.
+    """
+
+    @pytest.mark.parametrize(
+        "session_id",
+        ["pools", "not-a-uuid", "", "../../etc/passwd", "1", "null", "11111111-2222-3333-4444"],
+    )
+    def test_it_is_no_such_session_without_a_query(self, session_id):
+        store = SupabaseSessionStore(ExplodingClient())
+        assert store.get(session_id) is None
+
+    def test_a_well_formed_id_still_reaches_the_database(self):
+        # The guard must not swallow real lookups, which is the failure that
+        # would make every session unfindable and pass the tests above.
+        store = SupabaseSessionStore(ExplodingClient())
+        with pytest.raises(AssertionError, match="database was queried"):
+            store.get("11111111-2222-3333-4444-555555555555")
+
+    def test_uppercase_and_braced_forms_are_accepted(self):
+        # uuid.UUID parses these, and rejecting them would 404 a real session.
+        store = SupabaseSessionStore(ExplodingClient())
+        for variant in (
+            "11111111-2222-3333-4444-555555555555".upper(),
+            "{11111111-2222-3333-4444-555555555555}",
+        ):
+            with pytest.raises(AssertionError, match="database was queried"):
+                store.get(variant)
+
+    def test_a_none_id_is_refused(self):
+        store = SupabaseSessionStore(ExplodingClient())
+        assert store.get(None) is None

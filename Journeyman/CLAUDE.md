@@ -234,6 +234,12 @@ Things that have already cost time:
   while being a name almost nobody can place. Roughly one daily a week landed
   there. Hence the era tilt -- weighted *below* a tier mismatch, so an exactly
   right older career still beats a modern one from the wrong tier.
+- **A path parameter that reaches Postgres must be validated first.**
+  `game_sessions.id` is a uuid column, so PostgREST answers anything else with
+  a 400 that the client library raises -- which arrived as an unhandled
+  exception and became a 500 plus a Sentry event. `/api/game/not-a-uuid` did
+  it, and so does every crawler probing the route, which is also a way for
+  anyone to spend the error budget real faults are reported against.
 - **CI is path-filtered to `Journeyman/**`.** A PR touching nothing under it will
   never run the required checks and blocks forever waiting.
 
