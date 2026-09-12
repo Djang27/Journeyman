@@ -643,6 +643,8 @@ function App() {
                     final_time={game_over ? game.elapsed_seconds : null}
                     final_score={game_over ? game.score : null}
                     on_play_again={reset_game}
+                    signed_in={Boolean(user)}
+                    on_sign_in={authAvailable ? () => open_sidebar('account') : null}
                     game_mode={game_mode}
                     day_number={day_number}
                 />
