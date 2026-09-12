@@ -241,6 +241,16 @@ Things that have already cost time:
   Poll something harmless that changes with the deploy -- `/api/health`, a
   bundle hash, a new route returning 200 -- and probe the error path once,
   afterwards.
+- **supabase-py's default timeout is 120 seconds, which is not a timeout.**
+  Vercel kills the function long before it expires, so a slow Postgres produced
+  a dead function rather than a handled failure -- and it defeated the rate
+  limiter's fail-open policy, which correctly refuses to take the game down but
+  waited out the slowness first. Every client is built by `app._supabase()` so
+  the bound cannot be set in six places and missed in a seventh.
+- **A handled degradation is a warning, not an error.** The outage that trips
+  the limiter's fail-open path affects every request by definition, so logging
+  it at error opens thousands of high-priority Sentry issues and buries the
+  faults worth seeing while it is happening.
 - **A path parameter that reaches Postgres must be validated first.**
   `game_sessions.id` is a uuid column, so PostgREST answers anything else with
   a 400 that the client library raises -- which arrived as an unhandled
