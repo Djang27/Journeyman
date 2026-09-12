@@ -3178,6 +3178,59 @@ body {
 
 .fp-entry .upgrade-btn { margin-left: 0.5rem; }
 
+/* Sign in.
+   Two places, because they answer different questions. The chip sits where the
+   account chip sits for a signed-in player, so a returning reader finds it
+   where they left it. The note under the standings is for somebody who has
+   just read the board and has no idea an account exists. */
+.signin-chip {
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 6px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.signin-chip:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.fp-signin-note {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0.35rem 0 0.6rem;
+}
+
+.fp-signin {
+  background: none;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  padding: 7px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+}
+
+.fp-signin:hover { background: var(--ink); color: var(--paper); }
+
+.fp-signin-fine {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--ink-muted);
+  margin: 0.4rem 0 0;
+}
+
 /* The pool picker: who unlimited draws from.
    Set as a printed index tab rather than a control -- a hairline box, the
    chosen one inked solid. Nothing glows and nothing is rounded, because the

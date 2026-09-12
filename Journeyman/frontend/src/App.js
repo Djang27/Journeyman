@@ -557,6 +557,17 @@ function App() {
                         onOpenAccount={() => open_sidebar('account')}
                     />
                 )}
+                {/* Signed out, this corner held nothing at all, so the only
+                    route to an account was a hamburger that opens on the
+                    rules -- three clicks, none of them labelled. Somebody who
+                    does not know an account exists will not go looking for
+                    one. It sits where the account chip sits, because that is
+                    where a returning player already looks for it. */}
+                {!user && authAvailable && (
+                    <button className="signin-chip" onClick={() => open_sidebar('account')}>
+                        Sign in
+                    </button>
+                )}
             </div>
             {error && (
                 <div className="app-error" role="alert" onClick={() => set_error(null)}>
@@ -579,6 +590,8 @@ function App() {
                     pools={pools}
                     pool={pool}
                     on_choose_pool={choose_pool}
+                    signed_in={Boolean(user)}
+                    on_sign_in={authAvailable ? () => open_sidebar('account') : null}
                     // A game left behind, still playable. Only while it is
                     // unfinished -- a finished one has nothing to go back to.
                     resumable={game.session_id && !game_over ? game_mode : null}

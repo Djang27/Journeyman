@@ -127,6 +127,8 @@ function StartScreen({
     pools = null,
     pool = null,
     on_choose_pool = null,
+    signed_in = false,
+    on_sign_in = null,
 }) {
     // Which sheet is open: 'rules', 'privacy', 'attribution', or none.
     const [sheet, setSheet] = useState(null)
@@ -236,6 +238,29 @@ function StartScreen({
                                 <div><dt>Won</dt><dd>{record.wins}</dd></div>
                                 <div><dt>Streak</dt><dd>{record.streak}</dd></div>
                             </dl>
+                        </>
+                    )}
+
+                    {/* Directly under the board somebody has just read, which
+                        is the only place on this page where the reason to have
+                        an account is already on screen. Phrased as what is
+                        missing rather than as an instruction: nobody signs up
+                        because they were told to, and the game deliberately
+                        works without one. */}
+                    {!signed_in && on_sign_in && (
+                        <>
+                            <Rule />
+                            <span className="fp-kicker">Your record</span>
+                            <p className="fp-signin-note">
+                                Kept only while this tab is open. An account keeps your streak,
+                                your history, and your name on the board above.
+                            </p>
+                            <button className="fp-signin" onClick={on_sign_in}>
+                                Sign in or create an account
+                            </button>
+                            <p className="fp-signin-fine">
+                                Free. The daily needs no account at all.
+                            </p>
                         </>
                     )}
                 </aside>
