@@ -368,3 +368,54 @@ describe('choosing who you get', () => {
         expect(screen.getByText('Play a career')).toBeEnabled()
     })
 })
+
+// -- signing in ------------------------------------------------------------
+//
+// Signed out, the top-right corner held nothing and the only route to an
+// account was a hamburger that opens on the rules. Somebody who does not know
+// an account exists will not go looking for one.
+
+describe('the sign-in prompt', () => {
+    test('a signed-out reader is offered an account', () => {
+        show({ signed_in: false, on_sign_in: noop })
+        expect(screen.getByRole('button', { name: /sign in or create an account/i })).toBeInTheDocument()
+    })
+
+    test('it says what an account is for, not just that one exists', () => {
+        // Nobody signs up because they were told to.
+        show({ signed_in: false, on_sign_in: noop })
+        expect(screen.getByText(/keeps your streak/i)).toBeInTheDocument()
+    })
+
+    test('it does not contradict the promise that the daily is free', () => {
+        show({ signed_in: false, on_sign_in: noop })
+        expect(screen.getByText(/daily needs no account/i)).toBeInTheDocument()
+    })
+
+    test('a signed-in reader is not asked again', () => {
+        show({ signed_in: true, on_sign_in: noop, record: { played: 3, wins: 2, streak: 1 } })
+        expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument()
+    })
+
+    test('nothing is offered when accounts are unavailable', () => {
+        // lib/supabase returns a null client when unconfigured; offering a
+        // sign-in that cannot work is worse than offering none.
+        show({ signed_in: false, on_sign_in: null })
+        expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument()
+    })
+
+    test('the offer reaches the handler', async () => {
+        let opened = 0
+        show({ signed_in: false, on_sign_in: () => { opened += 1 } })
+        await userEvent.click(screen.getByRole('button', { name: /sign in or create an account/i }))
+        expect(opened).toBe(1)
+    })
+
+    test('playing is never blocked behind it', () => {
+        // The daily is the acquisition funnel. A signed-out reader must still
+        // be able to press play without passing an account gate.
+        show({ signed_in: false, on_sign_in: noop })
+        expect(screen.getByText('Play today')).toBeEnabled()
+        expect(screen.getByText('Play a career')).toBeEnabled()
+    })
+})
