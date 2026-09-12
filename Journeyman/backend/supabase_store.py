@@ -17,6 +17,7 @@ tests/test_supabase_store.py, which skips when that stack is not running.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 
 from sessions import Session, SessionError, SessionStore
@@ -141,6 +142,21 @@ class SupabaseSessionStore(SessionStore):
         return from_row(response.data[0])
 
     def get(self, session_id: str) -> Session | None:
+        # A malformed id cannot name a session, so say so here rather than
+        # asking Postgres.
+        #
+        # `id` is a uuid column, and PostgREST answers anything that is not one
+        # with a 400 that the client library raises -- which reached the error
+        # handler as an unhandled exception and became a 500 plus a Sentry
+        # event. Every crawler probing /api/game/<anything> produced one, so
+        # the wrong status code came with a way for anyone to burn the error
+        # budget that real faults are reported against.
+        #
+        # Only ids that could never match are skipped, so this hides no genuine
+        # database failure.
+        if not _is_uuid(session_id):
+            return None
+
         response = self._table().select(",".join(_COLUMNS)).eq("id", session_id).limit(1).execute()
         if not response.data:
             return None
@@ -240,6 +256,15 @@ class SupabaseSessionStore(SessionStore):
             .execute()
         )
         return {_date_str(row["puzzle_date"]) for row in (response.data or [])}
+
+
+def _is_uuid(value) -> bool:
+    """Whether this could be a session id at all."""
+    try:
+        uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError):
+        return False
+    return True
 
 
 def _is_unique_violation(exc) -> bool:
