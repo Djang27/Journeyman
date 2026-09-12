@@ -53,6 +53,32 @@ function fmt_time(s) {
     return `${m}:${String(sec).padStart(2, '0')}`
 }
 
+// The moment somebody most wants their score to mean something.
+//
+// Deliberately does not say "sign in to keep this result". It cannot be kept:
+// an anonymous session carries no user id, game_results.user_id is not
+// nullable, and sessions.py drops the row rather than inventing an owner. The
+// game just played is already gone by the time this renders, and an offer that
+// promises otherwise is one the server will refuse to honour.
+//
+// So it says what was actually lost and what changes next time, which is both
+// true and the stronger of the two pitches -- a concrete thing already missed
+// beats a vague benefit.
+function SaveResultsNote({ signed_in, on_sign_in }) {
+    if (signed_in || !on_sign_in) return null
+    return (
+        <div className="results-signin">
+            <p className="results-signin-note">
+                This one was not recorded. With an account your scores, your streak and
+                your place on the daily board are kept.
+            </p>
+            <button className="results-signin-btn" onClick={on_sign_in}>
+                Sign in or create an account
+            </button>
+        </div>
+    )
+}
+
 function CareerTimeline({ teams, guesses, results }) {
     return (
         <div className="career-timeline">
@@ -117,7 +143,7 @@ function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_act
 // waiting for their score notices waiting.
 const STAMP_HOLD_MS = 1150
 
-function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number }) {
+function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number, signed_in, on_sign_in }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
     const hard_mode_locked = results.some(r => r !== null) || game_over
@@ -291,6 +317,7 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                                         Review Guesses
                                     </button>
                                 </div>
+                                <SaveResultsNote signed_in={signed_in} on_sign_in={on_sign_in} />
                                 <div className="ct-section-label">Career Path</div>
                                 <CareerTimeline
                                     teams={teams ?? []}
@@ -319,6 +346,7 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                                         Review Guesses
                                     </button>
                                 </div>
+                                <SaveResultsNote signed_in={signed_in} on_sign_in={on_sign_in} />
                                 <div className="ct-section-label" style={{ marginTop: '1rem' }}>
                                     {player}'s Career Path
                                 </div>
