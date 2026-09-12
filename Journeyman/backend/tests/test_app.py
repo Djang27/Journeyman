@@ -1624,3 +1624,94 @@ class TestAdminRoutes:
         monkeypatch.setattr(app_module, "admin_ops", None)
         response = client.get("/api/admin/puzzles", headers={"X-Admin-Token": "s3cret"})
         assert response.status_code == 503
+
+
+class TestDatabaseTimeouts:
+    """A slow database must fail, not hang.
+
+    supabase-py defaults to a 120-second timeout and nothing overrode it, which
+    is the absence of a bound rather than a generous one: Vercel kills the
+    function long before it expires, so slow Postgres produced a dead function
+    instead of a handled failure.
+    """
+
+    def test_every_client_is_built_through_the_bounded_helper(self):
+        # Seven construction sites; a timeout set in six of them and missed in
+        # the seventh is the shape this guards against.
+        import pathlib
+
+        source = (pathlib.Path(__file__).parent.parent / "app.py").read_text()
+        body = source.split("def _supabase(", 1)[1]
+        assert "create_client(" not in body.split("def ", 2)[2], (
+            "a Supabase client is being built outside _supabase(); it would "
+            "inherit the 120-second default"
+        )
+
+    def test_the_limiter_gives_up_sooner_than_everything_else(self):
+        import app as app_module
+
+        assert app_module.LIMITER_TIMEOUT_SECONDS < app_module.DATABASE_TIMEOUT_SECONDS
+
+    def test_the_bound_is_well_under_what_vercel_allows(self):
+        # A timeout longer than the platform's own is not a timeout.
+        import app as app_module
+
+        assert 0 < app_module.DATABASE_TIMEOUT_SECONDS <= 9
+
+    def test_the_timeout_reaches_the_http_client(self):
+        # The setting is only worth having if it arrives somewhere. It is
+        # passed through two libraries to get to httpx, and one of them
+        # deprecated the parameter, so this asserts the value rather than the
+        # call.
+        import app as app_module
+
+        class FakeConfig:
+            supabase_url = "https://example.supabase.co"
+            supabase_service_key = "not-a-real-key"
+
+        client = app_module._supabase(FakeConfig(), timeout=3)
+        assert client.postgrest.session.timeout.read == 3
+
+
+class TestRateLimiterFailsOpenQuietly:
+    """The limiter is not the security boundary, so its outage is not an error."""
+
+    class Broken:
+        def consume(self, *_args, **_kwargs):
+            raise RuntimeError("gateway timeout")
+
+    def test_a_broken_limiter_does_not_refuse_the_request(self, client, monkeypatch):
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "rate_limiter", self.Broken())
+        response = client.post("/api/game/start", json={"mode": "unlimited"})
+        assert response.status_code == 201
+
+    def test_it_is_logged_as_a_warning_rather_than_an_error(self, client, monkeypatch, caplog):
+        # Severity here is about Sentry, not taste. The outage that triggers
+        # this affects every request by definition, so at error level it opens
+        # thousands of high-priority issues and buries the real faults.
+        import logging
+
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "rate_limiter", self.Broken())
+        with caplog.at_level(logging.WARNING, logger="journeyman"):
+            client.post("/api/game/start", json={"mode": "unlimited"})
+
+        records = [r for r in caplog.records if "rate limiter unavailable" in r.message]
+        assert records, "the degradation must still be reported"
+        assert all(r.levelno == logging.WARNING for r in records)
+
+    def test_the_stack_trace_is_kept(self, client, monkeypatch, caplog):
+        # Dropping the severity must not drop the evidence.
+        import logging
+
+        import app as app_module
+
+        monkeypatch.setattr(app_module, "rate_limiter", self.Broken())
+        with caplog.at_level(logging.WARNING, logger="journeyman"):
+            client.post("/api/game/start", json={"mode": "unlimited"})
+
+        record = next(r for r in caplog.records if "rate limiter unavailable" in r.message)
+        assert record.exc_info is not None

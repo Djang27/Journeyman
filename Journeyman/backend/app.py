@@ -132,6 +132,42 @@ def _build_session_store():
     return SupabaseSessionStore.from_config(config)
 
 
+# How long a database call may take before the app gives up on it.
+#
+# supabase-py defaults to 120 seconds, and nothing here overrode it. That is
+# not a timeout so much as the absence of one: Vercel kills the function long
+# before it expires, so a slow Postgres turned every request into a dead
+# function rather than a handled failure. It also defeated the rate limiter's
+# fail-open policy -- the code correctly refuses to take the game down when the
+# limiter is unavailable, but with no bound it waited out the slowness first,
+# which takes the game down by a different route.
+#
+# Generous against a healthy query, which runs in well under a second.
+DATABASE_TIMEOUT_SECONDS = 5
+
+# The limiter gets less. It fails open by design, so time spent waiting on it
+# buys nothing: the outcome after a slow success and after a timeout is the
+# same request being allowed through.
+LIMITER_TIMEOUT_SECONDS = 2
+
+
+def _supabase(config, timeout=DATABASE_TIMEOUT_SECONDS):
+    """A Supabase client that gives up in bounded time."""
+    from supabase.lib.client_options import SyncClientOptions
+    from supabase_auth import SyncMemoryStorage
+
+    from supabase import create_client
+
+    return create_client(
+        config.supabase_url,
+        config.supabase_service_key,
+        options=SyncClientOptions(
+            postgrest_client_timeout=timeout,
+            storage=SyncMemoryStorage(),
+        ),
+    )
+
+
 def _wire_player_pool(config):
     """Point player selection at the players table when there is one.
 
@@ -144,9 +180,7 @@ def _wire_player_pool(config):
     from difficulty import rate
     from players_repo import PlayersRepo, teams_of
 
-    from supabase import create_client
-
-    repo = PlayersRepo(create_client(config.supabase_url, config.supabase_service_key))
+    repo = PlayersRepo(_supabase(config))
 
     def fetch():
         # `fame` is computed here rather than stored: it is derived from three
@@ -178,9 +212,7 @@ def _build_puzzles_repo(config):
 
     from puzzles_repo import PuzzlesRepo
 
-    from supabase import create_client
-
-    return PuzzlesRepo(create_client(config.supabase_url, config.supabase_service_key))
+    return PuzzlesRepo(_supabase(config))
 
 
 puzzles_repo = _build_puzzles_repo(config)
@@ -203,9 +235,7 @@ def _build_rate_limiter(config):
 
     from rate_limit import PostgresRateLimiter
 
-    from supabase import create_client
-
-    return PostgresRateLimiter(create_client(config.supabase_url, config.supabase_service_key))
+    return PostgresRateLimiter(_supabase(config, LIMITER_TIMEOUT_SECONDS))
 
 
 rate_limiter = _build_rate_limiter(config)
@@ -223,9 +253,7 @@ def _build_quota_store(config):
 
     from quota import PostgresQuotaStore
 
-    from supabase import create_client
-
-    return PostgresQuotaStore(create_client(config.supabase_url, config.supabase_service_key))
+    return PostgresQuotaStore(_supabase(config))
 
 
 quota_store = _build_quota_store(config)
@@ -242,9 +270,7 @@ def _build_entitlements(config):
 
     from entitlements import PostgresEntitlements
 
-    from supabase import create_client
-
-    return PostgresEntitlements(create_client(config.supabase_url, config.supabase_service_key))
+    return PostgresEntitlements(_supabase(config))
 
 
 entitlements = _build_entitlements(config)
@@ -260,11 +286,7 @@ def _build_payment_events(config):
 
     from payment_events import PostgresPaymentEventStore
 
-    from supabase import create_client
-
-    return PostgresPaymentEventStore(
-        create_client(config.supabase_url, config.supabase_service_key)
-    )
+    return PostgresPaymentEventStore(_supabase(config))
 
 
 payment_events = _build_payment_events(config)
@@ -325,7 +347,14 @@ def _rate_limited(action, limit, user_id=None):
     try:
         decision = check(rate_limiter, action, limit, user_id, request.headers)
     except Exception:
-        logger.exception("rate limiter unavailable", extra={"http_path": request.path})
+        # A warning, not an error, and the distinction is about Sentry rather
+        # than about taste. This is an anticipated degradation with a policy --
+        # the request is allowed through and the player never knows. Logged at
+        # error it opens a high-priority issue, and the outage that causes it is
+        # by definition the one affecting every request, so it opens thousands
+        # of them and buries the genuine faults you need to see while it is
+        # happening. The stack trace is kept; only the severity changes.
+        logger.warning("rate limiter unavailable", exc_info=True, extra={"http_path": request.path})
         return None
 
     if decision.allowed:
@@ -980,9 +1009,7 @@ def _build_admin(config):
     if not config.use_database:
         return None
 
-    from supabase import create_client
-
-    return AdminOperations(create_client(config.supabase_url, config.supabase_service_key))
+    return AdminOperations(_supabase(config))
 
 
 admin_ops = _build_admin(config)
