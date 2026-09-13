@@ -27,7 +27,18 @@ export function calculate_streaks(games) {
 }
 
 export const BASE             = 1000
-export const TIME_GRACE       = 30    // free seconds before penalty starts
+export const TIME_GRACE       = 30    // free seconds, when the length is unknown
+// Free seconds, scaled to the work. A flat grace charges a nine-stop career
+// for the seven extra names it has to type, which is mechanics rather than
+// thinking. Mirrors scoring.py; the two must agree or the breakdown shown
+// beside a score stops explaining that score.
+export const BASE_TIME_GRACE      = 15
+export const TIME_GRACE_PER_TEAM  = 10
+
+export function time_grace(team_count) {
+    if (!team_count) return TIME_GRACE
+    return BASE_TIME_GRACE + TIME_GRACE_PER_TEAM * team_count
+}
 export const TIME_RATE        = 1     // points lost per second after grace
 // The clock keeps running while somebody is away -- it runs on the server, and
 // a browser that could discount its own time could claim a perfect one. What is
@@ -44,10 +55,10 @@ export const MISPLACED_PEN    = 25    // penalty per right-team-wrong-slot guess
 export const SCORE_FLOOR      = 100   // minimum score for any win
 export const HARD_MULTIPLIER  = 1.5   // score multiplier for hard mode wins
 
-export function score_breakdown({ time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses = 0 }) {
+export function score_breakdown({ time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses = 0, team_count = null }) {
     return {
         base:        BASE,
-        time_pen:    Math.min(Math.max(0, time_seconds - TIME_GRACE) * TIME_RATE, MAX_TIME_PENALTY),
+        time_pen:    Math.min(Math.max(0, time_seconds - time_grace(team_count)) * TIME_RATE, MAX_TIME_PENALTY),
         hint_pen:    hint_used ? HINT_PEN  : 0,
         wrong_pen:   wrong_guesses * WRONG_PEN,
         misplaced_pen: misplaced_guesses * MISPLACED_PEN,

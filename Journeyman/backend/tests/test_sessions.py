@@ -7,12 +7,14 @@ CI never touches Supabase.
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from scoring import TIME_GRACE, time_grace
 from sessions import (
     MAX_WRONG_GUESSES,
     InMemorySessionStore,
     SessionError,
     SessionNotFound,
     abandon,
+    max_wrong_guesses,
     public_view,
     set_hard_mode,
     start_session,
@@ -196,8 +198,11 @@ class TestScoringAndTime:
         finished = submit_guess(store, sid, 2, "jazz", now=T0 + timedelta(seconds=45))
 
         assert finished.status == "won"
-        # 45s elapsed, 15s past the 30s grace, so 1000 - 15.
-        assert finished.score == 985
+        # A three-team career is granted 15 + 3x10 = 45 seconds, so 45s of play
+        # costs nothing at all. The point of this test is that the clock comes
+        # from the server rather than the browser; the grace moving is why the
+        # number did.
+        assert finished.score == 1000
 
     def test_a_two_hour_clean_win_is_capped_not_floored(self, store):
         # The clock keeps running while somebody is away -- it runs on the
@@ -419,3 +424,91 @@ class TestResultRecording:
         sid = new_game(store, user_id="u1").id
         abandon(store, sid)
         assert store.recorded == []
+
+
+class TestLengthChangesTheChallenge:
+    """A longer career was harsher three separate ways, for the same reward.
+
+    More slots to get exactly right, the same three strikes to spend on them,
+    and the same clock to type them all in. Two of the three are fixed here;
+    the points themselves were deliberately left alone so that scores stay
+    comparable with every one already recorded.
+    """
+
+    def test_short_careers_keep_three_strikes(self):
+        for teams in (2, 3, 4):
+            assert max_wrong_guesses(teams) == 3
+
+    def test_a_long_career_is_allowed_more_mistakes(self):
+        assert max_wrong_guesses(5) == 4
+        assert max_wrong_guesses(6) == 4
+        assert max_wrong_guesses(7) == 5
+        assert max_wrong_guesses(9) == 5
+
+    def test_the_allowance_never_shrinks_as_a_career_grows(self):
+        allowances = [max_wrong_guesses(n) for n in range(2, 12)]
+        assert allowances == sorted(allowances)
+
+    def test_the_allowance_is_a_smaller_share_of_a_long_career(self):
+        # The change makes it fairer, not equal. Nine slots with five strikes
+        # is still a tighter margin than two slots with three, which is right:
+        # a long career should be harder, just not three times harder.
+        assert max_wrong_guesses(9) / 9 < max_wrong_guesses(2) / 2
+
+    def test_the_clock_gives_a_long_career_more_room(self):
+        assert time_grace(9) > time_grace(3) > time_grace(None)
+
+    def test_an_unknown_length_keeps_the_flat_grace(self):
+        # 352 recorded parity cases call this without a length and cannot be
+        # regenerated, because the JavaScript original is gone.
+        assert time_grace(None) == TIME_GRACE
+        assert time_grace(0) == TIME_GRACE
+
+    def test_a_long_career_now_survives_a_fourth_mistake(self, store):
+        session = start_session(
+            store,
+            mode="unlimited",
+            player_name="Long Career",
+            player_id=99,
+            teams=["boston celtics", "miami heat", "utah jazz", "chicago bulls", "phoenix suns"],
+        )
+        for slot in range(3):
+            submit_guess(store, session.id, slot, "not a real team")
+        still_going = store.get(session.id)
+        assert still_going.status == "active", "five stops should allow a fourth mistake"
+
+    def test_it_still_ends_when_the_allowance_runs_out(self, store):
+        session = start_session(
+            store,
+            mode="unlimited",
+            player_name="Long Career",
+            player_id=99,
+            teams=["boston celtics", "miami heat", "utah jazz", "chicago bulls", "phoenix suns"],
+        )
+        for slot in range(4):
+            submit_guess(store, session.id, slot, "not a real team")
+        assert store.get(session.id).status == "lost"
+
+    def test_hard_mode_still_ends_on_the_first_mistake(self, store):
+        # Hard mode reads the allowance rather than the old constant, so a
+        # longer career must not quietly buy extra lives in it.
+        session = start_session(
+            store,
+            mode="unlimited",
+            player_name="Long Career",
+            player_id=99,
+            teams=["boston celtics", "miami heat", "utah jazz", "chicago bulls", "phoenix suns"],
+            hard_mode=True,
+        )
+        submit_guess(store, session.id, 0, "not a real team")
+        assert store.get(session.id).status == "lost"
+
+    def test_the_client_is_told_the_real_allowance(self, store):
+        session = start_session(
+            store,
+            mode="unlimited",
+            player_name="Long Career",
+            player_id=99,
+            teams=["a", "b", "c", "d", "e", "f", "g"],
+        )
+        assert public_view(session)["max_wrong_guesses"] == 5

@@ -114,13 +114,17 @@ function CareerTimeline({ teams, guesses, results }) {
     )
 }
 
-function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_active, hard_mode }) {
+function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_active, hard_mode, num_teams }) {
+    // team_count matters: the clock's grace period scales with how many names
+    // there were to type. Without it the breakdown shown beside a score would
+    // stop adding up to that score.
     const { base, time_pen, hint_pen, wrong_pen, misplaced_pen } = score_breakdown({
         time_seconds: final_time,
         wrong_guesses,
         misplaced_guesses,
         hint_used: hint_active,
         hard_mode,
+        team_count: num_teams,
     })
     const floored = (base - time_pen - hint_pen - wrong_pen - misplaced_pen) < SCORE_FLOOR
 
@@ -300,6 +304,7 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                                     <span className="score-label">pts</span>
                                 </div>
                                 <ScoreBreakdown
+                                    num_teams={num_teams}
                                     final_time={final_time}
                                     wrong_guesses={wrong_guesses}
                                     misplaced_guesses={misplaced_guesses}
