@@ -112,13 +112,6 @@ export function use_hint(session_id) {
     return request(`/api/game/${session_id}/hint`, { method: 'POST' })
 }
 
-export function set_hard_mode(session_id, enabled) {
-    return request(`/api/game/${session_id}/hard-mode`, {
-        method: 'POST',
-        body: { enabled },
-    })
-}
-
 // -- billing -------------------------------------------------------------
 //
 // The browser never fulfils a purchase. It starts checkout and it reports what

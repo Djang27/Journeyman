@@ -3231,6 +3231,64 @@ body {
 /* The seasons half of the hint. Set as a date line rather than a badge --
    tabular figures, no fill -- so it reads as a fact about the stint rather
    than a second status flag competing with the conference. */
+/* Hard mode as a choice on the front page: a printed tick box, because that is
+   what a form on paper looks like and this is a decision made before starting.
+   The in-game version is a label -- a switch you can see and cannot move is
+   worse than no switch. */
+.hard-choice { margin: 0.2rem 0 0; }
+
+.hard-choice-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hard-choice-box {
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.hard-choice-switch.on { color: var(--ink); }
+.hard-choice-switch:hover .hard-choice-box { border-color: var(--accent); }
+
+.hard-choice-note {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.74rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-muted);
+  margin: 0.3rem 0 0;
+}
+
+.hard-mode-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
 .season-badge {
   margin-left: 0.4rem;
   font-family: 'Barlow Condensed', sans-serif;

@@ -824,6 +824,10 @@ def api_game_hard_mode(session_id):
 
     body = request.get_json(silent=True) or {}
     try:
+        # No caller since hard mode became a start-screen choice. Kept because
+        # a browser part-way through a game when that deployed still has the
+        # old bundle, and 404ing somebody mid-game is worse than a route
+        # nothing new calls.
         session = set_hard_mode(session_store, session_id, body.get("enabled", False))
     except SessionNotFound as exc:
         return _session_error(exc, 404)

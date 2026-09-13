@@ -147,10 +147,9 @@ function ScoreBreakdown({ final_time, wrong_guesses, misplaced_guesses, hint_act
 // waiting for their score notices waiting.
 const STAMP_HOLD_MS = 1150
 
-function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, on_hard_mode_toggle, elapsed, final_time, final_score, on_play_again, game_mode, day_number, signed_in, on_sign_in }) {
+function GameScreen({ player, num_teams, teams, hints, guesses, results, on_guess_change, on_submit, on_clear, has_won, has_lost, wrong_guesses, misplaced_guesses, max_guesses, hint_active, on_hint, hard_mode, elapsed, final_time, final_score, on_play_again, game_mode, day_number, signed_in, on_sign_in }) {
     const game_over        = has_won || has_lost
     const hint_available   = wrong_guesses >= 2 && !hint_active && !game_over
-    const hard_mode_locked = results.some(r => r !== null) || game_over
 
     const [hard_flash,    set_hard_flash]    = useState(false)
     const [show_results,  set_show_results]  = useState(false)
@@ -181,17 +180,15 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
         return undefined
     }, [game_over])
 
-    function handleHardModeToggle() {
-        if (hard_mode_locked) return
-        if (!hard_mode) {
-            // Stamped rather than flashed. A whole-screen colour wash is a
-            // videogame telling you something changed; a stamp is the page
-            // recording that it did.
-            set_hard_flash(true)
-            setTimeout(() => set_hard_flash(false), 1400)
-        }
-        on_hard_mode_toggle()
-    }
+    // Stamped when a hard game begins, rather than when somebody flips a
+    // switch mid-game -- the choice is made on the start screen now, so this is
+    // the page recording what kind of game this is.
+    useEffect(() => {
+        if (!hard_mode) return undefined
+        set_hard_flash(true)
+        const id = setTimeout(() => set_hard_flash(false), 1400)
+        return () => clearTimeout(id)
+    }, [hard_mode])
 
     return (
         <div className="game-screen">
@@ -236,22 +233,14 @@ function GameScreen({ player, num_teams, teams, hints, guesses, results, on_gues
                     </button>
                 )}
                 {hint_active && !game_over && (
-                    <span className="hint-active-label">Conference hints on</span>
+                    <span className="hint-active-label">Hints on</span>
                 )}
 
-                {!game_over && (
-                    <div
-                        className={`hard-mode-toggle ${hard_mode ? 'active' : ''} ${hard_mode_locked ? 'locked' : ''}`}
-                        onClick={handleHardModeToggle}
-                        title={hard_mode_locked ? 'Cannot change after guessing' : (hard_mode ? 'Hard mode on' : 'Activate hard mode')}
-                        role="button"
-                        aria-pressed={hard_mode}
-                    >
-                        <span className="hard-mode-toggle-label">Hard Mode</span>
-                        <div className="hard-mode-switch">
-                            <div className="hard-mode-knob" />
-                        </div>
-                    </div>
+                {/* A state, not a control. Changing it is a start-screen
+                    decision, so mid-game this only says which game you are in.
+                    A switch you can see and cannot move is worse than a label. */}
+                {hard_mode && !game_over && (
+                    <span className="hard-mode-badge">Hard mode</span>
                 )}
             </div>
 
