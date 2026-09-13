@@ -111,7 +111,20 @@ PROMOTION_CAREER_GAMES = 400
 # placeable, and wrong that they are big names: 7.0 and 9.2 points a game over
 # very long careers. That is what the middle pool is for. Big names means
 # somebody was a star; Mixed adds the role players who lasted.
-BIG_NAME_MIN_PPG = 11.0
+#
+# Set for precision rather than coverage, on purpose. This pool exists for
+# somebody who asked not to be shown names they do not know, so a wrong
+# inclusion costs far more than a wrong exclusion -- one breaks the promise the
+# label makes, the other just means a familiar name turns up in Mixed instead.
+#
+# At 11.0 the weakest entries were Sherman Douglas and Maurice Taylor. At 14.0
+# they are Larry Hughes and Kerry Kittles, which is the line. Raising it
+# further mostly removes players who genuinely are big names, and the pool is
+# already 247 careers deep.
+#
+# It does not affect the daily: this moves players between tiers 1 and 2, and
+# the daily's fame floor admits both.
+BIG_NAME_MIN_PPG = 14.0
 
 SHORT_PATH = 3  # two or three stints: the path itself is not the obstacle
 MEDIUM_PATH = 5
