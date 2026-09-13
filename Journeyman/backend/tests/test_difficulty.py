@@ -343,9 +343,15 @@ class TestShortAndOldCareers:
         assert D.fame_for(12.0, 700, 0, last_season=None) == D.fame_for(12.0, 700, 0)
 
     def test_the_era_nudge_stacks_with_longevity_rather_than_replacing_it(self):
-        # A long old career should still beat a short old one.
-        long_ago = D.fame_for(12.0, 900, 0, last_season=1985)
-        brief_ago = D.fame_for(12.0, 200, 0, last_season=1985)
+        """A long old career should still beat a short old one.
+
+        Scored above BIG_NAME_MIN_PPG deliberately. Below it both careers hit
+        the starter floor and then saturate at the bottom tier, so the example
+        compares two 4s and demonstrates nothing -- which is exactly what
+        happened when the floor moved and this test was still using 12.0.
+        """
+        long_ago = D.fame_for(15.0, 900, 0, last_season=1985)
+        brief_ago = D.fame_for(15.0, 200, 0, last_season=1985)
         assert long_ago < brief_ago
 
 
