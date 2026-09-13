@@ -15,7 +15,17 @@ deletes the JS copy.
 """
 
 BASE = 1000
-TIME_GRACE = 30  # free seconds before the time penalty starts
+TIME_GRACE = 30  # free seconds before the time penalty starts, when length is unknown
+
+# Free seconds, scaled to the work.
+#
+# A flat grace charges a nine-stop career for the seven extra team names it has
+# to type. That is not thinking time, it is mechanics, and the clock should not
+# bill for it. Worth about fifty points on the longest careers -- real, and
+# much smaller than it feels, which is why it is the least of the three things
+# that made long careers harsher.
+BASE_TIME_GRACE = 15
+TIME_GRACE_PER_TEAM = 10
 TIME_RATE = 1  # points lost per second after the grace period
 # The clock runs on the server and keeps running while somebody is away -- it
 # has to, because a browser that could say "do not count that" is a browser that
@@ -40,12 +50,32 @@ SCORE_FLOOR = 100  # minimum for any win, applied *before* the hard multiplier
 HARD_MULTIPLIER = 1.5
 
 
-def calculate_score(result, time_seconds, wrong_guesses, hint_used, hard_mode, misplaced_guesses=0):
+def time_grace(team_count=None):
+    """How long a career of this length may take before the clock starts biting.
+
+    Falls back to the flat value when the length is not given, which keeps the
+    parity fixture -- 352 recorded cases that cannot be regenerated, because the
+    JavaScript original is gone -- meaning exactly what it meant.
+    """
+    if not team_count:
+        return TIME_GRACE
+    return BASE_TIME_GRACE + TIME_GRACE_PER_TEAM * team_count
+
+
+def calculate_score(
+    result,
+    time_seconds,
+    wrong_guesses,
+    hint_used,
+    hard_mode,
+    misplaced_guesses=0,
+    team_count=None,
+):
     """Score one finished game. A loss is always zero."""
     if result != "win":
         return 0
 
-    time_pen = min(max(0, time_seconds - TIME_GRACE) * TIME_RATE, MAX_TIME_PENALTY)
+    time_pen = min(max(0, time_seconds - time_grace(team_count)) * TIME_RATE, MAX_TIME_PENALTY)
     hint_pen = HINT_PEN if hint_used else 0
     wrong_pen = wrong_guesses * WRONG_PEN
     misplaced_pen = misplaced_guesses * MISPLACED_PEN

@@ -22,6 +22,29 @@ from scoring import calculate_score
 from teams import conference
 
 MAX_WRONG_GUESSES = 3
+
+# Strikes, scaled to how many slots there are to get wrong.
+#
+# Three was flat, which is not the same challenge twice. Three mistakes across
+# two slots is more margin than you can use; three across nine is a third of
+# the way through the answer. The longest careers were being asked for more
+# precision on more slots for the same allowance and the same points -- three
+# separate ways in which length made a puzzle harsher rather than harder.
+#
+# Deliberately coarse. A formula per slot would be fairer on paper and
+# impossible to hold in your head, and a player has to know how many mistakes
+# they have left without doing arithmetic.
+STRIKES_BY_LENGTH = ((7, 5), (5, 4))
+
+
+def max_wrong_guesses(team_count):
+    """How many genuine mistakes this career allows before it ends."""
+    for length, strikes in STRIKES_BY_LENGTH:
+        if team_count >= length:
+            return strikes
+    return MAX_WRONG_GUESSES
+
+
 GAME_SLUG = "journeyman"
 
 
@@ -286,7 +309,8 @@ def submit_guess(
         misplaced_guesses += 1
     elif result != "green":
         # Hard mode ends the game on the first genuine mistake.
-        wrong_guesses = MAX_WRONG_GUESSES if session.hard_mode else wrong_guesses + 1
+        allowed = max_wrong_guesses(len(session.answer))
+        wrong_guesses = allowed if session.hard_mode else wrong_guesses + 1
 
     updated = replace(
         session,
@@ -298,7 +322,7 @@ def submit_guess(
 
     if updated.has_won:
         updated = _finish(updated, "won", now)
-    elif wrong_guesses >= MAX_WRONG_GUESSES:
+    elif wrong_guesses >= max_wrong_guesses(len(session.answer)):
         updated = _finish(updated, "lost", now)
 
     stored = store.update(updated)
@@ -372,6 +396,7 @@ def _finish(session: Session, status: str, now: datetime | None) -> Session:
         hint_used=session.hint_used,
         hard_mode=session.hard_mode,
         misplaced_guesses=session.misplaced_guesses,
+        team_count=len(session.answer),
     )
 
     return replace(session, status=status, finished_at=finished_at, score=score)
@@ -398,7 +423,7 @@ def public_view(session: Session, now: datetime | None = None) -> dict:
         "results": session.results,
         "guesses": session.guesses,
         "wrong_guesses": session.wrong_guesses,
-        "max_wrong_guesses": MAX_WRONG_GUESSES,
+        "max_wrong_guesses": max_wrong_guesses(len(session.answer)),
         # Shown in the score breakdown. Distinct from wrong_guesses because it
         # costs points rather than a life.
         "misplaced_guesses": session.misplaced_guesses,
