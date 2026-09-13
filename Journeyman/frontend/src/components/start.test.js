@@ -467,3 +467,41 @@ describe('choosing hard mode before starting', () => {
         expect(screen.getByText('Play a career')).toBeEnabled()
     })
 })
+
+describe('the hard mode mark', () => {
+    test('it is struck on the way on', async () => {
+        // Rendered off, then switched on, so the transition is what is tested
+        // rather than the resting state.
+        const { rerender } = render(
+            <StartScreen on_start_daily={noop} on_start_unlimited={noop}
+                daily_done={false} day_number={1} hard_mode={false} on_hard_mode={noop} />
+        )
+        rerender(
+            <StartScreen on_start_daily={noop} on_start_unlimited={noop}
+                daily_done={false} day_number={1} hard_mode={true} on_hard_mode={noop} />
+        )
+        expect(document.querySelector('.hard-choice-mark.struck')).not.toBeNull()
+    })
+
+    test('it is not struck again just for being on', () => {
+        // A re-render for any other reason -- the standings arriving, the quota
+        // ticking down -- must not replay the gesture.
+        show({ hard_mode: true, on_hard_mode: noop })
+        expect(document.querySelector('.hard-choice-mark.struck')).toBeNull()
+        expect(document.querySelector('.hard-choice-mark')).not.toBeNull()
+    })
+
+    test('turning it off strikes nothing', () => {
+        // Switching off is a correction, and a correction that announces
+        // itself reads as a mistake being celebrated.
+        const { rerender } = render(
+            <StartScreen on_start_daily={noop} on_start_unlimited={noop}
+                daily_done={false} day_number={1} hard_mode={true} on_hard_mode={noop} />
+        )
+        rerender(
+            <StartScreen on_start_daily={noop} on_start_unlimited={noop}
+                daily_done={false} day_number={1} hard_mode={false} on_hard_mode={noop} />
+        )
+        expect(document.querySelector('.hard-choice-mark')).toBeNull()
+    })
+})
