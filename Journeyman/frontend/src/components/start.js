@@ -107,6 +107,33 @@ function PoolPicker({ pools, pool, onChoose }) {
     )
 }
 
+// Hard mode, chosen before the game rather than during it.
+//
+// It used to live on the game screen, toggleable until the first guess, which
+// made it something you noticed halfway through rather than something you
+// decided. It is a way to play, like the pool, so it belongs with the pool --
+// and both apply to whichever button you press next.
+function HardModeToggle({ on, onToggle }) {
+    return (
+        <div className="hard-choice">
+            <button
+                type="button"
+                className={`hard-choice-switch ${on ? 'on' : ''}`}
+                onClick={() => onToggle(!on)}
+                aria-pressed={on}
+            >
+                <span className="hard-choice-box" aria-hidden="true">{on ? '\u2715' : ''}</span>
+                Hard mode
+            </button>
+            <p className="hard-choice-note">
+                {on
+                    ? 'One mistake ends the game. Scores are worth half again as much.'
+                    : 'One mistake ends the game, for half as much again on the score.'}
+            </p>
+        </div>
+    )
+}
+
 function StartScreen({
     on_start_daily,
     on_start_unlimited,
@@ -129,6 +156,8 @@ function StartScreen({
     on_choose_pool = null,
     signed_in = false,
     on_sign_in = null,
+    hard_mode = false,
+    on_hard_mode = null,
 }) {
     // Which sheet is open: 'rules', 'privacy', 'attribution', or none.
     const [sheet, setSheet] = useState(null)
@@ -204,6 +233,12 @@ function StartScreen({
                             </button>
                         )}
                     </article>
+                    {on_hard_mode && (
+                        <>
+                            <Rule />
+                            <HardModeToggle on={hard_mode} onToggle={on_hard_mode} />
+                        </>
+                    )}
                 </section>
 
                 {/* Standings column: today's board, then your own record. */}

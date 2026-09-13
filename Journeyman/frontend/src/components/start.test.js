@@ -419,3 +419,51 @@ describe('the sign-in prompt', () => {
         expect(screen.getByText('Play a career')).toBeEnabled()
     })
 })
+
+// -- hard mode -------------------------------------------------------------
+//
+// It used to live on the game screen, toggleable until the first guess, which
+// made it something you noticed halfway through rather than something you
+// decided. It is a way to play, like the pool.
+
+describe('choosing hard mode before starting', () => {
+    test('it is offered on the front page', () => {
+        show({ hard_mode: false, on_hard_mode: noop })
+        expect(screen.getByRole('button', { name: /hard mode/i })).toBeInTheDocument()
+    })
+
+    test('it says what it costs before it is chosen', () => {
+        show({ hard_mode: false, on_hard_mode: noop })
+        expect(screen.getByText(/one mistake ends the game/i)).toBeInTheDocument()
+    })
+
+    test('the state is readable without relying on colour', () => {
+        show({ hard_mode: true, on_hard_mode: noop })
+        expect(screen.getByRole('button', { name: /hard mode/i })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    test('toggling reports the new value, not the old one', async () => {
+        const seen = []
+        show({ hard_mode: false, on_hard_mode: v => seen.push(v) })
+        await userEvent.click(screen.getByRole('button', { name: /hard mode/i }))
+        expect(seen).toEqual([true])
+    })
+
+    test('turning it off reports false', async () => {
+        const seen = []
+        show({ hard_mode: true, on_hard_mode: v => seen.push(v) })
+        await userEvent.click(screen.getByRole('button', { name: /hard mode/i }))
+        expect(seen).toEqual([false])
+    })
+
+    test('it is absent when no handler is supplied', () => {
+        show({ hard_mode: false, on_hard_mode: null })
+        expect(screen.queryByRole('button', { name: /hard mode/i })).not.toBeInTheDocument()
+    })
+
+    test('it never blocks playing', () => {
+        show({ hard_mode: true, on_hard_mode: noop })
+        expect(screen.getByText('Play today')).toBeEnabled()
+        expect(screen.getByText('Play a career')).toBeEnabled()
+    })
+})

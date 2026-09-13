@@ -22,6 +22,7 @@ const PLAYED_KEY = "journeyman_played"
 // Which pool unlimited draws from. A per-browser preference, not a rule the
 // server owes anybody -- it is sent with each start and validated there.
 const POOL_KEY   = "journeyman_pool"
+const HARD_KEY   = "journeyman_hard_mode"
 const today_str  = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date())
 const DAILY_KEY  = `journeyman_daily_${today_str}`
 
@@ -35,6 +36,18 @@ function get_pool() {
 
 function save_pool(pool) {
     try { localStorage.setItem(POOL_KEY, pool) } catch {}
+}
+
+function get_hard_mode() {
+    try {
+        return localStorage.getItem(HARD_KEY) === "1"
+    } catch {
+        return false
+    }
+}
+
+function save_hard_mode(on) {
+    try { localStorage.setItem(HARD_KEY, on ? "1" : "0") } catch {}
 }
 
 function get_played_ids() {
@@ -139,6 +152,9 @@ function App() {
     // the label and the rule behind it cannot drift apart.
     const [pools, set_pools]                 = useState(null)
     const [pool, set_pool]                   = useState(get_pool)
+    // Chosen before the game starts, so it is settled by the time a session
+    // exists rather than toggled against one.
+    const [hard_mode, set_hard_mode_pref]    = useState(get_hard_mode)
 
     // Once, on mount. A failure leaves `pools` null and the picker simply does
     // not render -- the game still starts, on the server's default.
@@ -157,6 +173,11 @@ function App() {
     const choose_pool = (next) => {
         set_pool(next)
         save_pool(next)
+    }
+
+    const choose_hard_mode = (next) => {
+        set_hard_mode_pref(next)
+        save_hard_mode(next)
     }
 
     const start_time_ref = useRef(null)
@@ -361,6 +382,7 @@ function App() {
                 mode,
                 exclude: mode === 'daily' ? [] : get_played_ids(),
                 pool,
+                hard_mode,
             })
 
             set_game({ ...BLANK, ...session })
@@ -418,14 +440,6 @@ function App() {
         if (game_mode !== 'daily') record_played_id(session.player_id)
     }
 
-    const toggle_hard_mode = async () => {
-        if (!game.session_id) return
-        try {
-            apply(await api.set_hard_mode(game.session_id, !game.hard_mode))
-        } catch (err) {
-            set_error(err.message)
-        }
-    }
 
     const update_guess = (position, value) => {
         set_guesses(prev => {
@@ -590,6 +604,8 @@ function App() {
                     pools={pools}
                     pool={pool}
                     on_choose_pool={choose_pool}
+                    hard_mode={hard_mode}
+                    on_hard_mode={choose_hard_mode}
                     signed_in={Boolean(user)}
                     on_sign_in={authAvailable ? () => open_sidebar('account') : null}
                     // A game left behind, still playable. Only while it is
@@ -638,7 +654,6 @@ function App() {
                     hint_active={game.hint_used}
                     on_hint={activate_hint}
                     hard_mode={game.hard_mode}
-                    on_hard_mode_toggle={toggle_hard_mode}
                     elapsed={elapsed}
                     final_time={game_over ? game.elapsed_seconds : null}
                     final_score={game_over ? game.score : null}
