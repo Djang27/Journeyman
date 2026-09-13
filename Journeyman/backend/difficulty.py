@@ -81,9 +81,22 @@ STILL_RECENT_SEASON = 2022
 # This was 1990 and did not hold. Dave Greenwood last played in 1991 and Rod
 # Higgins in 1995, so both slipped past a cutoff drawn a year or five too early
 # -- and to somebody playing today the early nineties is not meaningfully nearer
-# than the eighties. Drawn at 2000 it catches them and still leaves Kareem,
-# Gervin, Frazier, Cowens and Gilmore, who are exempt on their selections.
+# than the eighties.
 DISTANT_ERA_SEASON = 2000
+DISTANT_ERA_PENALTY = 2
+
+# How many All-Star selections buy back one tier of that penalty.
+#
+# Exempting All-Stars outright, which is what the code used to do, is why
+# Walter Davis was rated a household name: six selections, and none of them
+# since 1992. But the same exemption is the only thing keeping Kareem and Magic
+# where they belong, so removing it is not the answer either.
+#
+# The number of selections is the difference. One or two says famous that
+# season; seventeen says famous forever. Seven per tier is where the shipped
+# pool separates the players a fan today can still name -- Kareem at 17,
+# Gervin at 9 -- from the ones only their own era knew.
+ERA_RELIEF_PER_ALL_STAR = 7
 
 # Whether a low scorer has played enough to be worth serving at all. Separate
 # from the fame threshold above and deliberately still 400: these decide
@@ -91,6 +104,14 @@ DISTANT_ERA_SEASON = 2000
 # dropped forty-five careers -- Scalabrine, Cardinal, Gadzuric -- out of the
 # playable pool as a side effect of retuning what "well known" means.
 PROMOTION_CAREER_GAMES = 400
+
+# Below this, a long career makes you familiar rather than famous.
+#
+# The longevity rescue is right that Robert Horry and Darrell Armstrong are
+# placeable, and wrong that they are big names: 7.0 and 9.2 points a game over
+# very long careers. That is what the middle pool is for. Big names means
+# somebody was a star; Mixed adds the role players who lasted.
+BIG_NAME_MIN_PPG = 11.0
 
 SHORT_PATH = 3  # two or three stints: the path itself is not the obstacle
 MEDIUM_PATH = 5
@@ -115,13 +136,6 @@ def fame_for(career_ppg, career_games=None, all_star_selections=0, last_season=N
     clubs scores as difficult and is the single best kind of puzzle this game
     has. Selecting on the composite would throw exactly those away.
     """
-    # An All-Star was, by definition, famous that season. Two or more is a name
-    # that outlived the career.
-    if all_star_selections >= 2:
-        return 0
-    if all_star_selections == 1:
-        return 1
-
     ppg = career_ppg or 0.0
     scoring = (
         0
@@ -135,8 +149,20 @@ def fame_for(career_ppg, career_games=None, all_star_selections=0, last_season=N
         else 4
     )
 
+    # An All-Star was, by definition, famous that season. Two or more is a name
+    # that outlived the career.
+    #
+    # A floor rather than an early return, which is what this used to be. The
+    # return meant nothing downstream could touch an All-Star -- so Walter
+    # Davis, six selections and none since 1992, was rated the equal of Kevin
+    # Durant and no era rule could reach him.
+    if all_star_selections >= 2:
+        scoring = min(scoring, 0)
+    elif all_star_selections == 1:
+        scoring = min(scoring, 1)
+
     if career_games is None:
-        return scoring
+        return _aged(scoring, all_star_selections, last_season)
 
     # Longevity pulls a low scorer back toward recognisable, and a short career
     # pushes a decent average away from it.
@@ -154,16 +180,35 @@ def fame_for(career_ppg, career_games=None, all_star_selections=0, last_season=N
     # reached the most recognisable tier on 6.2 points a game, and Dave
     # Greenwood on 10.2. Tier 0 now needs direct evidence of stardom -- All-Star
     # selections, handled above, or a scoring average nobody achieves quietly.
-    if (career_ppg or 0.0) < STAR_PPG:
+    #
+    # All-Star selections are exempt, and have to be: a selection is the direct
+    # evidence of stardom this cap exists to demand, so applying it to Rodman
+    # -- 7.3 a game, two selections -- would deny the very thing being asked
+    # for. That was a real bug the moment the early return above became a floor.
+    if all_star_selections == 0 and (career_ppg or 0.0) < STAR_PPG:
         scoring = max(1, scoring)
 
-    # Applied after the longevity adjustments, not instead of them: a long
-    # career from the seventies is still better known than a short one, just
-    # not as well known as the same career today.
-    if last_season is not None and last_season < DISTANT_ERA_SEASON:
-        scoring = min(4, scoring + 1)
+    # And below starter scoring, a long career makes you familiar rather than
+    # famous. Antoine Carr played 987 games at 9.3 a game and Darrell Armstrong
+    # 840 at 9.2; both were rated big names on longevity alone. The middle pool
+    # is exactly the place for them.
+    if all_star_selections == 0 and (career_ppg or 0.0) < BIG_NAME_MIN_PPG:
+        scoring = max(2, scoring)
 
-    return scoring
+    return _aged(scoring, all_star_selections, last_season)
+
+
+def _aged(scoring, all_star_selections, last_season):
+    """Fame decays, and All-Star selections slow the decay.
+
+    Applied after the longevity adjustments rather than instead of them: a long
+    career from the seventies is still better known than a short one, just not
+    as well known as the same career today.
+    """
+    if last_season is None or last_season >= DISTANT_ERA_SEASON:
+        return scoring
+    relief = all_star_selections // ERA_RELIEF_PER_ALL_STAR
+    return min(4, scoring + max(0, DISTANT_ERA_PENALTY - relief))
 
 
 def _still_recent(last_season):

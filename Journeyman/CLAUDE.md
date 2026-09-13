@@ -216,6 +216,16 @@ Things that have already cost time:
   Caldwell Jones got there on 6.2 points a game and Dave Greenwood on 10.2, for
   turning out eight hundred times. Tier 0 needs direct evidence now: All-Star
   selections, or a scoring average nobody achieves quietly.
+- **Fame decays, and All-Star selections slow the decay rather than stopping
+  it.** Exempting All-Stars from the era term outright rated Walter Davis --
+  six selections, none since 1992 -- level with Kevin Durant; exempting nobody
+  would demote Kareem. The count is what separates them, at one tier of relief
+  per seven selections.
+- **`Big names` means somebody was a star, not that they lasted.** The
+  longevity rescue is right that Horry at 7.0 a game and Darrell Armstrong at
+  9.2 are placeable and wrong that they are household names. Below
+  `BIG_NAME_MIN_PPG` with no selection, the middle pool is the ceiling -- that
+  is what it is for.
 - **Longevity rescues a low scorer into the wrong era.** Billy Paultz, 8.5 a
   game and last seen in 1985, rated level with Kevin Durant. Careers ending
   before 2000 take a one-tier nudge unless the player was an All-Star -- a

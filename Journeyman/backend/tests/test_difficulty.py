@@ -191,8 +191,12 @@ class TestPools:
         # one-time All-Star who played for eight clubs rates a 3 on the
         # composite, so a difficulty<=2 filter would drop him -- and he is
         # precisely the puzzle this game is for.
-        assert D.difficulty_for(14.0, 8, 700, 1) == 3
-        assert D.in_pool(D.fame_for(14.0, 700, 1), D.POOL_BIG_NAMES)
+        #
+        # 500 games rather than 700: past the longevity threshold an All-Star
+        # is pulled to tier 0, which drops the composite to 2 and stops the
+        # example demonstrating anything.
+        assert D.difficulty_for(14.0, 8, 500, 1) == 3
+        assert D.in_pool(D.fame_for(14.0, 500, 1), D.POOL_BIG_NAMES)
 
     def test_an_unknown_pool_name_falls_back_rather_than_raising(self):
         # It arrives from a request body. A stale client should get a game.
@@ -224,10 +228,15 @@ class TestLongevityIsNotFame:
         assert D.in_pool(fame, D.POOL_MIXED)
 
     def test_a_long_career_still_rescues_a_low_scorer(self):
-        # The rule longevity exists for. Robert Horry averaged 7.0 over 1,107
-        # games with no All-Star selection and is not obscure to anybody.
-        assert D.in_pool(D.fame_for(7.0, 1107, 0), D.POOL_BIG_NAMES)
-        assert D.in_pool(D.fame_for(8.3, 1287, 0), D.POOL_BIG_NAMES)  # Derek Fisher
+        """The rule longevity exists for -- but only as far as the middle pool.
+
+        Robert Horry averaged 7.0 over 1,107 games and Derek Fisher 8.3 over
+        1,287, neither an All-Star. They are placeable, which is what longevity
+        is evidence of, and they are not big names, which is what it is not.
+        """
+        assert D.in_pool(D.fame_for(7.0, 1107, 0), D.POOL_MIXED)
+        assert D.in_pool(D.fame_for(8.3, 1287, 0), D.POOL_MIXED)
+        assert not D.in_pool(D.fame_for(7.0, 1107, 0), D.POOL_BIG_NAMES)
 
     def test_an_all_star_is_never_demoted_by_this(self):
         # Rodman: 7.3 over 911 games, two selections. Scoring calls him
@@ -293,7 +302,7 @@ class TestShortAndOldCareers:
 
     def test_the_real_walter_berry_is_excluded_twice_over(self):
         # Short and long gone: both rules apply, and they stack.
-        assert D.fame_for(14.1, 205, 0, last_season=1989) == 3
+        assert D.fame_for(14.1, 205, 0, last_season=1989) == 4
 
     def test_a_short_career_that_is_still_going_is_not_penalised(self):
         # Jaden Ivey has played no longer than Walter Berry and is perfectly
@@ -306,16 +315,27 @@ class TestShortAndOldCareers:
         # Billy Paultz: 8.5 a game, 637 games, last seen in 1985. The longevity
         # rescue had him level with Kevin Durant.
         assert not D.in_pool(D.fame_for(8.5, 637, 0, last_season=1985), D.POOL_BIG_NAMES)
-        assert D.in_pool(D.fame_for(8.5, 637, 0, last_season=1985), D.POOL_MIXED)
 
-    def test_the_same_career_today_is_not_nudged(self):
-        assert D.in_pool(D.fame_for(8.5, 637, 0, last_season=2024), D.POOL_BIG_NAMES)
+    def test_the_same_career_today_is_better_known(self):
+        # The era term is the only difference between these two, so the recent
+        # one must land in a narrower pool than the old one.
+        recent = D.fame_for(8.5, 637, 0, last_season=2024)
+        distant = D.fame_for(8.5, 637, 0, last_season=1985)
+        assert recent < distant
+        assert D.in_pool(recent, D.POOL_MIXED)
 
-    def test_an_all_star_is_exempt_from_the_era_nudge(self):
-        # Direct evidence people knew the name at the time, which is exactly
-        # what the nudge is guessing at in its absence.
-        assert D.fame_for(7.3, 911, 2, last_season=1985) == 0
-        assert D.fame_for(10.0, 500, 1, last_season=1975) == 1
+    def test_selections_slow_the_decay_rather_than_stopping_it(self):
+        """The change Walter Davis forced.
+
+        Exempting All-Stars outright rated him -- six selections, none since
+        1992 -- the equal of Kevin Durant, and no era rule could reach him.
+        Exempting nobody would have demoted Kareem and Magic. The number of
+        selections is what separates them.
+        """
+        modest = D.fame_for(18.9, 1033, 6, last_season=1992)  # Walter Davis
+        immortal = D.fame_for(24.6, 1560, 17, last_season=1989)  # Kareem
+        assert not D.in_pool(modest, D.POOL_BIG_NAMES)
+        assert D.in_pool(immortal, D.POOL_BIG_NAMES)
 
     def test_an_unknown_season_is_not_treated_as_old(self):
         # Absent is not ancient. Penalising it would quietly demote every
@@ -348,7 +368,7 @@ class TestLongevityCannotMakeAStar:
         lands on 1 with or without the cap, so it asserted nothing. The mutation
         check caught that.
         """
-        assert D.fame_for(10.2, 823, 0, last_season=2010) == 1
+        assert D.fame_for(10.2, 823, 0, last_season=2010) == 2
 
     def test_even_a_thousand_quiet_games_stays_out_of_the_top_tier(self):
         # Caldwell Jones: 6.2 a game over 1,068 games.
@@ -370,8 +390,8 @@ class TestLongevityCannotMakeAStar:
         higgins = D.fame_for(9.0, 779, 0, last_season=1995)
         assert not D.in_pool(greenwood, D.POOL_BIG_NAMES)
         assert not D.in_pool(higgins, D.POOL_BIG_NAMES)
-        assert D.in_pool(greenwood, D.POOL_MIXED)
-        assert D.in_pool(higgins, D.POOL_MIXED)
+        assert D.in_pool(greenwood, D.POOL_DEEP_CUTS)
+        assert D.in_pool(higgins, D.POOL_DEEP_CUTS)
 
     def test_the_greats_of_that_era_survive_on_their_selections(self):
         # Kareem, Gervin, Frazier: exempt because an All-Star selection is
@@ -379,7 +399,10 @@ class TestLongevityCannotMakeAStar:
         assert D.in_pool(D.fame_for(24.6, 1560, 17, last_season=1989), D.POOL_BIG_NAMES)
         assert D.in_pool(D.fame_for(18.9, 825, 7, last_season=1980), D.POOL_BIG_NAMES)
 
-    def test_a_modern_long_career_is_unaffected(self):
-        # Horry, Fisher, Bowen, Battier: none an All-Star, none obscure.
+    def test_a_modern_long_career_lands_in_the_middle_pool(self):
+        # Horry, Fisher, Bowen, Battier: none an All-Star, none obscure, none
+        # a big name on the evidence this data actually holds.
         for ppg, games in ((7.0, 1107), (8.3, 1287), (6.1, 873), (8.6, 977)):
-            assert D.in_pool(D.fame_for(ppg, games, 0, last_season=2010), D.POOL_BIG_NAMES)
+            fame = D.fame_for(ppg, games, 0, last_season=2010)
+            assert D.in_pool(fame, D.POOL_MIXED)
+            assert not D.in_pool(fame, D.POOL_BIG_NAMES)
