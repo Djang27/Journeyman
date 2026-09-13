@@ -41,6 +41,30 @@ def teams_of(player):
     return [stint["team"] for stint in player.get("stints") or []]
 
 
+def season_label(stint):
+    """When a stint happened, as a player reads it.
+
+    Seasons are stored as the starting year, so 1995 means the 1995-96 season.
+    A single season prints as one year rather than a range of one, because
+    "1995-1995" reads as a typo.
+
+    Returns None when the source could not date the stint. The legacy JSON has
+    undated rows, and a hint that says "None" is worse than a hint that quietly
+    offers less.
+    """
+    start, end = stint.get("from_season"), stint.get("to_season")
+    if start is None:
+        return None
+    if end is None or end == start:
+        return str(start)
+    return f"{start}\u2013{end}"
+
+
+def seasons_of(player):
+    """The ordered season labels, parallel to `teams_of`."""
+    return [season_label(stint) for stint in player.get("stints") or []]
+
+
 def stints_from_teams(teams, seasons=None):
     """Build stints from bare team names.
 

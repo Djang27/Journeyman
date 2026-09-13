@@ -321,7 +321,42 @@ class TestHints:
 
         view = public_view(store.get(sid))
         # CAREER is celtics / heat / jazz -> East, East, West.
-        assert view["hints"] == ["East", "East", "West"]
+        assert [h["conference"] for h in view["hints"]] == ["East", "East", "West"]
+
+    def test_hints_give_the_seasons_too(self, store):
+        """The conference alone narrows a slot to half the league.
+
+        When the stint happened is the part you can reason from, and it is what
+        makes a nine-stop career tractable rather than a memory test.
+        """
+        session = start_session(
+            store,
+            mode="unlimited",
+            player_name="Test Journeyman",
+            player_id=1,
+            teams=CAREER,
+            seasons=["1995\u20131998", "1998", "1999\u20132003"],
+        )
+        submit_guess(store, session.id, 0, "lakers")
+        submit_guess(store, session.id, 1, "lakers")
+        use_hint(store, session.id)
+
+        hints = public_view(store.get(session.id))["hints"]
+        assert [h["seasons"] for h in hints] == ["1995\u20131998", "1998", "1999\u20132003"]
+
+    def test_a_session_without_seasons_still_gets_a_hint(self, store):
+        """Sessions started before seasons were carried, and undated careers.
+
+        The hint degrades to the conference on its own. Raising here would take
+        the hint away from every game already in flight at deploy time.
+        """
+        sid = new_game(store).id
+        submit_guess(store, sid, 0, "lakers")
+        submit_guess(store, sid, 1, "lakers")
+        use_hint(store, sid)
+
+        hints = public_view(store.get(sid))["hints"]
+        assert hints[0] == {"conference": "East", "seasons": None}
 
     def test_a_solved_slot_gets_no_hint(self, store):
         sid = new_game(store).id

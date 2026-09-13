@@ -203,10 +203,18 @@ function TeamList({ num_teams, hints, guesses, results, on_guess_change, on_subm
                 const result     = results[index]
                 const cardClass  = result ? RESULT_COLORS[result] : ""
                 const isLocked   = result === "green"
-                // The conference comes from the server, which is the only
-                // side that knows the answer. Deriving it here would mean
-                // holding the teams in the browser again.
-                const conf       = isLocked ? null : (hints?.[index] ?? null)
+                // The hint comes from the server, which is the only side that
+                // knows the answer. Deriving it here would mean holding the
+                // teams in the browser again.
+                //
+                // It used to be a bare conference string and is now
+                // { conference, seasons }. A session started before the change,
+                // or a career the source could not date, arrives with seasons
+                // null -- so each half is read independently and either can be
+                // missing without taking the other away.
+                const hint       = isLocked ? null : (hints?.[index] ?? null)
+                const conf       = typeof hint === 'string' ? hint : hint?.conference ?? null
+                const seasons    = typeof hint === 'string' ? null : hint?.seasons ?? null
                 const showClear  = !isLocked && !game_over && !!(guesses[index] ?? "")
                 const bend       = index % 2 === 0 ? 'bend-left' : 'bend-right'
 
@@ -220,6 +228,7 @@ function TeamList({ num_teams, hints, guesses, results, on_guess_change, on_subm
                             <span className="stop-number">
                                 Stop {index + 1}
                                 {conf && <span className={`conf-badge ${conf === "East" ? "east" : "west"}`}>{conf}</span>}
+                                {seasons && <span className="season-badge">{seasons}</span>}
                             </span>
 
                             {isLocked ? (

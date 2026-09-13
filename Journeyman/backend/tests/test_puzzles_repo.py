@@ -27,6 +27,10 @@ class TestPayload:
             "player_id": 1,
             "player_name": "Player 1",
             "teams": ["miami heat", "utah jazz"],
+            # None rather than an empty list: a puzzle scheduled before seasons
+            # were carried is indistinguishable from one whose source could not
+            # date the stints, and both mean "the hint offers less".
+            "seasons": None,
         }
 
     def test_the_teams_are_copied_not_referenced(self):

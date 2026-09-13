@@ -54,6 +54,9 @@ def to_row(session: Session) -> dict:
             "teams": session.answer,
             "player_name": session.player_name,
             "player_id": session.player_id,
+            # Added after launch. `answer` is jsonb, so this needs no migration,
+            # and a session started before it existed reads back as None.
+            "seasons": session.seasons,
         },
         "state": {
             "results": session.results,
@@ -86,6 +89,7 @@ def from_row(row: dict) -> Session:
         player_id=answer.get("player_id", 0),
         user_id=row.get("user_id"),
         puzzle_date=_date_str(row.get("puzzle_date")),
+        seasons=answer.get("seasons"),
         results=list(state.get("results", [])),
         guesses=list(state.get("guesses", [])),
         wrong_guesses=state.get("wrong_guesses", 0),
