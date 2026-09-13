@@ -3263,7 +3263,26 @@ body {
   font-size: 0.7rem;
   line-height: 1;
   color: var(--accent);
+  /* The mark overshoots the box on the way in; without this it is clipped at
+     exactly the moment the gesture is supposed to read. */
+  overflow: visible;
 }
+
+.hard-choice-mark { display: block; transform: rotate(-6deg); }
+
+/* Struck, not ticked: large and faint, landing askew with an overshoot -- the
+   same press the win stamp makes, at a fifteenth of the size. */
+.hard-choice-mark.struck {
+  animation: hard-strike 0.34s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+@keyframes hard-strike {
+  from { opacity: 0; transform: scale(3.4) rotate(-1deg); }
+  to   { opacity: 1; transform: scale(1) rotate(-6deg); }
+}
+
+/* And the box takes the ink, briefly, the way paper does under a stamp. */
+.hard-choice-switch.on .hard-choice-box { border-color: var(--accent); }
 
 .hard-choice-switch.on { color: var(--ink); }
 .hard-choice-switch:hover .hard-choice-box { border-color: var(--accent); }
@@ -3728,6 +3747,8 @@ body {
 /* Somebody who asked their system not to animate is not made to watch names
    fade; the component holds them still, and this stops the transition too. */
 @media (prefers-reduced-motion: reduce) {
+  .hard-choice-mark.struck { animation: none; }
+
   .supporters-names { transition: none; }
   .supporters-names.fading { opacity: 1; }
 }

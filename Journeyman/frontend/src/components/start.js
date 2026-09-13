@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { VerdictKey } from './verdict'
 import { PrivacyPolicy, Attribution } from './Legal'
 import SupportersStrip from './Supporters'
@@ -114,6 +114,24 @@ function PoolPicker({ pools, pool, onChoose }) {
 // decided. It is a way to play, like the pool, so it belongs with the pool --
 // and both apply to whichever button you press next.
 function HardModeToggle({ on, onToggle }) {
+    // The mark is struck rather than ticked: it arrives large and faint, lands
+    // askew and settles, which is the same gesture the win stamp makes. Turning
+    // hard mode on should feel like committing to something.
+    //
+    // Only on the way on. Switching it off is a correction, and a correction
+    // that announces itself reads as a mistake being celebrated.
+    const [struck, setStruck] = useState(false)
+    const was = useRef(on)
+
+    useEffect(() => {
+        const turning_on = on && !was.current
+        was.current = on
+        if (!turning_on) return undefined
+        setStruck(true)
+        const id = setTimeout(() => setStruck(false), 700)
+        return () => clearTimeout(id)
+    }, [on])
+
     return (
         <div className="hard-choice">
             <button
@@ -122,7 +140,9 @@ function HardModeToggle({ on, onToggle }) {
                 onClick={() => onToggle(!on)}
                 aria-pressed={on}
             >
-                <span className="hard-choice-box" aria-hidden="true">{on ? '\u2715' : ''}</span>
+                <span className="hard-choice-box" aria-hidden="true">
+                    {on && <span className={`hard-choice-mark ${struck ? 'struck' : ''}`}>\u2715</span>}
+                </span>
                 Hard mode
             </button>
             <p className="hard-choice-note">
