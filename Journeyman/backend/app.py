@@ -48,6 +48,8 @@ from sessions import (
     submit_guess,
     use_hint,
 )
+from supabase_client import DATABASE_TIMEOUT_SECONDS, LIMITER_TIMEOUT_SECONDS
+from supabase_client import build as _build_client
 from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
@@ -132,40 +134,12 @@ def _build_session_store():
     return SupabaseSessionStore.from_config(config)
 
 
-# How long a database call may take before the app gives up on it.
-#
-# supabase-py defaults to 120 seconds, and nothing here overrode it. That is
-# not a timeout so much as the absence of one: Vercel kills the function long
-# before it expires, so a slow Postgres turned every request into a dead
-# function rather than a handled failure. It also defeated the rate limiter's
-# fail-open policy -- the code correctly refuses to take the game down when the
-# limiter is unavailable, but with no bound it waited out the slowness first,
-# which takes the game down by a different route.
-#
-# Generous against a healthy query, which runs in well under a second.
-DATABASE_TIMEOUT_SECONDS = 5
-
-# The limiter gets less. It fails open by design, so time spent waiting on it
-# buys nothing: the outcome after a slow success and after a timeout is the
-# same request being allowed through.
-LIMITER_TIMEOUT_SECONDS = 2
-
-
+# Client construction and its time bounds live in supabase_client.py, so the app
+# and the scheduled jobs cannot drift apart. The constants are imported above
+# because the app's own callers and tests reach them through this module.
 def _supabase(config, timeout=DATABASE_TIMEOUT_SECONDS):
-    """A Supabase client that gives up in bounded time."""
-    from supabase.lib.client_options import SyncClientOptions
-    from supabase_auth import SyncMemoryStorage
-
-    from supabase import create_client
-
-    return create_client(
-        config.supabase_url,
-        config.supabase_service_key,
-        options=SyncClientOptions(
-            postgrest_client_timeout=timeout,
-            storage=SyncMemoryStorage(),
-        ),
-    )
+    """A Supabase client that gives up in bounded time. See supabase_client."""
+    return _build_client(config, timeout)
 
 
 def _wire_player_pool(config):

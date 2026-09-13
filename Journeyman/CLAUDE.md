@@ -255,8 +255,15 @@ Things that have already cost time:
   Vercel kills the function long before it expires, so a slow Postgres produced
   a dead function rather than a handled failure -- and it defeated the rate
   limiter's fail-open policy, which correctly refuses to take the game down but
-  waited out the slowness first. Every client is built by `app._supabase()` so
-  the bound cannot be set in six places and missed in a seventh.
+  waited out the slowness first. Every client is built by `supabase_client.build()`,
+  and a test fails if any other file calls `create_client`. The first guard for
+  this read only `app.py`, and passed while the session store -- the hottest
+  path in the app -- sat on the 120-second default in `supabase_store.py`.
+- **A scheduled job meets a cold database.** The daily jobs run at quiet hours,
+  so their first query can hit an idle Supabase instance and the gateway times
+  out before it wakes. That failed a reconciliation run. Jobs use a longer bound
+  and `supabase_client.with_retries()` around idempotent reads -- a short
+  timeout would only make them fail sooner.
 - **A handled degradation is a warning, not an error.** The outage that trips
   the limiter's fail-open path affects every request by definition, so logging
   it at error opens thousands of high-priority Sentry issues and buries the

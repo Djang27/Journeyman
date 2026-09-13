@@ -124,10 +124,13 @@ class SupabaseSessionStore(SessionStore):
 
     @classmethod
     def from_config(cls, config):
-        from supabase import create_client
+        # Through the shared builder. Built here directly, this client sat on
+        # supabase-py's 120-second default while every other client in the app
+        # was bounded -- and it is the one that handles every start and guess.
+        from supabase_client import build
 
         config.require_database()
-        return cls(create_client(config.supabase_url, config.supabase_service_key))
+        return cls(build(config))
 
     def _table(self):
         return self._client.table(TABLE)
