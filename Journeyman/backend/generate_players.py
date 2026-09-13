@@ -20,6 +20,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import difficulty
+from players_repo import seasons_of
 
 PLAYER_DATABASE_PATH = Path(__file__).with_name("nba_players.json")
 
@@ -68,6 +69,8 @@ def _load_from_file():
     for player in players:
         if "fame" not in player:
             player["fame"] = difficulty.rate(player)[0]
+        if "seasons" not in player:
+            player["seasons"] = seasons_of(player)
 
     return players
 
@@ -140,7 +143,7 @@ def randomPlayer(exclude_ids=None, pool=None):
         available = filtered if filtered else available  # reset when all have been seen
 
     player = random.choice(available)
-    return player["name"], player["teams"], player["id"]
+    return player["name"], player["teams"], player["id"], player.get("seasons")
 
 
 def daily_player():
@@ -148,4 +151,4 @@ def daily_player():
     today_str = _eastern_today().isoformat()
     index = int(hashlib.md5(today_str.encode()).hexdigest(), 16) % len(players)
     player = players[index]
-    return player["name"], player["teams"], player["id"], day_number()
+    return player["name"], player["teams"], player["id"], day_number(), player.get("seasons")

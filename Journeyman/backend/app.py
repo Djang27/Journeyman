@@ -178,7 +178,7 @@ def _wire_player_pool(config):
         return None
 
     from difficulty import rate
-    from players_repo import PlayersRepo, teams_of
+    from players_repo import PlayersRepo, seasons_of, teams_of
 
     repo = PlayersRepo(_supabase(config))
 
@@ -192,6 +192,7 @@ def _wire_player_pool(config):
                 "id": row["id"],
                 "name": row["name"],
                 "teams": teams_of(row),
+                "seasons": seasons_of(row),
                 "fame": rate(row)[0],
             }
             for row in repo.active_pool()
@@ -494,22 +495,34 @@ def _todays_puzzle(puzzle_date):
         row = puzzles_repo.get(puzzle_date)
         if row and row.get("payload"):
             payload = row["payload"]
-            puzzle = (payload["player_name"], payload["teams"], payload["player_id"])
+            # A puzzle scheduled before seasons were carried has none; the hint
+            # falls back to the conference alone rather than failing.
+            puzzle = (
+                payload["player_name"],
+                payload["teams"],
+                payload["player_id"],
+                payload.get("seasons"),
+            )
             daily_cache.put(puzzle_date, puzzle)
             return puzzle
 
-    player_name, teams, player_id, _ = daily_player()
+    player_name, teams, player_id, _, seasons = daily_player()
 
     # The session's composite foreign key requires the row to exist.
     session_store.ensure_puzzle(
         GAME_SLUG,
         puzzle_date,
-        {"player_name": player_name, "player_id": player_id, "teams": teams},
+        {
+            "player_name": player_name,
+            "player_id": player_id,
+            "teams": teams,
+            "seasons": seasons,
+        },
     )
 
     # Cached too: the fallback is deterministic for the date, and the row has
     # just been written, so re-deriving it per request buys nothing.
-    puzzle = (player_name, teams, player_id)
+    puzzle = (player_name, teams, player_id, seasons)
     daily_cache.put(puzzle_date, puzzle)
     return puzzle
 
@@ -630,6 +643,7 @@ def api_game_start():
         player_name = payload["player_name"]
         teams = payload["teams"]
         player_id = payload["player_id"]
+        seasons = payload.get("seasons")
 
     elif mode == "daily":
         puzzle_date = today_eastern().isoformat()
@@ -639,7 +653,7 @@ def api_game_start():
         existing = resume_daily(session_store, user_id, puzzle_date)
         if existing is not None:
             return jsonify(public_view(existing)), 200
-        player_name, teams, player_id = _todays_puzzle(puzzle_date)
+        player_name, teams, player_id, seasons = _todays_puzzle(puzzle_date)
     else:
         # Charged before the game is built, so a refused start costs nothing
         # and cannot hand out a player the caller then keeps.
@@ -652,7 +666,7 @@ def api_game_start():
         # Unlimited only. The daily is the same puzzle for everybody, so a
         # per-player pool setting would make the leaderboard meaningless, and
         # the archive is a fixed list of past dailies.
-        player_name, teams, player_id = randomPlayer(
+        player_name, teams, player_id, seasons = randomPlayer(
             exclude_ids=exclude_ids, pool=body.get("pool") or difficulty.DEFAULT_POOL
         )
 
@@ -666,6 +680,7 @@ def api_game_start():
             user_id=user_id,
             puzzle_date=puzzle_date,
             hard_mode=hard_mode,
+            seasons=seasons,
         )
     except SessionError as exc:
         return _session_error(exc, 409 if "already played" in str(exc) else 400)

@@ -27,7 +27,7 @@ from difficulty import (  # noqa: E402
     week_shape,
 )
 from generate_players import today_eastern  # noqa: E402
-from players_repo import PlayersRepo, teams_of  # noqa: E402
+from players_repo import PlayersRepo, seasons_of, teams_of  # noqa: E402
 from puzzles_repo import NotEnoughPlayers, PuzzlesRepo, plan  # noqa: E402
 
 
@@ -70,6 +70,7 @@ def main(argv=None):
             "id": row["id"],
             "name": row["name"],
             "teams": teams_of(row),
+            "seasons": seasons_of(row),
             "last_season": row.get("last_season"),
             # Derived, not read from players.difficulty. That column is written
             # at import, so retuning the rating leaves every stored value stale

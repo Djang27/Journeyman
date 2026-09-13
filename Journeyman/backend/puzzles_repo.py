@@ -42,6 +42,10 @@ def payload_for(player):
         "player_id": player["id"],
         "player_name": player["name"],
         "teams": list(player["teams"]),
+        # Added after the hint started using them. A puzzle scheduled before
+        # this reads back without them and its hint offers the conference
+        # alone, so an old calendar degrades rather than breaks.
+        "seasons": list(player.get("seasons") or []) or None,
     }
 
 

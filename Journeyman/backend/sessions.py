@@ -68,6 +68,10 @@ class Session:
     player_id: int
     user_id: str | None = None
     puzzle_date: str | None = None
+    # When each stint happened, parallel to `answer`. Unlike the answer this is
+    # not secret -- it is what the hint reveals -- but it is held here for the
+    # same reason: so the client never needs the career to render it.
+    seasons: list[str | None] | None = None
     results: list[str | None] = field(default_factory=list)
     guesses: list[str | None] = field(default_factory=list)
     wrong_guesses: int = 0
@@ -223,6 +227,7 @@ def start_session(
     puzzle_date: str | None = None,
     hard_mode: bool = False,
     now: datetime | None = None,
+    seasons: list[str | None] | None = None,
 ) -> Session:
     if mode not in ("daily", "unlimited", "archive"):
         raise SessionError(f"unknown mode {mode!r}")
@@ -238,6 +243,7 @@ def start_session(
         player_id=player_id,
         user_id=user_id,
         puzzle_date=puzzle_date,
+        seasons=list(seasons) if seasons else None,
         results=[None] * len(teams),
         guesses=[None] * len(teams),
         hard_mode=hard_mode,
@@ -437,9 +443,18 @@ def public_view(session: Session, now: datetime | None = None) -> dict:
     # client never needs the answer to render it -- previously team_list.js
     # derived this from the teams array it had been handed.
     if session.hint_used:
+        # Conference and years together. The conference alone narrows a slot to
+        # half the league, which is a nudge rather than a clue; when the stint
+        # happened is the thing you can actually reason from, and it is what
+        # makes a long career tractable at all.
+        #
+        # Seasons are absent for sessions started before they were carried, and
+        # for careers the source could not date. The hint degrades to the
+        # conference on its own rather than showing a gap.
+        seasons = session.seasons or [None] * len(session.answer)
         view["hints"] = [
-            None if result == "green" else conference(team)
-            for team, result in zip(session.answer, session.results, strict=True)
+            None if result == "green" else {"conference": conference(team), "seasons": season}
+            for team, season, result in zip(session.answer, seasons, session.results, strict=True)
         ]
 
     if session.is_finished:

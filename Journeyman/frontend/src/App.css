@@ -3228,6 +3228,20 @@ body {
    Set apart by rules rather than a panel: the sheet is already a card, and a
    card inside a card reads as an advert. Placed under the actions so it never
    sits between somebody and the button they came for. */
+/* The seasons half of the hint. Set as a date line rather than a badge --
+   tabular figures, no fill -- so it reads as a fact about the stint rather
+   than a second status flag competing with the conference. */
+.season-badge {
+  margin-left: 0.4rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .results-signin {
   margin: 1rem 0 0.25rem;
   padding: 0.7rem 0 0;

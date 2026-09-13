@@ -30,13 +30,13 @@ class TestDailyPlayer:
 
     def test_returns_a_player_from_the_pool(self, player_db, frozen_date, sample_players):
         frozen_date(player_db, 2026, 8, 27)
-        name, teams, player_id, _ = player_db.daily_player()
+        name, teams, player_id, _, _seasons = player_db.daily_player()
         match = next(p for p in sample_players if p["id"] == player_id)
         assert (name, teams) == (match["name"], match["teams"])
 
     def test_includes_the_day_number(self, player_db, frozen_date):
         frozen_date(player_db, 2026, 6, 12)
-        *_, day_num = player_db.daily_player()
+        *_, day_num, _seasons = player_db.daily_player()
         assert day_num == 2
 
     def test_selection_shifts_when_the_pool_grows(
@@ -79,7 +79,7 @@ class TestDailyPlayer:
 
 class TestRandomPlayer:
     def test_returns_a_player_from_the_pool(self, player_db, sample_players):
-        _, _, player_id = player_db.randomPlayer()
+        _, _, player_id, _seasons = player_db.randomPlayer()
         assert player_id in {p["id"] for p in sample_players}
 
     def test_excludes_seen_ids(self, player_db, sample_players):
@@ -89,11 +89,11 @@ class TestRandomPlayer:
 
     def test_resets_once_every_player_has_been_seen(self, player_db, sample_players):
         everyone = {p["id"] for p in sample_players}
-        _, _, player_id = player_db.randomPlayer(exclude_ids=everyone)
+        _, _, player_id, _seasons = player_db.randomPlayer(exclude_ids=everyone)
         assert player_id in everyone
 
     def test_empty_exclude_set_is_ignored(self, player_db, sample_players):
-        _, _, player_id = player_db.randomPlayer(exclude_ids=set())
+        _, _, player_id, _seasons = player_db.randomPlayer(exclude_ids=set())
         assert player_id in {p["id"] for p in sample_players}
 
 
@@ -143,7 +143,7 @@ class TestPoolSelection:
             assert picked in self.BIG_NAMES
 
     def test_an_unknown_pool_name_still_returns_a_game(self, player_db, sample_players):
-        _, _, player_id = player_db.randomPlayer(pool="nonsense")
+        _, _, player_id, _seasons = player_db.randomPlayer(pool="nonsense")
         assert player_id in {p["id"] for p in sample_players}
 
 
