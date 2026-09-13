@@ -28,11 +28,11 @@ POOL_PATH = Path(__file__).with_name("nba_players.json")
 
 
 def _repo():
-    from supabase import create_client
+    from supabase_client import BATCH_TIMEOUT_SECONDS, build
 
     config = load_config()
     config.require_database()
-    return PlayersRepo(create_client(config.supabase_url, config.supabase_service_key))
+    return PlayersRepo(build(config, BATCH_TIMEOUT_SECONDS))
 
 
 def main(argv=None):

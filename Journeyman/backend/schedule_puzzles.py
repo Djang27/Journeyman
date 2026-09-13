@@ -32,11 +32,11 @@ from puzzles_repo import NotEnoughPlayers, PuzzlesRepo, plan  # noqa: E402
 
 
 def _client():
-    from supabase import create_client
+    from supabase_client import BATCH_TIMEOUT_SECONDS, build
 
     config = load_config()
     config.require_database()
-    return create_client(config.supabase_url, config.supabase_service_key)
+    return build(config, BATCH_TIMEOUT_SECONDS)
 
 
 def main(argv=None):

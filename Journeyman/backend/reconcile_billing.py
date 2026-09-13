@@ -189,8 +189,7 @@ def main(argv=None):
     from config import load_config
     from entitlements import PostgresEntitlements
     from payment_events import PostgresPaymentEventStore
-
-    from supabase import create_client
+    from supabase_client import BATCH_TIMEOUT_SECONDS, build, with_retries
 
     config = load_config()
     if not can_reconcile(config):
@@ -198,13 +197,19 @@ def main(argv=None):
         return 0
     config.require_database()
 
-    client = create_client(config.supabase_url, config.supabase_service_key)
+    client = build(config, BATCH_TIMEOUT_SECONDS)
     entitlements = PostgresEntitlements(client)
     event_store = PostgresPaymentEventStore(client)
 
     sessions = fetch_recent_sessions(config, args.days)
-    problems = missing_fulfilments(sessions, event_store, entitlements.is_unlimited)
-    stalled = stalled_events(event_store)
+    # Retried, because this job runs once a day at a quiet hour and its first
+    # query regularly meets a database that has gone idle. A single gateway
+    # timeout used to fail the whole run. Both calls only read, so trying again
+    # is safe; Stripe's fetch above has retries of its own.
+    problems = with_retries(
+        lambda: missing_fulfilments(sessions, event_store, entitlements.is_unlimited)
+    )
+    stalled = with_retries(lambda: stalled_events(event_store))
 
     print(f"checked {len(sessions)} Stripe sessions from the last {args.days} days")
     print(f"  paid but not entitled: {len(problems)}")

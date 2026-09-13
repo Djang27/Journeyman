@@ -1635,16 +1635,25 @@ class TestDatabaseTimeouts:
     instead of a handled failure.
     """
 
-    def test_every_client_is_built_through_the_bounded_helper(self):
-        # Seven construction sites; a timeout set in six of them and missed in
-        # the seventh is the shape this guards against.
+    def test_no_module_builds_a_client_of_its_own(self):
+        """Every file, not one of them.
+
+        The version of this that read only app.py -- and only the text after
+        _supabase(), which _build_session_store sits above -- passed while the
+        session store built an unbounded client in supabase_store.py. A client
+        can only be bounded in one place if it can only be built in one place.
+        """
         import pathlib
 
-        source = (pathlib.Path(__file__).parent.parent / "app.py").read_text()
-        body = source.split("def _supabase(", 1)[1]
-        assert "create_client(" not in body.split("def ", 2)[2], (
-            "a Supabase client is being built outside _supabase(); it would "
-            "inherit the 120-second default"
+        backend = pathlib.Path(__file__).parent.parent
+        offenders = sorted(
+            path.name
+            for path in backend.glob("*.py")
+            if path.name != "supabase_client.py" and "create_client(" in path.read_text()
+        )
+        assert offenders == [], (
+            f"{offenders} build a Supabase client directly and inherit the "
+            "120-second default; use supabase_client.build()"
         )
 
     def test_the_limiter_gives_up_sooner_than_everything_else(self):
@@ -1715,3 +1724,37 @@ class TestRateLimiterFailsOpenQuietly:
 
         record = next(r for r in caplog.records if "rate limiter unavailable" in r.message)
         assert record.exc_info is not None
+
+
+class TestTheSessionStoreIsBounded:
+    """The client that handles every start and every guess.
+
+    The timeout fix routed six clients through app._supabase() and missed this
+    one: _build_session_store() goes through SupabaseSessionStore.from_config(),
+    which built its own client with supabase-py's 120-second default. The guard
+    test meant to catch exactly that read app.py's source text -- so a client
+    built in another module was invisible to it, and it only inspected the text
+    after _supabase(), while _build_session_store is defined before it.
+
+    So this asks the object rather than the text.
+    """
+
+    def test_the_store_the_app_builds_gives_up_in_bounded_time(self, monkeypatch):
+        import app as app_module
+        from config import Config
+
+        monkeypatch.setattr(
+            app_module,
+            "load_config",
+            lambda environ=None: Config(
+                environ={
+                    "SUPABASE_URL": "https://example.supabase.co",
+                    "SUPABASE_SERVICE_ROLE_KEY": "not-a-real-key",
+                }
+            ),
+        )
+        store = app_module._build_session_store()
+        read = store._client.postgrest.session.timeout.read
+        assert read is not None and read <= 9, (
+            f"the session store waits {read}s -- Vercel kills the function first"
+        )
